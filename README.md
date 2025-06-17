@@ -115,4 +115,4 @@ For any queries or suggestions, please reach out to [sohelakhtar2101@gmail.com]
 - Next.js team for the amazing framework
 - Vercel for hosting
 - MongoDB for database
-- All contributors and users of the platform 
+
