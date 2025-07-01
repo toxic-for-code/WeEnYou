@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import { connectDB } from '@/lib/db';
 import Booking from '@/models/Booking';
+import ServiceBooking from '@/models/ServiceBooking';
 import Stripe from 'stripe';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -32,13 +33,25 @@ export async function POST(req: Request) {
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session;
-        const { bookingId } = session.metadata!;
+        const { bookingId, serviceBookingIds } = session.metadata!;
 
-        // Update booking status
+        // Update hall booking status
         await Booking.findByIdAndUpdate(bookingId, {
           paymentStatus: 'paid',
           status: 'confirmed',
         });
+
+        // Update service bookings status if any
+        if (serviceBookingIds) {
+          const serviceIds = JSON.parse(serviceBookingIds);
+          await ServiceBooking.updateMany(
+            { _id: { $in: serviceIds } },
+            {
+              paymentStatus: 'paid',
+              status: 'confirmed',
+            }
+          );
+        }
 
         break;
       }
@@ -48,13 +61,25 @@ export async function POST(req: Request) {
         const session = await stripe.checkout.sessions.retrieve(
           charge.metadata.checkout_session_id
         );
-        const { bookingId } = session.metadata!;
+        const { bookingId, serviceBookingIds } = session.metadata!;
 
-        // Update booking status
+        // Update hall booking status
         await Booking.findByIdAndUpdate(bookingId, {
           paymentStatus: 'refunded',
           status: 'cancelled',
         });
+
+        // Update service bookings status if any
+        if (serviceBookingIds) {
+          const serviceIds = JSON.parse(serviceBookingIds);
+          await ServiceBooking.updateMany(
+            { _id: { $in: serviceIds } },
+            {
+              paymentStatus: 'refunded',
+              status: 'cancelled',
+            }
+          );
+        }
 
         break;
       }
@@ -69,3 +94,4 @@ export async function POST(req: Request) {
     );
   }
 } 
+ 

@@ -4,6 +4,8 @@ import { authOptions } from '@/lib/auth';
 import { connectDB } from '@/lib/db';
 import Booking from '@/models/Booking';
 import { sendCancellationEmail } from '@/lib/email';
+import Hall from '@/models/Hall';
+import Notification from '@/models/Notification';
 
 export async function POST(
   request: Request,
@@ -59,6 +61,16 @@ export async function POST(
     booking.paymentStatus = 'refunded';
     await booking.save();
 
+    // Notify owner
+    const hall = await Hall.findById(booking.hallId);
+    if (hall) {
+      await Notification.create({
+        userId: hall.ownerId,
+        type: 'cancellation',
+        message: `Booking for ${hall.name} (${booking.startDate} to ${booking.endDate}) was cancelled by the user.`,
+      });
+    }
+
     // Send cancellation email
     await sendCancellationEmail({
       to: session.user.email!,
@@ -78,3 +90,4 @@ export async function POST(
     );
   }
 } 
+ 

@@ -4,6 +4,9 @@ import { authOptions } from '@/lib/auth';
 import { connectDB } from '@/lib/db';
 import Hall from '@/models/Hall';
 import Booking from '@/models/Booking';
+import Notification from '@/models/Notification';
+import Service from '@/models/Service';
+import ServiceBooking from '@/models/ServiceBooking';
 
 export async function POST(req: Request) {
   try {
@@ -15,10 +18,14 @@ export async function POST(req: Request) {
       );
     }
 
-    const { hallId, startDate, endDate, guests, specialRequests } = await req.json();
+    const { hallId, startDate, endDate, guests, specialRequests, services = [], servicesTotal = 0 } = await req.json();
+
+    // Log the incoming request body for debugging
+    console.log('Booking request body:', { hallId, startDate, endDate, guests, specialRequests, services, servicesTotal });
 
     // Validate required fields
     if (!hallId || !startDate || !endDate || !guests) {
+      console.error('Booking error: Missing required fields', { hallId, startDate, endDate, guests });
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
@@ -30,6 +37,7 @@ export async function POST(req: Request) {
     // Check if hall exists
     const hall = await Hall.findById(hallId);
     if (!hall) {
+      console.error('Booking error: Hall not found', { hallId });
       return NextResponse.json(
         { error: 'Hall not found' },
         { status: 404 }
@@ -42,6 +50,7 @@ export async function POST(req: Request) {
     const now = new Date();
 
     if (start < now) {
+      console.error('Booking error: Start date in the past', { startDate });
       return NextResponse.json(
         { error: 'Start date cannot be in the past' },
         { status: 400 }
@@ -49,6 +58,7 @@ export async function POST(req: Request) {
     }
 
     if (end <= start) {
+      console.error('Booking error: End date before or equal to start date', { startDate, endDate });
       return NextResponse.json(
         { error: 'End date must be after start date' },
         { status: 400 }
@@ -64,15 +74,20 @@ export async function POST(req: Request) {
           endDate: { $gte: start },
         },
       ],
-      status: { $in: ['confirmed', 'pending'] },
+      status: { $in: ['confirmed'] },
     });
 
     if (existingBooking) {
+      console.log('Conflicting booking:', existingBooking);
       return NextResponse.json(
         { error: 'Hall is not available for the selected dates' },
         { status: 400 }
       );
     }
+
+    // Calculate total price for hall only (do not include services)
+    const hallPrice = hall.price * Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+    const totalPrice = hallPrice;
 
     // Create booking
     const booking = await Booking.create({
@@ -82,8 +97,39 @@ export async function POST(req: Request) {
       endDate,
       guests,
       specialRequests,
-      totalPrice: hall.price * Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)),
+      totalPrice,
       status: 'pending',
+    });
+
+    // Create service bookings if any
+    if (services.length > 0) {
+      const serviceBookingPromises = services.map(async (service: { name: string; price: number }) => {
+        // Find the service in the database
+        const dbService = await Service.findOne({ name: service.name, price: service.price });
+        if (dbService) {
+          return ServiceBooking.create({
+            userId: session.user.id,
+            serviceId: dbService._id,
+            providerId: dbService.providerId,
+            hallId,
+            hallBookingId: booking._id,
+            startDate,
+            endDate,
+            totalPrice: service.price,
+            status: 'pending',
+            paymentStatus: 'pending',
+          });
+        }
+      });
+
+      await Promise.all(serviceBookingPromises);
+    }
+
+    // Notify owner
+    await Notification.create({
+      userId: hall.ownerId,
+      type: 'booking',
+      message: `New booking for ${hall.name} from ${session.user.name || 'a user'} (${startDate} to ${endDate})`,
     });
 
     return NextResponse.json({ booking }, { status: 201 });
@@ -109,11 +155,33 @@ export async function GET() {
 
     await connectDB();
 
-    const bookings = await Booking.find({ userId: session.user.id })
-      .populate('hallId', 'name images location')
-      .sort({ createdAt: -1 });
+    let bookings;
+    if (session.user.role === 'owner') {
+      // Owner: get all bookings for their halls
+      const halls = await Hall.find({ ownerId: session.user.id });
+      const hallIds = halls.map(h => h._id);
+      bookings = await Booking.find({ hallId: { $in: hallIds } })
+        .populate('hallId', 'name images location ownerId')
+        .sort({ createdAt: -1 })
+        .lean();
+    } else {
+      // User: get their own bookings
+      bookings = await Booking.find({ userId: session.user.id })
+        .populate('hallId', 'name images location ownerId')
+        .sort({ createdAt: -1 })
+        .lean();
+    }
 
-    return NextResponse.json({ bookings });
+    // For each booking, populate serviceBookings with providerId
+    const bookingsWithServices = await Promise.all(bookings.map(async (booking) => {
+      const serviceBookings = await ServiceBooking.find({ hallBookingId: booking._id })
+        .populate('providerId', 'name')
+        .lean();
+      booking.serviceBookings = serviceBookings;
+      return booking;
+    }));
+
+    return NextResponse.json({ bookings: bookingsWithServices });
   } catch (error) {
     console.error('Error fetching bookings:', error);
     return NextResponse.json(
@@ -122,3 +190,4 @@ export async function GET() {
     );
   }
 } 
+ 

@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
+import { Dialog } from '@headlessui/react';
 
 interface Booking {
   _id: string;
@@ -26,9 +27,15 @@ interface Booking {
   startDate: string;
   endDate: string;
   totalPrice: number;
-  status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
+  status: 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'pending_approval';
   paymentStatus: 'pending' | 'paid' | 'refunded';
   createdAt: string;
+  pendingChange?: {
+    type: 'reschedule' | 'cancel';
+    startDate?: string;
+    endDate?: string;
+    requestedAt?: string;
+  };
 }
 
 export default function AdminBookings() {
@@ -40,6 +47,12 @@ export default function AdminBookings() {
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [selectedPaymentStatus, setSelectedPaymentStatus] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [showChat, setShowChat] = useState(false);
+  const [chatBooking, setChatBooking] = useState<Booking | null>(null);
+  const [messages, setMessages] = useState<any[]>([]);
+  const [newMessage, setNewMessage] = useState('');
+  const [chatLoading, setChatLoading] = useState(false);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -101,13 +114,65 @@ export default function AdminBookings() {
     }
   };
 
+  const handleOwnerAction = async (bookingId: string, action: 'approve' | 'reject') => {
+    setActionLoading(bookingId + action);
+    try {
+      const res = await fetch(`/api/bookings/${bookingId}/owner-action`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to update booking');
+      setBookings(bookings.map(b => b._id === bookingId ? data.booking : b));
+    } catch (err) {
+      setError('Failed to update booking');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const openChat = async (booking: Booking) => {
+    setChatBooking(booking);
+    setShowChat(true);
+    setChatLoading(true);
+    try {
+      const res = await fetch(`/api/messages?bookingId=${booking._id}`);
+      const data = await res.json();
+      setMessages(data.messages || []);
+    } catch {
+      setMessages([]);
+    } finally {
+      setChatLoading(false);
+    }
+  };
+
+  const sendMessage = async () => {
+    if (!chatBooking || !newMessage.trim()) return;
+    setChatLoading(true);
+    try {
+      const res = await fetch('/api/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bookingId: chatBooking._id, message: newMessage }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setMessages([...messages, data.message]);
+        setNewMessage('');
+      }
+    } finally {
+      setChatLoading(false);
+    }
+  };
+
   const filteredBookings = bookings.filter(booking => {
     const matchesStatus = selectedStatus === 'all' || booking.status === selectedStatus;
     const matchesPayment = selectedPaymentStatus === 'all' || booking.paymentStatus === selectedPaymentStatus;
     const matchesSearch = 
-      booking.hallId.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      booking.userId.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      booking.userId.email.toLowerCase().includes(searchTerm.toLowerCase());
+      (booking.hallId && booking.hallId.name && booking.hallId.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (booking.userId && booking.userId.name && booking.userId.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (booking.userId && booking.userId.email && booking.userId.email.toLowerCase().includes(searchTerm.toLowerCase()));
     return matchesStatus && matchesPayment && matchesSearch;
   });
 
@@ -170,10 +235,10 @@ export default function AdminBookings() {
 
       <div className="grid gap-6">
         {filteredBookings.map((booking) => (
-          <div key={booking._id} className="bg-white p-6 rounded-lg shadow-md">
+          <div key={booking._id} className={`bg-white p-6 rounded-lg shadow-md ${booking.status === 'pending_approval' ? 'border-2 border-yellow-500' : ''}`}>
             <div className="flex flex-col md:flex-row gap-6">
               <div className="w-full md:w-1/4">
-                {booking.hallId.images[0] && (
+                {booking.hallId && booking.hallId.images && booking.hallId.images[0] && (
                   <div className="relative h-48 w-full">
                     <Image
                       src={booking.hallId.images[0]}
@@ -187,14 +252,20 @@ export default function AdminBookings() {
               <div className="flex-1">
                 <div className="flex justify-between items-start">
                   <div>
-                    <Link 
-                      href={`/admin/halls/${booking.hallId._id}`}
-                      className="text-xl font-semibold hover:text-blue-600"
-                    >
-                      {booking.hallId.name}
-                    </Link>
+                    {booking.hallId && booking.hallId._id ? (
+                      <Link 
+                        href={`/admin/halls/${booking.hallId._id}`}
+                        className="text-xl font-semibold hover:text-blue-600"
+                      >
+                        {booking.hallId.name}
+                      </Link>
+                    ) : (
+                      <span className="text-xl font-semibold text-gray-400">Hall deleted</span>
+                    )}
                     <p className="text-gray-600">
-                      {booking.hallId.location.city}, {booking.hallId.location.state}
+                      {booking.hallId && booking.hallId.location && booking.hallId.location.city && booking.hallId.location.state
+                        ? `${booking.hallId.location.city}, ${booking.hallId.location.state}`
+                        : 'Location unavailable'}
                     </p>
                   </div>
                   <p className="text-lg font-semibold">₹{booking.totalPrice}</p>
@@ -202,9 +273,8 @@ export default function AdminBookings() {
 
                 <div className="mt-4">
                   <h3 className="font-semibold">Customer Information</h3>
-                  <p>{booking.userId.name}</p>
-                  <p>{booking.userId.email}</p>
-                  {booking.userId.phone && <p>{booking.userId.phone}</p>}
+                  <p>{booking.userId && booking.userId.name ? booking.userId.name : 'User deleted'}{booking.userId && booking.userId.email ? ` (${booking.userId.email})` : ''}</p>
+                  {booking.userId && booking.userId.phone && <p>{booking.userId.phone}</p>}
                 </div>
 
                 <div className="mt-4">
@@ -212,6 +282,35 @@ export default function AdminBookings() {
                   <p>End Date: {new Date(booking.endDate).toLocaleDateString()}</p>
                   <p>Booked on: {new Date(booking.createdAt).toLocaleDateString()}</p>
                 </div>
+
+                {/* Pending Approval Actions */}
+                {booking.status === 'pending_approval' && booking.pendingChange && (
+                  <div className="mt-4 p-4 bg-yellow-50 border border-yellow-400 rounded">
+                    <h4 className="font-semibold text-yellow-800 mb-2">Pending {booking.pendingChange.type === 'reschedule' ? 'Reschedule' : 'Cancellation'} Request</h4>
+                    {booking.pendingChange.type === 'reschedule' && (
+                      <div className="mb-2">
+                        <p>Requested New Start: <span className="font-medium">{booking.pendingChange.startDate ? new Date(booking.pendingChange.startDate).toLocaleDateString() : ''}</span></p>
+                        <p>Requested New End: <span className="font-medium">{booking.pendingChange.endDate ? new Date(booking.pendingChange.endDate).toLocaleDateString() : ''}</span></p>
+                      </div>
+                    )}
+                    <div className="flex gap-2 mt-2">
+                      <button
+                        onClick={() => handleOwnerAction(booking._id, 'approve')}
+                        disabled={actionLoading === booking._id + 'approve'}
+                        className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+                      >
+                        {actionLoading === booking._id + 'approve' ? 'Approving...' : 'Approve'}
+                      </button>
+                      <button
+                        onClick={() => handleOwnerAction(booking._id, 'reject')}
+                        disabled={actionLoading === booking._id + 'reject'}
+                        className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50"
+                      >
+                        {actionLoading === booking._id + 'reject' ? 'Rejecting...' : 'Reject'}
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 <div className="mt-4 flex flex-wrap gap-4">
                   <select
@@ -242,11 +341,75 @@ export default function AdminBookings() {
                     View Details
                   </Link>
                 </div>
+
+                {/* Chat Button */}
+                <div className="mt-4">
+                  <button
+                    onClick={() => openChat(booking)}
+                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                  >
+                    Messages
+                  </button>
+                </div>
               </div>
             </div>
           </div>
         ))}
       </div>
+
+      {/* Chat Modal */}
+      <Dialog open={showChat} onClose={() => setShowChat(false)} className="fixed z-50 inset-0 overflow-y-auto">
+        <div className="flex items-center justify-center min-h-screen px-4">
+          <div className="fixed inset-0 bg-black opacity-30" aria-hidden="true" />
+          <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full mx-auto p-6 z-10">
+            <Dialog.Title className="text-lg font-bold mb-4">Messages</Dialog.Title>
+            {chatBooking && (
+              <div className="mb-2 text-sm text-gray-700">
+                <div>Hall: <b>{chatBooking.hallId && chatBooking.hallId.name ? chatBooking.hallId.name : 'Hall deleted'}</b></div>
+                <div>User: <b>{chatBooking.userId && chatBooking.userId.name ? chatBooking.userId.name : 'User deleted'}{chatBooking.userId && chatBooking.userId.email ? ` (${chatBooking.userId.email})` : ''}</b></div>
+              </div>
+            )}
+            <div className="h-64 overflow-y-auto border rounded p-2 bg-gray-50 mb-2">
+              {chatLoading ? (
+                <div>Loading...</div>
+              ) : messages.length === 0 ? (
+                <div className="text-gray-400">No messages yet.</div>
+              ) : (
+                messages.map((msg, i) => (
+                  <div key={i} className={`mb-2 ${msg.sender === 'owner' ? 'text-right' : 'text-left'}`}> {/* Adjust sender logic as needed */}
+                    <span className={`inline-block px-3 py-1 rounded ${msg.sender === 'owner' ? 'bg-blue-200' : 'bg-gray-200'}`}>{msg.text || msg.message}</span>
+                  </div>
+                ))
+              )}
+            </div>
+            <div className="flex gap-2 mt-2">
+              <input
+                type="text"
+                value={newMessage}
+                onChange={e => setNewMessage(e.target.value)}
+                className="flex-1 border rounded px-2 py-1"
+                placeholder="Type a message..."
+                disabled={chatLoading}
+                onKeyDown={e => { if (e.key === 'Enter') sendMessage(); }}
+              />
+              <button
+                onClick={sendMessage}
+                disabled={chatLoading || !newMessage.trim()}
+                className="px-4 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+              >
+                Send
+              </button>
+            </div>
+            <button
+              onClick={() => setShowChat(false)}
+              className="mt-4 px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 w-full"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </Dialog>
     </div>
   );
 } 
+ 

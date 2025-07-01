@@ -27,6 +27,10 @@ export default function BookingForm({ hallId, price, services = [], servicesTota
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    if (!hallId) {
+      setError('Hall ID is missing. Please try again from a valid hall page.');
+      return;
+    }
     if (formData.guests > capacity) {
       setError(`Number of guests must be less than or equal to hall capacity (${capacity}).`);
       return;
@@ -46,18 +50,20 @@ export default function BookingForm({ hallId, price, services = [], servicesTota
         body: JSON.stringify({
           hallId,
           ...formData,
+          services: services.map(s => ({ name: s.name, price: s.price })),
         }),
       });
 
+      const data = await response.json();
       if (!response.ok) {
-        throw new Error('Failed to create booking');
+        setError(data.error || 'Failed to create booking');
+        return;
       }
 
-      const data = await response.json();
       router.push(`/bookings/${data.booking._id}`);
     } catch (error) {
       console.error('Error creating booking:', error);
-      alert('Failed to create booking. Please try again.');
+      setError('Failed to create booking. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -209,3 +215,4 @@ export default function BookingForm({ hallId, price, services = [], servicesTota
     </form>
   );
 } 
+ 

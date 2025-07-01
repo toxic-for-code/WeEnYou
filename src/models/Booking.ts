@@ -36,7 +36,7 @@ const bookingSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['pending', 'confirmed', 'cancelled', 'completed'],
+      enum: ['pending', 'confirmed', 'cancelled', 'completed', 'pending_approval'],
       default: 'pending',
     },
     paymentStatus: {
@@ -46,6 +46,19 @@ const bookingSchema = new mongoose.Schema(
     },
     paymentId: {
       type: String,
+    },
+    pendingChange: {
+      type: {
+        type: String, // 'reschedule' or 'cancel'
+        enum: ['reschedule', 'cancel'],
+      },
+      startDate: Date,
+      endDate: Date,
+      requestedAt: Date,
+    },
+    reminderSent: {
+      type: Boolean,
+      default: false,
     },
   },
   {
@@ -61,3 +74,4 @@ bookingSchema.index({ status: 1 });
 const Booking = mongoose.models.Booking || mongoose.model('Booking', bookingSchema);
 
 export default Booking; 
+ 

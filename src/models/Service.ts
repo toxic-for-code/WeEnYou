@@ -11,6 +11,12 @@ const serviceSchema = new mongoose.Schema({
   providerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   images: [{ type: String }],
   verified: { type: Boolean, default: false },
+  status: { type: String, enum: ['active', 'inactive'], default: 'active' },
+  availability: [{
+    date: { type: Date, required: true },
+    isAvailable: { type: Boolean, default: true },
+  }],
 }, { timestamps: true });
 
 export default mongoose.models.Service || mongoose.model('Service', serviceSchema); 
+ 

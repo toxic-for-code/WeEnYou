@@ -4,6 +4,41 @@ import { authOptions } from '@/lib/auth';
 import { connectDB } from '@/lib/db';
 import Service from '@/models/Service';
 
+export async function GET(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session || session.user.role !== 'admin') {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    await connectDB();
+    const service = await Service.findById(params.id)
+      .populate('providerId', 'name email phone')
+      .exec();
+
+    if (!service) {
+      return NextResponse.json(
+        { error: 'Service not found' },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({ service });
+  } catch (error) {
+    console.error('Error fetching service:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
 export async function DELETE(
   request: Request,
   { params }: { params: { id: string } }
@@ -18,7 +53,7 @@ export async function DELETE(
     }
 
     await connectDB();
-    const deletedService = await Service.findByIdAndDelete(params.id);
+    const deletedService = await Service.findByIdAndDelete(params.id).exec();
 
     if (!deletedService) {
       return NextResponse.json(
@@ -60,7 +95,7 @@ export async function PUT(
         updatedAt: new Date(),
       },
       { new: true }
-    ).populate('providerId', 'name email phone');
+    ).populate('providerId', 'name email phone').exec();
 
     if (!updatedService) {
       return NextResponse.json(
@@ -78,3 +113,4 @@ export async function PUT(
     );
   }
 } 
+ 

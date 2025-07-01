@@ -9,6 +9,7 @@ interface IUser extends mongoose.Document {
   role: 'user' | 'admin' | 'owner' | 'provider';
   status?: 'active' | 'suspended';
   comparePassword(candidatePassword: string): Promise<boolean>;
+  wishlist: mongoose.Types.ObjectId[];
 }
 
 const userSchema = new mongoose.Schema({
@@ -47,6 +48,7 @@ const userSchema = new mongoose.Schema({
     enum: ['active', 'suspended'],
     default: 'active',
   },
+  wishlist: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Hall' }],
 }, {
   timestamps: true,
 });
@@ -77,3 +79,4 @@ userSchema.methods.comparePassword = async function(candidatePassword: string): 
 const User = mongoose.models.User || mongoose.model<IUser>('User', userSchema);
 
 export default User; 
+ 

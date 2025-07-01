@@ -14,6 +14,15 @@ export async function POST(req: Request) {
       );
     }
 
+    // Validate role - prevent users from signing up as admin
+    const allowedRoles = ['user', 'owner', 'provider'];
+    if (!allowedRoles.includes(role)) {
+      return NextResponse.json(
+        { message: 'Invalid role specified' },
+        { status: 400 }
+      );
+    }
+
     await connectDB();
 
     // Check if user already exists
@@ -49,3 +58,4 @@ export async function POST(req: Request) {
     );
   }
 } 
+ 

@@ -24,12 +24,13 @@ export async function GET(request: Request) {
 
     await connectDB();
 
-    // Get all halls owned by the user
-    const userHalls = await Hall.find({ ownerId: session.user.id });
-    const hallIds = userHalls.map((hall) => hall._id);
-
-    // Build query
-    const query: any = { hallId: { $in: hallIds } };
+    let query: any = {};
+    if (session.user.role !== 'admin') {
+      // Only restrict to user's halls if not admin
+      const userHalls = await Hall.find({ ownerId: session.user.id });
+      const hallIds = userHalls.map((hall) => hall._id);
+      query.hallId = { $in: hallIds };
+    }
     if (status) {
       query.status = status;
     }
@@ -43,7 +44,7 @@ export async function GET(request: Request) {
       .skip((page - 1) * limit)
       .limit(limit)
       .populate('hallId', 'name images location')
-      .populate('userId', 'name email');
+      .populate('userId', 'name email phone');
 
     // Get total count for pagination
     const total = await Booking.countDocuments(query);
@@ -65,3 +66,4 @@ export async function GET(request: Request) {
     );
   }
 } 
+ 

@@ -4,7 +4,18 @@ import { useSession, signIn, signOut } from 'next-auth/react';
 
 export default function AuthButtons() {
   const { data: session, status } = useSession();
-  if (status === 'loading') return null;
+  if (status === 'loading') {
+    return (
+      <>
+        <div className="ml-4 inline-block animate-pulse">
+          <div className="h-10 w-24 bg-gray-200 rounded" />
+        </div>
+        <div className="ml-2 inline-block animate-pulse">
+          <div className="h-10 w-24 bg-gray-200 rounded" />
+        </div>
+      </>
+    );
+  }
   if (session) {
     return (
       <button
@@ -38,3 +49,4 @@ export default function AuthButtons() {
     </>
   );
 } 
+ 

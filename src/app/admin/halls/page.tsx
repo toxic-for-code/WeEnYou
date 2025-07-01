@@ -9,14 +9,29 @@ import Image from 'next/image';
 interface Hall {
   _id: string;
   name: string;
+  description: string;
   images: string[];
   location: {
+    address: string;
     city: string;
     state: string;
+    pincode: string;
   };
   price: number;
   capacity: number;
   verified: boolean;
+  status: string;
+  amenities: string[];
+  averageRating: number;
+  totalReviews: number;
+  ownerId: {
+    _id: string;
+    name: string;
+    email: string;
+    phone: string;
+  };
+  createdAt: string;
+  updatedAt: string;
 }
 
 export default function AdminHalls() {
@@ -194,10 +209,42 @@ export default function AdminHalls() {
               />
             </div>
             <div className="p-6">
-              <h3 className="text-xl font-semibold">{hall.name}</h3>
-              <p className="text-gray-600">{hall.location.city}, {hall.location.state}</p>
-              <p className="text-gray-600">Capacity: {hall.capacity}</p>
-              <p className="text-gray-600">Price: ₹{hall.price}/day</p>
+              <div className="flex justify-between items-start mb-2">
+                <h3 className="text-xl font-semibold">{hall.name}</h3>
+                <span className={`px-2 py-1 text-xs rounded-full ${
+                  hall.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                }`}>
+                  {hall.status}
+                </span>
+              </div>
+              <p className="text-gray-600 mb-2">{hall.location.address}</p>
+              <p className="text-gray-600 mb-2">{hall.location.city}, {hall.location.state} - {hall.location.pincode}</p>
+              <p className="text-gray-600 mb-2">Capacity: {hall.capacity} people</p>
+              <p className="text-gray-600 mb-2">Price: ₹{hall.price}/day</p>
+              <p className="text-gray-600 mb-2">Rating: {hall.averageRating.toFixed(1)} ⭐ ({hall.totalReviews} reviews)</p>
+              <p className="text-gray-600 mb-4 text-sm">
+                Owner: {hall.ownerId.name} ({hall.ownerId.email})
+              </p>
+              <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+                {hall.description}
+              </p>
+              {hall.amenities.length > 0 && (
+                <div className="mb-4">
+                  <p className="text-gray-600 text-sm font-medium mb-1">Amenities:</p>
+                  <div className="flex flex-wrap gap-1">
+                    {hall.amenities.slice(0, 3).map((amenity, index) => (
+                      <span key={index} className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded">
+                        {amenity}
+                      </span>
+                    ))}
+                    {hall.amenities.length > 3 && (
+                      <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded">
+                        +{hall.amenities.length - 3} more
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
               <div className="mt-4 flex justify-between items-center">
                 <button
                   onClick={() => toggleVerification(hall._id, !hall.verified)}
@@ -228,3 +275,4 @@ export default function AdminHalls() {
     </div>
   );
 } 
+ 

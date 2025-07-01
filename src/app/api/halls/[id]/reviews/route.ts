@@ -5,6 +5,7 @@ import { connectDB } from '@/lib/db';
 import Review from '@/models/Review';
 import Booking from '@/models/Booking';
 import Hall from '@/models/Hall';
+import Notification from '@/models/Notification';
 
 // Get reviews for a hall
 export async function GET(
@@ -106,8 +107,17 @@ export async function POST(
       bookingId,
     });
 
-    // Update hall's rating distribution
+    // Notify owner
     const hall = await Hall.findById(params.id);
+    if (hall) {
+      await Notification.create({
+        userId: hall.ownerId,
+        type: 'review',
+        message: `New review for ${hall.name}: ${rating} stars - "${comment?.slice(0, 40)}${comment?.length > 40 ? '...' : ''}"`,
+      });
+    }
+
+    // Update hall's rating distribution
     if (hall) {
       const distribution = hall.ratingDistribution || new Map();
       distribution.set(rating, (distribution.get(rating) || 0) + 1);
@@ -123,4 +133,42 @@ export async function POST(
       { status: 500 }
     );
   }
+}
+
+// POST /api/halls/[id]/reviews/[reviewId]/response
+export async function POST_response(request: Request, { params }: { params: { id: string, reviewId: string } }) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    await connectDB();
+    const review = await Review.findById(params.reviewId);
+    if (!review) return NextResponse.json({ error: 'Review not found' }, { status: 404 });
+    const hall = await Hall.findById(params.id);
+    if (!hall || hall.ownerId.toString() !== session.user.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    const { response } = await request.json();
+    review.response = response;
+    await review.save();
+    return NextResponse.json({ review });
+  } catch (error) {
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+// POST /api/halls/[id]/reviews/[reviewId]/flag
+export async function POST_flag(request: Request, { params }: { params: { id: string, reviewId: string } }) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    await connectDB();
+    const review = await Review.findById(params.reviewId);
+    if (!review) return NextResponse.json({ error: 'Review not found' }, { status: 404 });
+    const hall = await Hall.findById(params.id);
+    if (!hall || hall.ownerId.toString() !== session.user.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    review.flagged = true;
+    await review.save();
+    return NextResponse.json({ review });
+  } catch (error) {
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
 } 
+ 

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useSession } from 'next-auth/react';
 import BookingForm from '@/components/BookingForm';
@@ -62,6 +62,7 @@ export default function HallDetail() {
   const { isLoaded } = useJsApiLoader({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
   });
+  const router = useRouter();
 
   useEffect(() => {
     const fetchHall = async () => {
@@ -96,6 +97,23 @@ export default function HallDetail() {
     setCart(cart.filter(s => s._id !== serviceId));
   };
   const totalPrice = cart.reduce((sum, s) => sum + s.price, 0);
+
+  const handleMessageOwner = async () => {
+    if (!session || !hall.ownerId?._id) return;
+    const res = await fetch('/api/conversations', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        participants: [session.user.id, hall.ownerId._id],
+        conversationType: 'hall_booking',
+        hallId: hall._id,
+      }),
+    });
+    const data = await res.json();
+    if (data.conversation?._id) {
+      router.push(`/messages/${data.conversation._id}`);
+    }
+  };
 
   if (loading) {
     return (
@@ -173,6 +191,14 @@ export default function HallDetail() {
               <div className="mb-4">
                 <h2 className="text-lg font-semibold mb-1">Owner Info</h2>
                 <p className="text-gray-700">{hall.ownerId?.name} ({hall.ownerId?.email})</p>
+                {session && session.user.id !== hall.ownerId?._id && (
+                  <button
+                    className="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                    onClick={handleMessageOwner}
+                  >
+                    Message Owner
+                  </button>
+                )}
               </div>
 
               {/* Map */}
@@ -325,17 +351,19 @@ export default function HallDetail() {
           </div>
 
           {/* Booking Form */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow-md p-6 sticky top-8">
-              <BookingForm 
-                hallId={hall._id} 
-                price={hall.price} 
-                services={cart.map(s => ({ name: s.name, price: s.price }))}
-                servicesTotal={totalPrice}
-                capacity={hall.capacity}
-              />
+          {session && session.user.id !== hall.ownerId?._id && session.user.role !== 'owner' && (
+            <div className="lg:col-span-1">
+              <div className="bg-white rounded-lg shadow-md p-6 sticky top-8">
+                <BookingForm 
+                  hallId={hall._id} 
+                  price={hall.price} 
+                  services={cart.map(s => ({ name: s.name, price: s.price }))}
+                  servicesTotal={totalPrice}
+                  capacity={hall.capacity}
+                />
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>
@@ -409,3 +437,4 @@ function ReviewForm({ hallId }: { hallId: string }) {
     </form>
   );
 } 
+ 

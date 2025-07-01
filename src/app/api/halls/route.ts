@@ -9,7 +9,6 @@ export async function POST(req: Request) {
   try {
     // Check session
     const session = await getServerSession(authOptions);
-    console.log('Session:', session);
     
     if (!session) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
@@ -22,7 +21,6 @@ export async function POST(req: Request) {
     // Connect to database
     try {
       await connectDB();
-      console.log('Database connected successfully');
     } catch (dbError) {
       console.error('Database connection error:', dbError);
       return NextResponse.json({ error: 'Database connection failed' }, { status: 500 });
@@ -32,7 +30,6 @@ export async function POST(req: Request) {
     let body;
     try {
       body = await req.json();
-      console.log('Request body:', body);
     } catch (parseError) {
       console.error('Error parsing request body:', parseError);
       return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
@@ -48,6 +45,7 @@ export async function POST(req: Request) {
       capacity,
       amenities,
       images,
+      coordinates,
     } = body;
 
     // Validate required fields
@@ -67,8 +65,23 @@ export async function POST(req: Request) {
       }, { status: 400 });
     }
 
-    // For simplicity, use dummy coordinates. In production, use a geocoding API.
-    const coordinates = [77.5946, 12.9716];
+    // Validate price and capacity
+    if (Number(price) <= 0) {
+      return NextResponse.json({ error: 'Price must be greater than 0' }, { status: 400 });
+    }
+
+    if (Number(capacity) <= 0) {
+      return NextResponse.json({ error: 'Capacity must be greater than 0' }, { status: 400 });
+    }
+
+    // Validate coordinates if provided, otherwise use default
+    let validCoordinates = [77.5946, 12.9716]; // Default to Bangalore
+    if (coordinates && Array.isArray(coordinates) && coordinates.length === 2) {
+      const [lng, lat] = coordinates;
+      if (lng >= -180 && lng <= 180 && lat >= -90 && lat <= 90) {
+        validCoordinates = coordinates;
+      }
+    }
 
     // Create hall
     try {
@@ -85,7 +98,7 @@ export async function POST(req: Request) {
           state,
           coordinates: {
             type: 'Point',
-            coordinates: [77.5946, 12.9716],
+            coordinates: validCoordinates,
           },
         },
         ownerId: session.user.id,
@@ -99,10 +112,7 @@ export async function POST(req: Request) {
         availability: [],
       };
 
-      console.log('Creating hall with data:', hallData);
-
       const hall = await Hall.create(hallData);
-      console.log('Hall created successfully:', hall);
       return NextResponse.json({ hall }, { status: 201 });
     } catch (createError) {
       console.error('Error creating hall:', createError);
@@ -124,23 +134,23 @@ export async function POST(req: Request) {
   }
 }
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
+    const session = await getServerSession(authOptions);
     await connectDB();
-    console.log('Fetching halls from database...');
-    
-    const halls = await Hall.find({})
-      .lean()
-      .sort({ createdAt: -1 });
-    
-    // Log verification status for each hall
-    halls.forEach(hall => {
-      console.log(`Hall ${hall.name} (${hall._id}) verification status:`, hall.verified);
-    });
 
+    // If owner, return only their halls
+    if (session?.user?.role === 'owner') {
+      const halls = await Hall.find({ ownerId: session.user.id }).sort({ createdAt: -1 });
+      return NextResponse.json({ halls }, { status: 200 });
+    }
+
+    // Otherwise, return all halls (for public listing)
+    const halls = await Hall.find({}).lean().sort({ createdAt: -1 });
     return NextResponse.json({ halls }, { status: 200 });
   } catch (error) {
     console.error('Error fetching halls:', error);
     return NextResponse.json({ error: 'Failed to fetch halls' }, { status: 500 });
   }
 } 
+ 

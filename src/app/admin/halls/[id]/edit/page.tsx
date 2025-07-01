@@ -244,3 +244,4 @@ export default function AdminEditHall({ params }: { params: { id: string } }) {
     </div>
   );
 } 
+ 

@@ -3,10 +3,17 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { connectDB } from '@/lib/db';
 import Booking from '@/models/Booking';
-import Stripe from 'stripe';
+import ServiceBooking from '@/models/ServiceBooking';
+import Razorpay from 'razorpay';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2023-10-16',
+// Validate environment variables
+if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+  throw new Error('Razorpay environment variables are not configured');
+}
+
+const razorpay = new Razorpay({
+  key_id: process.env.RAZORPAY_KEY_ID,
+  key_secret: process.env.RAZORPAY_KEY_SECRET,
 });
 
 export async function POST(req: Request) {
@@ -19,7 +26,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const { bookingId, amount } = await req.json();
+    const { bookingId, serviceBookingIds, amount } = await req.json();
 
     if (!bookingId || !amount) {
       return NextResponse.json(
@@ -34,7 +41,7 @@ export async function POST(req: Request) {
     const booking = await Booking.findOne({
       _id: bookingId,
       userId: session.user.id,
-    });
+    }).populate('hallId');
 
     if (!booking) {
       return NextResponse.json(
@@ -50,37 +57,42 @@ export async function POST(req: Request) {
       );
     }
 
-    // Create Stripe checkout session
-    const stripeSession = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
-      line_items: [
-        {
-          price_data: {
-            currency: 'inr',
-            product_data: {
-              name: `Booking for ${booking.hallId.name}`,
-              description: `Check-in: ${new Date(booking.startDate).toLocaleDateString()} - Check-out: ${new Date(booking.endDate).toLocaleDateString()}`,
-            },
-            unit_amount: amount * 100, // Convert to paise
-          },
-          quantity: 1,
-        },
-      ],
-      mode: 'payment',
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/bookings/${bookingId}?payment=success`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/bookings/${bookingId}?payment=cancelled`,
-      metadata: {
-        bookingId,
+    // Verify service bookings if any
+    if (serviceBookingIds && serviceBookingIds.length > 0) {
+      const serviceBookings = await ServiceBooking.find({
+        _id: { $in: serviceBookingIds },
         userId: session.user.id,
+        paymentStatus: 'pending'
+      });
+
+      if (serviceBookings.length !== serviceBookingIds.length) {
+        return NextResponse.json(
+          { error: 'One or more service bookings are invalid or already paid' },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Create Razorpay order
+    const order = await razorpay.orders.create({
+      amount: amount * 100, // in paise
+      currency: 'INR',
+      receipt: `booking_${bookingId}`,
+      notes: {
+        bookingId: bookingId,
+        serviceBookingIds: serviceBookingIds ? JSON.stringify(serviceBookingIds) : '',
+        userId: session.user.id,
+        hall: booking.hallId.name,
       },
     });
 
-    return NextResponse.json({ sessionId: stripeSession.id });
+    return NextResponse.json({ order });
   } catch (error) {
-    console.error('Error creating payment session:', error);
+    console.error('Error creating Razorpay order:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
     );
   }
 } 
+ 

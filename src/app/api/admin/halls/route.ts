@@ -20,7 +20,7 @@ export async function GET() {
 
     // Get all halls (since this is an admin endpoint)
     const halls = await Hall.find()
-      .populate('ownerId', 'name email')
+      .populate('ownerId', 'name email phone')
       .sort({ createdAt: -1 });
 
     // Get booking statistics for each hall
@@ -88,3 +88,4 @@ export async function GET() {
     );
   }
 } 
+ 

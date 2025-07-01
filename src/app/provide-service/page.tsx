@@ -29,6 +29,8 @@ export default function ProvideServicePage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   if (status === 'loading') {
     return <div className="text-center py-12">Loading...</div>;
@@ -53,24 +55,44 @@ export default function ProvideServicePage() {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null;
+    setImageFile(file);
+    setImagePreview(file ? URL.createObjectURL(file) : null);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setSuccess('');
     setLoading(true);
     try {
+      let imageUrl = '';
+      if (imageFile) {
+        const formData = new FormData();
+        formData.append('images', imageFile);
+        const uploadRes = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
+        const uploadData = await uploadRes.json();
+        imageUrl = uploadData.urls?.[0] || '';
+      }
       const res = await fetch('/api/services', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...form,
           price: Number(form.price),
+          image: imageUrl,
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to list service');
       setSuccess('Service listed successfully!');
       setForm({ serviceType: '', name: '', description: '', price: '', contact: '', city: '', state: '' });
+      setImageFile(null);
+      setImagePreview(null);
     } catch (err: any) {
       setError(err.message || 'Something went wrong');
     } finally {
@@ -166,6 +188,13 @@ export default function ProvideServicePage() {
             className="w-full border rounded px-3 py-2"
           />
         </div>
+        <div>
+          <label className="block font-medium mb-1">Service Image</label>
+          <input type="file" accept="image/*" onChange={handleImageChange} className="mb-2" />
+          {imagePreview && (
+            <img src={imagePreview} alt="Preview" className="w-32 h-32 object-cover rounded mb-2" />
+          )}
+        </div>
         <button
           type="submit"
           disabled={loading}
@@ -177,3 +206,4 @@ export default function ProvideServicePage() {
     </div>
   );
 } 
+ 

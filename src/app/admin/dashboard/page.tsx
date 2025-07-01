@@ -294,16 +294,20 @@ export default function AdminDashboard() {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center">
                         <div className="relative h-12 w-12 flex-shrink-0">
-                          <Image
-                            src={booking.hallId.images[0]}
-                            alt={booking.hallId.name}
-                            fill
-                            className="object-cover rounded-lg"
-                          />
+                          {booking.hallId && booking.hallId.images && booking.hallId.images[0] ? (
+                            <Image
+                              src={booking.hallId.images[0]}
+                              alt={booking.hallId.name}
+                              fill
+                              className="object-cover rounded-lg"
+                            />
+                          ) : (
+                            <div className="h-12 w-12 bg-gray-200 rounded-lg" />
+                          )}
                         </div>
                         <div className="ml-4">
                           <p className="text-sm font-medium text-gray-900">
-                            {booking.hallId.name}
+                            {booking.hallId && booking.hallId.name ? booking.hallId.name : 'Hall deleted'}
                           </p>
                           <p className="text-sm text-gray-500">
                             {booking.userId.name}
@@ -416,16 +420,20 @@ export default function AdminDashboard() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center">
                       <div className="relative h-12 w-12 flex-shrink-0">
-                        <Image
-                          src={booking.hallId.images[0]}
-                          alt={booking.hallId.name}
-                          fill
-                          className="object-cover rounded-lg"
-                        />
+                        {booking.hallId && booking.hallId.images && booking.hallId.images[0] ? (
+                          <Image
+                            src={booking.hallId.images[0]}
+                            alt={booking.hallId.name}
+                            fill
+                            className="object-cover rounded-lg"
+                          />
+                        ) : (
+                          <div className="h-12 w-12 bg-gray-200 rounded-lg" />
+                        )}
                       </div>
                       <div className="ml-4">
                         <p className="text-sm font-medium text-gray-900">
-                          {booking.hallId.name}
+                          {booking.hallId && booking.hallId.name ? booking.hallId.name : 'Hall deleted'}
                         </p>
                         <p className="text-sm text-gray-500">
                           {booking.userId.name} ({booking.userId.email})
@@ -474,3 +482,4 @@ export default function AdminDashboard() {
     </div>
   );
 } 
+ 

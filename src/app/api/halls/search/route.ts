@@ -10,13 +10,17 @@ export async function GET(req: Request) {
     const capacity = searchParams.get('capacity');
     const priceRange = searchParams.get('priceRange');
     const amenities = searchParams.get('amenities')?.split(',').filter(Boolean) || [];
+    const minRating = searchParams.get('minRating');
+    const dateRange = searchParams.get('dateRange'); // format: 'YYYY-MM-DD,YYYY-MM-DD'
 
     console.log('Received search params:', {
       location,
       date,
       capacity,
       priceRange,
-      amenities
+      amenities,
+      minRating,
+      dateRange
     });
 
     await connectDB();
@@ -72,6 +76,26 @@ export async function GET(req: Request) {
       query.amenities = { $all: formattedAmenities };
     }
 
+    // Minimum rating filter
+    if (minRating && !isNaN(Number(minRating))) {
+      query.averageRating = { $gte: Number(minRating) };
+    }
+
+    // Date range availability filter
+    if (dateRange) {
+      const [start, end] = dateRange.split(',');
+      if (start && end) {
+        query['availability'] = {
+          $not: {
+            $elemMatch: {
+              date: { $gte: new Date(start), $lte: new Date(end) },
+              isAvailable: false,
+            },
+          },
+        };
+      }
+    }
+
     console.log('Final query:', query);
 
     // Execute query with pagination
@@ -107,3 +131,4 @@ export async function GET(req: Request) {
     );
   }
 } 
+ 

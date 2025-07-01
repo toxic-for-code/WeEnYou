@@ -38,6 +38,15 @@ const reviewSchema = new mongoose.Schema(
       ref: 'Booking',
       required: true,
     },
+    response: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    flagged: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,
@@ -74,3 +83,4 @@ reviewSchema.post('save', async function () {
 const Review = mongoose.models.Review || mongoose.model('Review', reviewSchema);
 
 export default Review; 
+ 

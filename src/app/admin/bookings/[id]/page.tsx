@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import { encode as encodeQuery } from 'querystring';
 
 interface Booking {
   _id: string;
@@ -60,6 +61,17 @@ export default function AdminBookingDetails({ params }: { params: { id: string }
     return <div>Booking not found</div>;
   }
 
+  // Calendar event details
+  const eventTitle = `Event Hall Booking: ${booking.hallId.name}`;
+  const eventLocation = `${booking.hallId.location.city}, ${booking.hallId.location.state}`;
+  const eventDescription = `Booking at ${booking.hallId.name}`;
+  const startISO = new Date(booking.startDate).toISOString().replace(/[-:]|\.\d{3}/g, '');
+  const endISO = new Date(booking.endDate).toISOString().replace(/[-:]|\.\d{3}/g, '');
+  const googleUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(eventTitle)}&dates=${startISO}/${endISO}&details=${encodeURIComponent(eventDescription)}&location=${encodeURIComponent(eventLocation)}`;
+  const outlookUrl = `https://outlook.live.com/calendar/0/deeplink/compose?subject=${encodeURIComponent(eventTitle)}&body=${encodeURIComponent(eventDescription)}&startdt=${booking.startDate}&enddt=${booking.endDate}&location=${encodeURIComponent(eventLocation)}`;
+  const icsContent = `BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nSUMMARY:${eventTitle}\nDTSTART:${startISO}\nDTEND:${endISO}\nDESCRIPTION:${eventDescription}\nLOCATION:${eventLocation}\nEND:VEVENT\nEND:VCALENDAR`;
+  const icsUrl = `data:text/calendar;charset=utf-8,${encodeURIComponent(icsContent)}`;
+
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-8">Booking Details</h1>
@@ -84,8 +96,18 @@ export default function AdminBookingDetails({ params }: { params: { id: string }
           <p>Status: {booking.status}</p>
           <p>Payment Status: {booking.paymentStatus}</p>
           <p>Created At: {new Date(booking.createdAt).toLocaleDateString()}</p>
+          {/* Add to Calendar Links */}
+          <div className="mt-6 flex flex-col gap-2">
+            <span className="font-medium text-gray-700">Add to Calendar:</span>
+            <div className="flex gap-4">
+              <a href={googleUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Google Calendar</a>
+              <a href={outlookUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Outlook</a>
+              <a href={icsUrl} download={`booking-${booking._id}.ics`} className="text-blue-600 underline">iCal (.ics)</a>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   );
 } 
+ 

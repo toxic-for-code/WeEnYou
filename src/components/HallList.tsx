@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useSession } from 'next-auth/react';
 
 interface HallListProps {
   selectedHall: string | null;
@@ -13,12 +14,25 @@ interface HallListProps {
     capacity: string;
     priceRange: string;
     amenities: string[];
+    minRating?: string;
+    dateRangeStart?: string;
+    dateRangeEnd?: string;
   };
 }
 
 export default function HallList({ selectedHall, onHallSelect, filters }: HallListProps) {
+  const { data: session } = useSession();
   const [halls, setHalls] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [wishlist, setWishlist] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (session?.user) {
+      fetch('/api/wishlist')
+        .then(res => res.json())
+        .then(data => setWishlist(Array.isArray(data.wishlist) ? data.wishlist.map((h: any) => h._id) : []));
+    }
+  }, [session]);
 
   useEffect(() => {
     const fetchHalls = async () => {
@@ -33,25 +47,20 @@ export default function HallList({ selectedHall, onHallSelect, filters }: HallLi
 
         let response, data;
         if (isFiltersEmpty) {
-          console.log('Fetching all halls...');
           response = await fetch('/api/halls');
           data = await response.json();
-          console.log('Received halls data:', data.halls);
         } else {
-          console.log('Fetching filtered halls...');
           const queryParams = new URLSearchParams({
             ...filters,
             amenities: filters.amenities.join(','),
           });
+          if (filters.minRating) queryParams.set('minRating', filters.minRating);
+          if (filters.dateRangeStart && filters.dateRangeEnd) {
+            queryParams.set('dateRange', `${filters.dateRangeStart},${filters.dateRangeEnd}`);
+          }
           response = await fetch(`/api/halls/search?${queryParams}`);
           data = await response.json();
-          console.log('Received filtered halls data:', data.halls);
         }
-        
-        // Log each hall's verification status
-        data.halls.forEach((hall: any) => {
-          console.log(`Hall ${hall.name} verification status:`, typeof hall.verified, hall.verified);
-        });
         
         setHalls(data.halls);
       } catch (error) {
@@ -63,6 +72,25 @@ export default function HallList({ selectedHall, onHallSelect, filters }: HallLi
 
     fetchHalls();
   }, [filters]);
+
+  const handleWishlistToggle = async (hallId: string, isWishlisted: boolean) => {
+    if (!session?.user) return;
+    if (isWishlisted) {
+      await fetch('/api/wishlist', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ hallId }),
+      });
+      setWishlist((prev) => prev.filter((id) => id !== hallId));
+    } else {
+      await fetch('/api/wishlist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ hallId }),
+      });
+      setWishlist((prev) => [...prev, hallId]);
+    }
+  };
 
   if (loading) {
     return (
@@ -98,6 +126,17 @@ export default function HallList({ selectedHall, onHallSelect, filters }: HallLi
               fill
               className="object-cover"
             />
+            {session?.user && (
+              <button
+                className={`absolute top-2 right-2 z-10 p-1 rounded-full bg-white shadow ${wishlist.includes(hall._id) ? 'text-red-500' : 'text-gray-400'}`}
+                onClick={e => { e.stopPropagation(); handleWishlistToggle(hall._id, wishlist.includes(hall._id)); }}
+                aria-label={wishlist.includes(hall._id) ? 'Remove from wishlist' : 'Add to wishlist'}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill={wishlist.includes(hall._id) ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor" className="w-6 h-6">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 016.364 0L12 7.636l1.318-1.318a4.5 4.5 0 116.364 6.364L12 21.364l-7.682-7.682a4.5 4.5 0 010-6.364z" />
+                </svg>
+              </button>
+            )}
           </div>
           <div className="p-6">
             <div className="flex justify-between items-start mb-2">
@@ -139,3 +178,4 @@ export default function HallList({ selectedHall, onHallSelect, filters }: HallLi
     </div>
   );
 } 
+ 

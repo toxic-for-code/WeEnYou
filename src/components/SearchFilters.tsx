@@ -10,6 +10,9 @@ interface SearchFiltersProps {
     capacity: string;
     priceRange: string;
     amenities: string[];
+    minRating?: string;
+    dateRangeStart?: string;
+    dateRangeEnd?: string;
   };
   setFilters: (filters: any) => void;
 }
@@ -49,6 +52,10 @@ export default function SearchFilters({ filters, setFilters }: SearchFiltersProp
         }
       }
     });
+    // Add dateRange param if both start and end are set
+    if (newFilters.dateRangeStart && newFilters.dateRangeEnd) {
+      params.set('dateRange', `${newFilters.dateRangeStart},${newFilters.dateRangeEnd}`);
+    }
     router.push(`/halls?${params.toString()}`);
   };
 
@@ -99,7 +106,29 @@ export default function SearchFilters({ filters, setFilters }: SearchFiltersProp
           />
         </div>
 
-        {/* Date */}
+        {/* Date Range */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Date Range
+          </label>
+          <div className="flex gap-2">
+            <input
+              type="date"
+              value={filters.dateRangeStart || ''}
+              onChange={e => handleFilterChange('dateRangeStart', e.target.value)}
+              className="input-field"
+            />
+            <span className="self-center">to</span>
+            <input
+              type="date"
+              value={filters.dateRangeEnd || ''}
+              onChange={e => handleFilterChange('dateRangeEnd', e.target.value)}
+              className="input-field"
+            />
+          </div>
+        </div>
+
+        {/* Date (single) */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Date
@@ -172,7 +201,25 @@ export default function SearchFilters({ filters, setFilters }: SearchFiltersProp
             ))}
           </div>
         </div>
+
+        {/* Minimum Rating */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Minimum Rating
+          </label>
+          <select
+            value={filters.minRating || ''}
+            onChange={e => handleFilterChange('minRating', e.target.value)}
+            className="input-field"
+          >
+            <option value="">Any</option>
+            {[5,4,3,2,1].map(r => (
+              <option key={r} value={r}>{r}+</option>
+            ))}
+          </select>
+        </div>
       </div>
     </div>
   );
 } 
+ 

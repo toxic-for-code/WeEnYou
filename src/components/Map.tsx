@@ -67,28 +67,34 @@ export default function Map({ selectedHall, onHallSelect, filters }: MapProps) {
           mapTypeControl: false,
         }}
       >
-        {halls.map((hall: any) => (
-          <Marker
-            key={hall._id}
-            position={{
-              lat: hall.location.coordinates[1],
-              lng: hall.location.coordinates[0],
-            }}
-            onClick={() => handleMarkerClick(hall._id)}
-            icon={selectedHall === hall._id ? '/marker-selected.png' : '/marker.png'}
-          >
-            {activeMarker === hall._id && (
-              <InfoWindow onCloseClick={() => setActiveMarker(null)}>
-                <div>
-                  <h3 className="font-bold">{hall.name}</h3>
-                  <p>₹{hall.price}/day</p>
-                  <p>Capacity: {hall.capacity}</p>
-                </div>
-              </InfoWindow>
-            )}
-          </Marker>
-        ))}
+        {halls.map((hall: any) => {
+          const lat = Number(hall.location?.coordinates?.[1]);
+          const lng = Number(hall.location?.coordinates?.[0]);
+          if (!isFinite(lat) || !isFinite(lng)) {
+            // Skip invalid coordinates
+            return null;
+          }
+          return (
+            <Marker
+              key={hall._id}
+              position={{ lat, lng }}
+              onClick={() => handleMarkerClick(hall._id)}
+              icon={selectedHall === hall._id ? '/marker-selected.png' : '/marker.png'}
+            >
+              {activeMarker === hall._id && (
+                <InfoWindow onCloseClick={() => setActiveMarker(null)}>
+                  <div>
+                    <h3 className="font-bold">{hall.name}</h3>
+                    <p>₹{hall.price}/day</p>
+                    <p>Capacity: {hall.capacity}</p>
+                  </div>
+                </InfoWindow>
+              )}
+            </Marker>
+          );
+        })}
       </GoogleMap>
     </div>
   );
 } 
+ 

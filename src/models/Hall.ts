@@ -176,3 +176,4 @@ hallSchema.index({ rating: -1 });
 hallSchema.index({ status: 1 });
 
 export default mongoose.models.Hall || mongoose.model<IHall>('Hall', hallSchema); 
+ 
