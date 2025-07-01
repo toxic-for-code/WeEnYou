@@ -156,9 +156,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📧 Contact
 
-For any queries or suggestions, please reach out to:
-- GitHub: [@toxic-for-code](https://github.com/toxic-for-code)
-- Email: [your-email@example.com]
+For any queries or suggestions, please reach out to [sohelakhtar2101@gmail.com]
 
 ## 🙏 Acknowledgments
 
@@ -172,5 +170,4 @@ For any queries or suggestions, please reach out to:
 
 - [Live Demo](https://venuevista.vercel.app)
 - [API Documentation](https://venuevista.vercel.app/api-docs)
-- [Issue Tracker](https://github.com/toxic-for-code/venuevista/issues) 
- 
+- [Issue Tracker](https://github.com/toxic-for-code/venuevista/issues)
