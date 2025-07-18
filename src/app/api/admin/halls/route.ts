@@ -19,6 +19,7 @@ export async function GET() {
     await connectDB();
 
     // Get all halls (since this is an admin endpoint)
+    // This will fetch halls from both main site and owner subdomain
     const halls = await Hall.find()
       .populate('ownerId', 'name email phone')
       .sort({ createdAt: -1 });

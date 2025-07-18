@@ -18,7 +18,9 @@ export async function GET(
       .populate('ownerId', 'name email')
       .populate('reviews.userId', 'name');
 
-    if (!hall) {
+    // Check if hall exists and is approved (active), unless owner or admin
+    const session = await getServerSession(authOptions);
+    if (!hall || (hall.status !== 'active' && (!session || (session.user.role !== 'owner' || hall.ownerId.toString() !== session.user.id) && session.user.role !== 'admin'))) {
       return NextResponse.json(
         { error: 'Hall not found' },
         { status: 404 }

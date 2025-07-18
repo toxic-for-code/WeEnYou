@@ -16,11 +16,12 @@ export async function GET(req: Request) {
 
     await connectDB();
 
-    const [totalHalls, totalBookings, totalUsers, totalServices] = await Promise.all([
+    const [totalHalls, totalBookings, totalUsers, totalServices, pendingHalls] = await Promise.all([
       Hall.countDocuments(),
       Booking.countDocuments(),
       User.countDocuments(),
       Service.countDocuments(),
+      Hall.countDocuments({ status: 'pending' }),
     ]);
 
     return NextResponse.json({
@@ -28,6 +29,7 @@ export async function GET(req: Request) {
       totalBookings,
       totalUsers,
       totalServices,
+      pendingHalls,
     });
   } catch (error) {
     console.error('Error fetching admin stats:', error);

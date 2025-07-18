@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import ServiceImages from '@/components/ServiceImages';
 
 async function getService(id: string) {
   const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
@@ -19,13 +20,7 @@ export default async function ServicePage({ params }: { params: { id: string } }
         <span className="inline-block px-3 py-1 rounded-full bg-primary-100 text-primary-800 text-sm mr-2">{service.serviceType}</span>
         <span className="inline-block px-3 py-1 rounded-full bg-green-100 text-green-800 text-sm">₹{service.price}</span>
       </div>
-      {service.images && service.images.length > 0 && (
-        <div className="mb-6 grid grid-cols-2 gap-4">
-          {service.images.map((img: string, i: number) => (
-            <img key={i} src={img} alt={service.name} className="rounded w-full h-40 object-cover" />
-          ))}
-        </div>
-      )}
+      <ServiceImages images={service.images} serviceName={service.name} />
       <p className="mb-6 text-gray-700">{service.description}</p>
       <div className="mb-2 text-gray-600">Location: {service.city}, {service.state}</div>
       <div className="mb-2 text-gray-600">Contact: {service.contact}</div>

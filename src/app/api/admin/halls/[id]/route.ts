@@ -55,16 +55,25 @@ export async function PUT(
     await connectDB();
     const data = await request.json();
 
+    // Debug log
+    console.log('PUT /api/admin/halls/[id] - Incoming data:', data);
+
+    const updateObj = {
+      name: data.name,
+      description: data.description,
+      capacity: data.capacity,
+      price: data.price,
+      location: data.location,
+      platformFeePercent: data.platformFeePercent, // allow updating platform fee
+      updatedAt: new Date(),
+    };
+
+    // Debug log
+    console.log('PUT /api/admin/halls/[id] - Update object:', updateObj);
+
     const updatedHall = await Hall.findByIdAndUpdate(
       params.id,
-      {
-        name: data.name,
-        description: data.description,
-        capacity: data.capacity,
-        price: data.price,
-        location: data.location,
-        updatedAt: new Date(),
-      },
+      updateObj,
       { new: true }
     );
 
@@ -132,24 +141,55 @@ export async function PATCH(
     }
 
     await connectDB();
-    const data = await request.json();
+    const body = await request.json();
 
-    const updatedHall = await Hall.findByIdAndUpdate(
-      params.id,
-      { $set: data },
-      { new: true }
-    );
+    // Debug log
+    console.log('PATCH /api/admin/halls/[id] - Incoming body:', body);
 
-    if (!updatedHall) {
+    if (typeof body.featured === 'boolean') {
+      // Update featured status
+      const hall = await Hall.findByIdAndUpdate(
+        params.id,
+        { featured: body.featured },
+        { new: true }
+      ).populate('ownerId', 'name email phone');
+      console.log('Updated hall after PATCH (featured):', hall);
+      if (!hall) {
+        return NextResponse.json(
+          { error: 'Hall not found' },
+          { status: 404 }
+        );
+      }
+      return NextResponse.json({ 
+        hall,
+        message: `Hall ${body.featured ? 'marked as' : 'removed from'} featured` 
+      });
+    } else if (typeof body.platformFeePercent === 'number') {
+      // Update platformFeePercent
+      const hall = await Hall.findByIdAndUpdate(
+        params.id,
+        { platformFeePercent: body.platformFeePercent },
+        { new: true }
+      ).populate('ownerId', 'name email phone');
+      console.log('Updated hall after PATCH (platformFeePercent):', hall);
+      if (!hall) {
+        return NextResponse.json(
+          { error: 'Hall not found' },
+          { status: 404 }
+        );
+      }
+      return NextResponse.json({ 
+        hall,
+        message: `Hall platform fee updated to ${body.platformFeePercent}%` 
+      });
+    } else {
       return NextResponse.json(
-        { error: 'Hall not found' },
-        { status: 404 }
+        { error: 'PATCH body must include either { featured: boolean } or { platformFeePercent: number }' },
+        { status: 400 }
       );
     }
-
-    return NextResponse.json({ hall: updatedHall });
   } catch (error) {
-    console.error('Error updating hall:', error);
+    console.error('Error updating hall featured status:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

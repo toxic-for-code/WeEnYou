@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
+import { getImageUrl } from '@/lib/imageUtils';
 
 interface Hall {
   _id: string;
@@ -53,6 +54,7 @@ interface DashboardStats {
   totalBookings: number;
   totalUsers: number;
   totalServices: number;
+  pendingHalls: number;
 }
 
 export default function AdminDashboard() {
@@ -61,8 +63,10 @@ export default function AdminDashboard() {
   const [halls, setHalls] = useState<Hall[]>([]);
   const [recentBookings, setRecentBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'overview' | 'halls' | 'bookings'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'halls' | 'bookings' | 'support'>('overview');
   const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [notifications, setNotifications] = useState<any>(null);
+  const [supportRequests, setSupportRequests] = useState<any[]>([]);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -77,16 +81,19 @@ export default function AdminDashboard() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [hallsResponse, bookingsResponse] = await Promise.all([
+        const [hallsResponse, bookingsResponse, supportResponse] = await Promise.all([
           fetch('/api/admin/halls'),
           fetch('/api/admin/bookings?limit=5'),
+          fetch('/api/admin/support-requests'),
         ]);
 
         const hallsData = await hallsResponse.json();
         const bookingsData = await bookingsResponse.json();
+        const supportData = await supportResponse.json();
 
         setHalls(hallsData.halls);
         setRecentBookings(bookingsData.bookings);
+        setSupportRequests(supportData.requests || []);
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {
@@ -101,11 +108,18 @@ export default function AdminDashboard() {
 
   const fetchDashboardStats = async () => {
     try {
-      const response = await fetch('/api/admin/stats');
-      const data = await response.json();
-      setStats(data);
+      const [statsResponse, notificationsResponse] = await Promise.all([
+        fetch('/api/admin/stats'),
+        fetch('/api/admin/notifications')
+      ]);
+      
+      const statsData = await statsResponse.json();
+      const notificationsData = await notificationsResponse.json();
+      
+      setStats(statsData);
+      setNotifications(notificationsData);
     } catch (error) {
-      console.error('Error fetching dashboard stats:', error);
+      console.error('Error fetching dashboard data:', error);
     }
   };
 
@@ -143,6 +157,65 @@ export default function AdminDashboard() {
         </div>
       </div>
       
+      {/* Pending Halls Alert */}
+      {stats?.pendingHalls && stats.pendingHalls > 0 && (
+        <div className="mt-6 bg-yellow-50 border-l-4 border-yellow-400 p-4">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-yellow-700">
+                <strong>{stats.pendingHalls} hall(s)</strong> are waiting for approval.
+                {notifications?.hasNewSubmissions && (
+                  <span className="ml-2 text-orange-600 font-semibold">New submissions detected!</span>
+                )}
+              </p>
+              <div className="mt-2">
+                <Link
+                  href="/admin/halls?tab=pending"
+                  className="text-sm font-medium text-yellow-800 hover:text-yellow-900 underline"
+                >
+                  Review pending halls →
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Recent Submissions */}
+      {notifications?.recentPendingHalls && notifications.recentPendingHalls.length > 0 && (
+        <div className="mt-6 bg-blue-50 border-l-4 border-blue-400 p-4">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-blue-700">
+                <strong>Recent submissions</strong> from the last 7 days:
+              </p>
+              <div className="mt-2 space-y-1">
+                {notifications.recentPendingHalls.slice(0, 3).map((hall: any) => (
+                  <div key={hall._id} className="text-xs text-blue-600">
+                    • {hall.name} by {hall.ownerId.name} ({new Date(hall.createdAt).toLocaleDateString()})
+                  </div>
+                ))}
+                {notifications.recentPendingHalls.length > 3 && (
+                  <div className="text-xs text-blue-600">
+                    • ... and {notifications.recentPendingHalls.length - 3} more
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      
       <h2 className="text-2xl font-bold mb-4 mt-8">Dashboard</h2>
       <div className="border-b border-gray-200 mb-8">
         <nav className="-mb-px flex space-x-8">
@@ -176,6 +249,18 @@ export default function AdminDashboard() {
           >
             Bookings
           </button>
+          {session?.user?.role === 'admin' && (
+            <button
+              onClick={() => setActiveTab('support')}
+              className={`${
+                activeTab === 'support'
+                  ? 'border-primary-500 text-primary-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+            >
+              Support Requests
+            </button>
+          )}
         </nav>
       </div>
 
@@ -296,7 +381,7 @@ export default function AdminDashboard() {
                         <div className="relative h-12 w-12 flex-shrink-0">
                           {booking.hallId && booking.hallId.images && booking.hallId.images[0] ? (
                             <Image
-                              src={booking.hallId.images[0]}
+                              src={getImageUrl(booking.hallId.images[0])}
                               alt={booking.hallId.name}
                               fill
                               className="object-cover rounded-lg"
@@ -358,7 +443,7 @@ export default function AdminDashboard() {
                     <div className="flex items-center">
                       <div className="relative h-16 w-16 flex-shrink-0">
                         <Image
-                          src={hall.images[0]}
+                          src={getImageUrl(hall.images[0])}
                           alt={hall.name}
                           fill
                           className="object-cover rounded-lg"
@@ -422,7 +507,7 @@ export default function AdminDashboard() {
                       <div className="relative h-12 w-12 flex-shrink-0">
                         {booking.hallId && booking.hallId.images && booking.hallId.images[0] ? (
                           <Image
-                            src={booking.hallId.images[0]}
+                            src={getImageUrl(booking.hallId.images[0])}
                             alt={booking.hallId.name}
                             fill
                             className="object-cover rounded-lg"
@@ -477,6 +562,40 @@ export default function AdminDashboard() {
               ))}
             </ul>
           </div>
+        </div>
+      )}
+
+      {activeTab === 'support' && (
+        <div className="bg-white rounded-lg shadow p-6 mt-4">
+          <h2 className="text-2xl font-bold mb-4">Support Requests</h2>
+          {supportRequests.length === 0 ? (
+            <div className="text-gray-500">No support requests found.</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full border">
+                <thead>
+                  <tr className="bg-gray-100">
+                    <th className="px-4 py-2 border">Date</th>
+                    <th className="px-4 py-2 border">User</th>
+                    <th className="px-4 py-2 border">Email</th>
+                    <th className="px-4 py-2 border">Subject</th>
+                    <th className="px-4 py-2 border">Message</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {supportRequests.map((req) => (
+                    <tr key={req._id} className="border-b">
+                      <td className="px-4 py-2 border whitespace-nowrap">{new Date(req.createdAt).toLocaleString()}</td>
+                      <td className="px-4 py-2 border whitespace-nowrap">{req.user?.name || 'N/A'}</td>
+                      <td className="px-4 py-2 border whitespace-nowrap">{req.email}</td>
+                      <td className="px-4 py-2 border whitespace-nowrap">{req.subject}</td>
+                      <td className="px-4 py-2 border max-w-xs truncate" title={req.message}>{req.message}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
     </div>

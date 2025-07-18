@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
+import { getImageUrl } from '@/lib/imageUtils';
 
 interface Service {
   _id: string;
@@ -161,7 +162,7 @@ export default function AdminServices() {
           <div key={service._id} className="bg-white rounded-lg shadow-md overflow-hidden">
             <div className="relative h-48">
               <Image
-                src={service.images[0] || '/placeholder.jpg'}
+                src={getImageUrl(service.images[0] || '/placeholder.jpg')}
                 alt={service.name}
                 fill
                 className="object-cover"

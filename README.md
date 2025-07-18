@@ -125,7 +125,7 @@ VenueVista is a modern, full-stack web application for booking event venues and 
 
 ## 🚀 Upcoming Features
 
-- Payment gateway integration (Razorpay/Stripe)
+- Payment gateway integration (Razorpay)
 - Real-time chat system
 - Calendar integration
 - Email notifications

@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
+import { getImageUrl } from '@/lib/imageUtils';
 
 interface Service {
   _id: string;
@@ -143,7 +144,7 @@ export default function AdminServiceDetail({ params }: { params: { id: string } 
       <div className="bg-white rounded-lg shadow-md overflow-hidden">
         <div className="relative h-64 md:h-96">
           <Image
-            src={service.images[0] || '/placeholder.jpg'}
+            src={getImageUrl(service.images[0] || '/placeholder.jpg')}
             alt={service.name}
             fill
             className="object-cover"
@@ -204,7 +205,7 @@ export default function AdminServiceDetail({ params }: { params: { id: string } 
                 {service.images.slice(1).map((image, index) => (
                   <div key={index} className="relative h-32">
                     <Image
-                      src={image}
+                      src={getImageUrl(image)}
                       alt={`${service.name} - Image ${index + 2}`}
                       fill
                       className="object-cover rounded"

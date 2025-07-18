@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { useSession } from 'next-auth/react';
 import BookingForm from '@/components/BookingForm';
 import { useJsApiLoader, GoogleMap, Marker } from '@react-google-maps/api';
+import { getImageUrl } from '@/lib/imageUtils';
 
 interface Hall {
   _id: string;
@@ -139,7 +140,7 @@ export default function HallDetail() {
         <div className="bg-white rounded-lg shadow-md overflow-hidden mb-8">
           <div className="relative h-[400px]">
             <Image
-              src={hall.images[activeImage]}
+              src={getImageUrl(hall.images[activeImage])}
               alt={hall.name}
               fill
               className="object-cover"
@@ -155,7 +156,7 @@ export default function HallDetail() {
                 }`}
               >
                 <Image
-                  src={image}
+                  src={getImageUrl(image)}
                   alt={`${hall.name} - Image ${index + 1}`}
                   fill
                   className="object-cover"
@@ -349,21 +350,6 @@ export default function HallDetail() {
               </div>
             </div>
           </div>
-
-          {/* Booking Form */}
-          {session && session.user.id !== hall.ownerId?._id && session.user.role !== 'owner' && (
-            <div className="lg:col-span-1">
-              <div className="bg-white rounded-lg shadow-md p-6 sticky top-8">
-                <BookingForm 
-                  hallId={hall._id} 
-                  price={hall.price} 
-                  services={cart.map(s => ({ name: s.name, price: s.price }))}
-                  servicesTotal={totalPrice}
-                  capacity={hall.capacity}
-                />
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </div>

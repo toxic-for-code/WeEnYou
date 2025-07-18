@@ -86,6 +86,10 @@ export async function POST(req: Request) {
       },
     });
 
+    // Save the Razorpay orderId in the booking for webhook lookup
+    const updateResult = await Booking.findByIdAndUpdate(bookingId, { $set: { orderId: order.id } });
+    console.log('Updated booking with orderId:', { bookingId, orderId: order.id, updateResult });
+
     return NextResponse.json({ order });
   } catch (error) {
     console.error('Error creating Razorpay order:', error);

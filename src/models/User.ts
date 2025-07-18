@@ -6,7 +6,8 @@ interface IUser extends mongoose.Document {
   email: string;
   password: string;
   phone?: string;
-  role: 'user' | 'admin' | 'owner' | 'provider';
+  image?: string;
+  role: 'user' | 'admin' | 'owner' | 'provider' | 'event_manager';
   status?: 'active' | 'suspended';
   comparePassword(candidatePassword: string): Promise<boolean>;
   wishlist: mongoose.Types.ObjectId[];
@@ -38,9 +39,13 @@ const userSchema = new mongoose.Schema({
     type: String,
     trim: true,
   },
+  image: {
+    type: String,
+    trim: true,
+  },
   role: {
     type: String,
-    enum: ['user', 'admin', 'owner', 'provider'],
+    enum: ['user', 'admin', 'owner', 'provider', 'event_manager'],
     default: 'user',
   },
   status: {

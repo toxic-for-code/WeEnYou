@@ -47,6 +47,10 @@ const bookingSchema = new mongoose.Schema(
     paymentId: {
       type: String,
     },
+    event_manager_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+    },
     pendingChange: {
       type: {
         type: String, // 'reschedule' or 'cancel'

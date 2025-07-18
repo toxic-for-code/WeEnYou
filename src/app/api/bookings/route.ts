@@ -18,7 +18,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const { hallId, startDate, endDate, guests, specialRequests, services = [], servicesTotal = 0 } = await req.json();
+    const { hallId, startDate, endDate, guests, specialRequests, services = [], servicesTotal = 0, totalAmount } = await req.json();
 
     // Log the incoming request body for debugging
     console.log('Booking request body:', { hallId, startDate, endDate, guests, specialRequests, services, servicesTotal });
@@ -57,10 +57,10 @@ export async function POST(req: Request) {
       );
     }
 
-    if (end <= start) {
-      console.error('Booking error: End date before or equal to start date', { startDate, endDate });
+    if (end < start) {
+      console.error('Booking error: End date before start date', { startDate, endDate });
       return NextResponse.json(
-        { error: 'End date must be after start date' },
+        { error: 'End date must not be before start date' },
         { status: 400 }
       );
     }
@@ -87,7 +87,8 @@ export async function POST(req: Request) {
 
     // Calculate total price for hall only (do not include services)
     const hallPrice = hall.price * Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
-    const totalPrice = hallPrice;
+    // Use totalAmount from frontend if provided, else fallback to hallPrice
+    const totalPrice = typeof totalAmount === 'number' ? totalAmount : hallPrice;
 
     // Create booking
     const booking = await Booking.create({
@@ -97,7 +98,7 @@ export async function POST(req: Request) {
       endDate,
       guests,
       specialRequests,
-      totalPrice,
+      totalPrice, // This now includes all fees if provided
       status: 'pending',
     });
 
@@ -161,13 +162,13 @@ export async function GET() {
       const halls = await Hall.find({ ownerId: session.user.id });
       const hallIds = halls.map(h => h._id);
       bookings = await Booking.find({ hallId: { $in: hallIds } })
-        .populate('hallId', 'name images location ownerId')
+        .populate('hallId', 'name images location amenities ownerId')
         .sort({ createdAt: -1 })
         .lean();
     } else {
       // User: get their own bookings
       bookings = await Booking.find({ userId: session.user.id })
-        .populate('hallId', 'name images location ownerId')
+        .populate('hallId', 'name images location amenities ownerId')
         .sort({ createdAt: -1 })
         .lean();
     }

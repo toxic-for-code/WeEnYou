@@ -49,9 +49,9 @@ export async function POST(req: Request) {
     } = body;
 
     // Validate required fields
-    if (!name || !description || !address || !city || !state || !price || !capacity || !images || !Array.isArray(images) || images.length === 0) {
+    if (!name || !description || !address || !city || !state || !price || !capacity) {
       return NextResponse.json({ 
-        error: 'Missing required fields or images must be a non-empty array.',
+        error: 'Missing required fields.',
         details: {
           name: !name,
           description: !description,
@@ -59,8 +59,7 @@ export async function POST(req: Request) {
           city: !city,
           state: !state,
           price: !price,
-          capacity: !capacity,
-          images: !images || !Array.isArray(images) || images.length === 0
+          capacity: !capacity
         }
       }, { status: 400 });
     }
@@ -102,7 +101,7 @@ export async function POST(req: Request) {
           },
         },
         ownerId: session.user.id,
-        status: 'active',
+        status: 'pending',
         rating: 0,
         reviews: [],
         verified: false,
@@ -112,7 +111,7 @@ export async function POST(req: Request) {
         availability: [],
       };
 
-      const hall = await Hall.create(hallData);
+      const hall = await (new Hall(hallData)).save();
       return NextResponse.json({ hall }, { status: 201 });
     } catch (createError) {
       console.error('Error creating hall:', createError);
@@ -145,8 +144,8 @@ export async function GET(req: Request) {
       return NextResponse.json({ halls }, { status: 200 });
     }
 
-    // Otherwise, return all halls (for public listing)
-    const halls = await Hall.find({}).lean().sort({ createdAt: -1 });
+    // Otherwise, return only approved halls (status: 'active') for public listing
+    const halls = await Hall.find({ status: 'active' }).sort({ createdAt: -1 });
     return NextResponse.json({ halls }, { status: 200 });
   } catch (error) {
     console.error('Error fetching halls:', error);

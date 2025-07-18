@@ -25,7 +25,22 @@ export async function POST(request: Request) {
       );
     }
 
-    const uploadDir = join(process.cwd(), 'public', 'uploads');
+    // Get the host from request headers to determine subdomain
+    const host = request.headers.get('host') || '';
+    const isSubdomain = host.includes('owner.') || host.includes('partner.') || host.includes('admin.');
+    
+    // Determine upload directory based on subdomain
+    let uploadDir;
+    
+    if (isSubdomain) {
+      // For subdomain, use environment variable or default path
+      const subdomainUploadPath = process.env.SUBDOMAIN_UPLOAD_PATH || join(process.cwd(), '..', 'subdomain-public', 'uploads');
+      uploadDir = subdomainUploadPath;
+    } else {
+      // For main domain
+      uploadDir = join(process.cwd(), 'public', 'uploads');
+    }
+
     const urls: string[] = [];
 
     for (const file of files) {
@@ -45,8 +60,9 @@ export async function POST(request: Request) {
       // Save file
       await writeFile(filepath, buffer);
 
-      // Add URL to response
-      urls.push(`/uploads/${filename}`);
+      // Always return URLs that use the image proxy API
+      // This ensures images can be served from both main domain and subdomain
+      urls.push(`/api/images/${filename}`);
     }
 
     return NextResponse.json({ urls });

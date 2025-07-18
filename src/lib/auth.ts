@@ -2,12 +2,15 @@ import { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { connectDB } from './db';
 import User from '@/models/User';
+import mongoose from 'mongoose';
 
 interface CustomUser {
   id: string;
   email: string;
   name: string;
   role: string;
+  image: string;
+  phone: string;
 }
 
 export const authOptions: NextAuthOptions = {
@@ -48,6 +51,8 @@ export const authOptions: NextAuthOptions = {
             email: user.email,
             name: user.name,
             role: user.role,
+            image: user.image,
+            phone: user.phone,
           } as CustomUser;
         } catch (error: any) {
           throw new Error(error.message || 'Authentication failed');
@@ -67,7 +72,17 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
-        token.role = (user as CustomUser).role;
+        token.role = (user as any).role;
+        token.image = (user as any).image;
+        token.phone = (user as any).phone;
+      } else if (token?.id) {
+        await connectDB();
+        // @ts-ignore
+        const dbUser = await (User as any).findById(token.id);
+        if (dbUser) {
+          token.image = dbUser.image;
+          token.phone = dbUser.phone;
+        }
       }
       return token;
     },
@@ -75,6 +90,8 @@ export const authOptions: NextAuthOptions = {
       if (session.user) {
         session.user.id = token.id as string;
         (session.user as any).role = token.role;
+        (session.user as any).image = token.image;
+        (session.user as any).phone = token.phone;
       }
       return session;
     },

@@ -11,7 +11,9 @@ export default function AdminSidebar() {
     { name: 'Halls', path: '/admin/halls' },
     { name: 'Bookings', path: '/admin/bookings' },
     { name: 'Users', path: '/admin/users' },
+    { name: 'Verifications', path: '/admin/verifications' },
     { name: 'Services', path: '/admin/services' },
+    { name: 'Planned Events', path: '/admin/plan-events' },
   ];
 
   return (

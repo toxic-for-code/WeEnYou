@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
+import { getImageUrl } from '@/lib/imageUtils';
 
 interface Hall {
   _id: string;
@@ -32,6 +33,8 @@ interface Hall {
   };
   createdAt: string;
   updatedAt: string;
+  featured: boolean;
+  platformFeePercent?: number;
 }
 
 export default function AdminHalls() {
@@ -40,8 +43,24 @@ export default function AdminHalls() {
   const [halls, setHalls] = useState<Hall[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [verifyingHalls, setVerifyingHalls] = useState<string[]>([]);
   const [updating, setUpdating] = useState(false);
+  const [approvingHalls, setApprovingHalls] = useState<string[]>([]);
+  const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'featured'>('all');
+  const [togglingFeatured, setTogglingFeatured] = useState<string[]>([]);
+  // Commission percent editing state
+  const [platformFeeEdits, setPlatformFeeEdits] = useState<{[id: string]: number}>({});
+  const [savingPlatformFee, setSavingPlatformFee] = useState<string | null>(null);
+
+  // Check URL parameters for tab
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const tab = urlParams.get('tab');
+    if (tab === 'pending') {
+      setActiveTab('pending');
+    }
+  }, []);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -163,6 +182,148 @@ export default function AdminHalls() {
     }
   };
 
+  const approveHall = async (hallId: string, action: 'approve' | 'reject', reason?: string) => {
+    try {
+      setApprovingHalls(prev => [...prev, hallId]);
+      
+      const response = await fetch(`/api/admin/halls/${hallId}/approve`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ action, reason }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update hall status');
+      }
+
+      const { hall: updatedHall, message } = await response.json();
+      
+      // Update the hall in the local state
+      setHalls(prevHalls => 
+        prevHalls.map(hall => 
+          hall._id === hallId ? { ...hall, status: updatedHall.status, verified: updatedHall.verified } : hall
+        )
+      );
+
+      setError(''); // Clear any existing error
+      setSuccess(message); // Show success message
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (error: any) {
+      console.error('Error approving/rejecting hall:', error);
+      setError(error.message || 'Failed to update hall status');
+    } finally {
+      setApprovingHalls(prev => prev.filter(id => id !== hallId));
+    }
+  };
+
+  const handleVerifyHall = async (hallId: string) => {
+    if (verifyingHalls.includes(hallId)) return;
+    
+    setVerifyingHalls(prev => [...prev, hallId]);
+    try {
+      const response = await fetch(`/api/admin/halls/${hallId}/verify`, {
+        method: 'POST',
+      });
+      
+      if (response.ok) {
+        setSuccess('Hall verification status updated successfully');
+        fetchHalls();
+      } else {
+        setError('Failed to update hall verification status');
+      }
+    } catch (error) {
+      setError('Error updating hall verification status');
+    } finally {
+      setVerifyingHalls(prev => prev.filter(id => id !== hallId));
+    }
+  };
+
+  const handleToggleFeatured = async (hallId: string, currentFeatured: boolean) => {
+    if (togglingFeatured.includes(hallId)) return;
+    
+    setTogglingFeatured(prev => [...prev, hallId]);
+    try {
+      const response = await fetch(`/api/admin/halls/${hallId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ featured: !currentFeatured }),
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setSuccess(data.message || 'Featured status updated successfully');
+        fetchHalls();
+      } else {
+        setError('Failed to update featured status');
+      }
+    } catch (error) {
+      setError('Error updating featured status');
+    } finally {
+      setTogglingFeatured(prev => prev.filter(id => id !== hallId));
+    }
+  };
+
+  // Save platform fee percent for a hall
+  const savePlatformFee = async (hallId: string) => {
+    setSavingPlatformFee(hallId);
+    try {
+      const percent = platformFeeEdits[hallId];
+      const res = await fetch(`/api/admin/halls/${hallId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ platformFeePercent: percent }),
+      });
+      if (!res.ok) throw new Error('Failed to update platform fee');
+      await fetchHalls();
+      setSuccess('Platform fee updated');
+      setTimeout(() => setSuccess(''), 2000);
+    } catch (err) {
+      setError('Failed to update platform fee');
+    } finally {
+      setSavingPlatformFee(null);
+    }
+  };
+
+  // Approve with platform fee prompt
+  const approveHallWithPlatformFee = async (hallId: string) => {
+    let percent = prompt('Enter platform fee percent (e.g. 10, 15, 20):', '10');
+    if (!percent) return;
+    percent = percent.replace(/[^0-9.]/g, '');
+    const num = Number(percent);
+    if (isNaN(num) || num < 0 || num > 100) {
+      alert('Invalid platform fee percent');
+      return;
+    }
+    setApprovingHalls(prev => [...prev, hallId]);
+    try {
+      const response = await fetch(`/api/admin/halls/${hallId}/approve`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'approve', platformFeePercent: num }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to approve hall');
+      }
+      const { hall: updatedHall, message } = await response.json();
+      setHalls(prevHalls => prevHalls.map(hall => hall._id === hallId ? { ...hall, status: updatedHall.status, verified: updatedHall.verified, platformFeePercent: updatedHall.platformFeePercent } : hall));
+      setError('');
+      setSuccess(message);
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (error: any) {
+      setError(error.message || 'Failed to approve hall');
+    } finally {
+      setApprovingHalls(prev => prev.filter(id => id !== hallId));
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -183,6 +344,42 @@ export default function AdminHalls() {
           {updating ? 'Updating...' : 'Update All Halls'}
         </button>
       </div>
+
+      {/* Tab Navigation */}
+      <div className="border-b border-gray-200 mb-8">
+        <nav className="-mb-px flex space-x-8">
+          <button
+            onClick={() => setActiveTab('all')}
+            className={`${
+              activeTab === 'all'
+                ? 'border-primary-500 text-primary-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+          >
+            All Halls
+          </button>
+          <button
+            onClick={() => setActiveTab('pending')}
+            className={`${
+              activeTab === 'pending'
+                ? 'border-primary-500 text-primary-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+          >
+            Pending Approval ({halls.filter(h => h.status === 'pending').length})
+          </button>
+          <button
+            onClick={() => setActiveTab('featured')}
+            className={`${
+              activeTab === 'featured'
+                ? 'border-primary-500 text-primary-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+          >
+            Featured Halls
+          </button>
+        </nav>
+      </div>
       {error && (
         <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-4">
           <div className="flex">
@@ -197,12 +394,33 @@ export default function AdminHalls() {
           </div>
         </div>
       )}
+      {success && (
+        <div className="bg-green-50 border-l-4 border-green-400 p-4 mb-4">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-green-700">{success}</p>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {halls.map((hall) => (
+        {halls
+          .filter(hall => {
+            if (activeTab === 'all') return true;
+            if (activeTab === 'pending') return hall.status === 'pending';
+            if (activeTab === 'featured') return hall.featured === true;
+            return true;
+          })
+          .map((hall) => (
           <div key={hall._id} className="bg-white rounded-lg shadow-md overflow-hidden">
             <div className="relative h-48">
               <Image
-                src={hall.images[0] || '/placeholder.jpg'}
+                src={getImageUrl(hall.images[0] || '/placeholder.jpg')}
                 alt={hall.name}
                 fill
                 className="object-cover"
@@ -211,16 +429,41 @@ export default function AdminHalls() {
             <div className="p-6">
               <div className="flex justify-between items-start mb-2">
                 <h3 className="text-xl font-semibold">{hall.name}</h3>
-                <span className={`px-2 py-1 text-xs rounded-full ${
-                  hall.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                }`}>
-                  {hall.status}
-                </span>
+                <div className="flex gap-2">
+                  <span className={`px-2 py-1 text-xs rounded-full ${
+                    hall.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                  }`}>
+                    {hall.status}
+                  </span>
+                  {hall.featured && (
+                    <span className="px-2 py-1 text-xs rounded-full bg-orange-100 text-orange-800">
+                      Featured
+                    </span>
+                  )}
+                </div>
               </div>
               <p className="text-gray-600 mb-2">{hall.location.address}</p>
               <p className="text-gray-600 mb-2">{hall.location.city}, {hall.location.state} - {hall.location.pincode}</p>
               <p className="text-gray-600 mb-2">Capacity: {hall.capacity} people</p>
               <p className="text-gray-600 mb-2">Price: ₹{hall.price}/day</p>
+              <p className="text-gray-600 mb-2">Platform Fee: {hall.platformFeePercent}%</p>
+              <div className="flex items-center gap-2 mb-2">
+                {/* Remove the input and Save button for platform fee in the card/list view. Only display: */}
+                {/* <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={platformFeeEdits[hall._id] ?? hall.platformFeePercent ?? 10}
+                  onChange={e => setPlatformFeeEdits(edits => ({ ...edits, [hall._id]: Number(e.target.value) }))}
+                  className="w-20 border rounded px-2 py-1 text-sm"
+                  disabled={savingPlatformFee === hall._id}
+                /> */}
+                {/* <button
+                  onClick={() => savePlatformFee(hall._id)}
+                  disabled={savingPlatformFee === hall._id}
+                  className="px-2 py-1 bg-blue-500 text-white rounded text-xs disabled:opacity-50"
+                >{savingPlatformFee === hall._id ? 'Saving...' : 'Save'}</button> */}
+              </div>
               <p className="text-gray-600 mb-2">Rating: {hall.averageRating.toFixed(1)} ⭐ ({hall.totalReviews} reviews)</p>
               <p className="text-gray-600 mb-4 text-sm">
                 Owner: {hall.ownerId.name} ({hall.ownerId.email})
@@ -246,6 +489,24 @@ export default function AdminHalls() {
                 </div>
               )}
               <div className="mt-4 flex justify-between items-center">
+                {hall.status === 'pending' ? (
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => approveHallWithPlatformFee(hall._id)}
+                      disabled={approvingHalls.includes(hall._id)}
+                      className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {approvingHalls.includes(hall._id) ? 'Approving...' : 'Approve'}
+                    </button>
+                    <button
+                      onClick={() => approveHall(hall._id, 'reject')}
+                      disabled={approvingHalls.includes(hall._id)}
+                      className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {approvingHalls.includes(hall._id) ? 'Rejecting...' : 'Reject'}
+                    </button>
+                  </div>
+                ) : (
                 <button
                   onClick={() => toggleVerification(hall._id, !hall.verified)}
                   disabled={verifyingHalls.includes(hall._id)}
@@ -261,12 +522,28 @@ export default function AdminHalls() {
                     ? 'Verified ✓'
                     : 'Verify'}
                 </button>
-                <Link 
-                  href={`/admin/halls/${hall._id}`} 
-                  className="text-primary-600 hover:text-primary-700"
-                >
-                  View Details
-                </Link>
+                )}
+                <div className="flex gap-2">
+                  {hall.status === 'active' && (
+                    <button
+                      onClick={() => handleToggleFeatured(hall._id, hall.featured)}
+                      disabled={togglingFeatured.includes(hall._id)}
+                      className={`px-3 py-2 text-sm rounded ${
+                        hall.featured
+                          ? 'bg-orange-500 hover:bg-orange-600 text-white'
+                          : 'bg-blue-500 hover:bg-blue-600 text-white'
+                      } disabled:opacity-50`}
+                    >
+                      {togglingFeatured.includes(hall._id) ? 'Updating...' : hall.featured ? 'Remove Featured' : 'Mark Featured'}
+                    </button>
+                  )}
+                  <Link 
+                    href={`/admin/halls/${hall._id}`} 
+                    className="text-primary-600 hover:text-primary-700"
+                  >
+                    View Details
+                  </Link>
+                </div>
               </div>
             </div>
           </div>

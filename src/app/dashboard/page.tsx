@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import { getImageUrl } from '@/lib/imageUtils';
 import Link from 'next/link';
 import { format } from 'date-fns';
 
@@ -509,7 +510,7 @@ export default function Dashboard() {
                           <div className="relative w-20 h-20 flex-shrink-0">
                             {booking.hallId && booking.hallId.images && booking.hallId.images[0] ? (
                               <Image
-                                src={booking.hallId.images[0]}
+                                src={getImageUrl(booking.hallId.images[0])}
                                 alt={booking.hallId.name}
                                 fill
                                 className="object-cover rounded-lg"
@@ -814,7 +815,7 @@ export default function Dashboard() {
                     <div>
                       <div className="relative h-40 mb-4 rounded-lg overflow-hidden">
                         {hall.images && hall.images[0] ? (
-                          <Image src={hall.images[0]} alt={hall.name} fill className="object-cover" />
+                          <Image src={getImageUrl(hall.images[0])} alt={hall.name} fill className="object-cover" />
                         ) : (
                           <div className="w-40 h-40 bg-gray-200 rounded-lg" />
                         )}
@@ -878,7 +879,7 @@ export default function Dashboard() {
                                 {review.images && review.images.length > 0 && (
                                   <div className="flex gap-2 mb-1">
                                     {review.images.map((img: string, i: number) => (
-                                      <img key={i} src={img} alt="Review" className="w-12 h-12 object-cover rounded" />
+                                      <img key={i} src={getImageUrl(img)} alt="Review" className="w-12 h-12 object-cover rounded" />
                                     ))}
                                   </div>
                                 )}
@@ -1103,7 +1104,7 @@ export default function Dashboard() {
               <div className="flex flex-wrap gap-2 mb-2">
                 {editForm?.images?.map((img: string, i: number) => (
                   <div key={i} className="relative w-20 h-20">
-                    <Image src={img} alt="Hall image" fill className="object-cover rounded" />
+                    <Image src={getImageUrl(img)} alt="Hall image" fill className="object-cover rounded" />
                     <button
                       type="button"
                       onClick={() => handleRemoveExistingImage(img)}

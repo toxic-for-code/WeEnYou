@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useSession } from 'next-auth/react';
 import Image from 'next/image';
+import { getImageUrl } from '@/lib/imageUtils';
 
 interface ReviewFormProps {
   hallId: string;
@@ -179,7 +180,7 @@ export default function ReviewForm({
             {images.map((url, index) => (
               <div key={url} className="relative">
                 <Image
-                  src={url}
+                  src={getImageUrl(url)}
                   alt={`Review image ${index + 1}`}
                   width={200}
                   height={200}

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useSession } from 'next-auth/react';
+import { getImageUrl } from '@/lib/imageUtils';
 
 interface HallListProps {
   selectedHall: string | null;
@@ -121,7 +122,7 @@ export default function HallList({ selectedHall, onHallSelect, filters }: HallLi
         >
           <div className="relative h-48">
             <Image
-              src={hall.images[0] || '/placeholder.jpg'}
+              src={getImageUrl(hall.images[0] || '/placeholder.jpg')}
               alt={hall.name}
               fill
               className="object-cover"
@@ -142,6 +143,9 @@ export default function HallList({ selectedHall, onHallSelect, filters }: HallLi
             <div className="flex justify-between items-start mb-2">
               <div>
                 <h3 className="text-xl font-semibold">{hall.name}</h3>
+                {typeof hall.distance === 'number' && (
+                  <div className="text-xs text-gray-500 mb-1">{hall.distance.toFixed(1)} km away</div>
+                )}
                 {hall.verified && (
                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                     <svg className="mr-1.5 h-2 w-2 text-green-400" fill="currentColor" viewBox="0 0 8 8">

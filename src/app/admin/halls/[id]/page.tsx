@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
+import { getImageUrl } from '@/lib/imageUtils';
 
 interface Hall {
   _id: string;
@@ -32,6 +33,7 @@ interface Hall {
   };
   createdAt: string;
   updatedAt: string;
+  platformFeePercent: number;
 }
 
 export default function AdminHallDetails({ params }: { params: { id: string } }) {
@@ -41,6 +43,9 @@ export default function AdminHallDetails({ params }: { params: { id: string } })
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [deleting, setDeleting] = useState(false);
+  const [platformFee, setPlatformFee] = useState<number | ''>(hall?.platformFeePercent ?? '');
+  const [savingPlatformFee, setSavingPlatformFee] = useState(false);
+  const [platformFeeMsg, setPlatformFeeMsg] = useState('');
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -51,6 +56,30 @@ export default function AdminHallDetails({ params }: { params: { id: string } })
       fetchHallDetails();
     }
   }, [session, status, router, params.id]);
+
+  useEffect(() => {
+    if (hall) setPlatformFee(hall.platformFeePercent ?? '');
+  }, [hall]);
+
+  const savePlatformFee = async () => {
+    if (platformFee === '' || isNaN(Number(platformFee))) return;
+    setSavingPlatformFee(true);
+    setPlatformFeeMsg('');
+    try {
+      const response = await fetch(`/api/admin/halls/${params.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ platformFeePercent: Number(platformFee) })
+      });
+      if (!response.ok) throw new Error('Failed to update platform fee');
+      setPlatformFeeMsg('Platform fee updated!');
+      await fetchHallDetails();
+    } catch (e) {
+      setPlatformFeeMsg('Failed to update platform fee');
+    } finally {
+      setSavingPlatformFee(false);
+    }
+  };
 
   const fetchHallDetails = async () => {
     try {
@@ -149,7 +178,7 @@ export default function AdminHallDetails({ params }: { params: { id: string } })
       <div className="bg-white rounded-lg shadow-md overflow-hidden">
         <div className="relative h-64 md:h-96">
           <Image
-            src={hall.images[0] || '/placeholder.jpg'}
+            src={getImageUrl(hall.images[0] || '/placeholder.jpg')}
             alt={hall.name}
             fill
             className="object-cover"
@@ -181,6 +210,24 @@ export default function AdminHallDetails({ params }: { params: { id: string } })
               <div className="space-y-2">
                 <p><span className="font-medium">Price:</span> ₹{hall.price}/day</p>
                 <p><span className="font-medium">Capacity:</span> {hall.capacity} people</p>
+                <p><span className="font-medium">Platform Fee:</span> {hall.platformFeePercent}%</p>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={platformFee}
+                    onChange={e => setPlatformFee(e.target.value === '' ? '' : Number(e.target.value))}
+                    className="w-20 border rounded px-2 py-1 text-sm"
+                    disabled={savingPlatformFee}
+                  />
+                  <button
+                    onClick={savePlatformFee}
+                    disabled={savingPlatformFee || platformFee === ''}
+                    className="px-2 py-1 bg-blue-500 text-white rounded text-xs disabled:opacity-50"
+                  >{savingPlatformFee ? 'Saving...' : 'Save'}</button>
+                  {platformFeeMsg && <span className="text-xs text-green-600 ml-2">{platformFeeMsg}</span>}
+                </div>
                 <p><span className="font-medium">Rating:</span> {hall.averageRating.toFixed(1)} ⭐ ({hall.totalReviews} reviews)</p>
                 <p><span className="font-medium">Created:</span> {new Date(hall.createdAt).toLocaleDateString()}</p>
                 <p><span className="font-medium">Last Updated:</span> {new Date(hall.updatedAt).toLocaleDateString()}</p>
@@ -232,7 +279,7 @@ export default function AdminHallDetails({ params }: { params: { id: string } })
                 {hall.images.slice(1).map((image, index) => (
                   <div key={index} className="relative h-32">
                     <Image
-                      src={image}
+                      src={getImageUrl(image)}
                       alt={`${hall.name} - Image ${index + 2}`}
                       fill
                       className="object-cover rounded"

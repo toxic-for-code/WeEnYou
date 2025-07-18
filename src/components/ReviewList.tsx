@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import { format } from 'date-fns';
+import { getImageUrl } from '@/lib/imageUtils';
 
 interface Review {
   _id: string;
@@ -144,7 +145,7 @@ export default function ReviewList({
                 <div className="flex items-center space-x-4">
                   <div className="relative h-10 w-10 rounded-full overflow-hidden">
                     <Image
-                      src={review.user.image || '/default-avatar.png'}
+                      src={getImageUrl(review.user.image || '/default-avatar.png')}
                       alt={review.user.name}
                       fill
                       className="object-cover"
@@ -184,7 +185,7 @@ export default function ReviewList({
                   {review.images.map((image, index) => (
                     <div key={index} className="relative aspect-square">
                       <Image
-                        src={image}
+                        src={getImageUrl(image)}
                         alt={`Review image ${index + 1}`}
                         fill
                         className="rounded-lg object-cover"

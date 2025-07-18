@@ -28,11 +28,13 @@ export interface IHall extends mongoose.Document {
     isAvailable: boolean;
   }[];
   verified: boolean;
+  featured: boolean;
   createdAt: Date;
   updatedAt: Date;
   averageRating: number;
   totalReviews: number;
   ratingDistribution: Map<number, number>;
+  platformFeePercent?: number;
 }
 
 const hallSchema = new mongoose.Schema({
@@ -46,11 +48,10 @@ const hallSchema = new mongoose.Schema({
     required: [true, 'Please provide a description'],
     trim: true,
   },
-  images: [{
-    type: String,
-    required: true,
-    trim: true,
-  }],
+  images: {
+    type: [String],
+    default: [],
+  },
   price: {
     type: Number,
     required: [true, 'Please provide a price'],
@@ -61,13 +62,23 @@ const hallSchema = new mongoose.Schema({
     required: [true, 'Please provide capacity'],
     min: [1, 'Capacity must be at least 1'],
   },
-  amenities: [{
-    type: String,
-    trim: true,
-  }],
+  amenities: {
+    type: [String],
+    default: [],
+  },
   verified: {
     type: Boolean,
     default: false,
+  },
+  featured: {
+    type: Boolean,
+    default: false,
+  },
+  platformFeePercent: {
+    type: Number,
+    default: 10,
+    min: 0,
+    max: 100,
   },
   location: {
     address: {
@@ -110,8 +121,8 @@ const hallSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['active', 'inactive'],
-    default: 'active',
+    enum: ['pending', 'active', 'inactive'],
+    default: 'pending',
   },
   availability: [{
     date: {
@@ -174,6 +185,7 @@ hallSchema.index({ price: 1 });
 hallSchema.index({ capacity: 1 });
 hallSchema.index({ rating: -1 });
 hallSchema.index({ status: 1 });
+hallSchema.index({ featured: 1 });
 
-export default mongoose.models.Hall || mongoose.model<IHall>('Hall', hallSchema); 
+export default mongoose.models.Hall || mongoose.model('Hall', hallSchema); 
  
