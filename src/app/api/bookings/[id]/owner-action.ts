@@ -20,50 +20,28 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     if (booking.hallId.ownerId.toString() !== session.user.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
-    if (booking.status !== 'pending_approval' || !booking.pendingChange) {
-      return NextResponse.json({ error: 'No pending change to act on' }, { status: 400 });
+    // Accept/reject after advance payment (pending_owner_confirmation)
+    if (booking.status !== 'pending_owner_confirmation') {
+      return NextResponse.json({ error: 'Booking is not awaiting owner confirmation' }, { status: 400 });
     }
     const { action } = await req.json();
     if (action === 'approve') {
-      if (booking.pendingChange.type === 'cancel') {
-        booking.status = 'cancelled';
-      } else if (booking.pendingChange.type === 'reschedule') {
-        // Check for overlap with other bookings
-        const overlap = await Booking.findOne({
-          hallId: booking.hallId._id,
-          _id: { $ne: booking._id },
-          status: { $in: ['pending', 'confirmed'] },
-          $or: [
-            { startDate: { $lt: booking.pendingChange.endDate }, endDate: { $gt: booking.pendingChange.startDate } }
-          ]
-        });
-        if (overlap) {
-          return NextResponse.json({ error: 'Selected dates are not available' }, { status: 400 });
-        }
-        booking.startDate = booking.pendingChange.startDate;
-        booking.endDate = booking.pendingChange.endDate;
-        booking.status = 'confirmed';
-      }
-      // Notify user
+      booking.status = 'confirmed';
       await Notification.create({
         userId: booking.userId,
         type: 'booking',
-        message: `Your booking change request for hall '${booking.hallId.name}' was approved by the owner.`
+        message: `Your booking for hall '${booking.hallId.name}' was accepted by the owner. Please pay the remaining amount to complete your booking.`
       });
-      booking.pendingChange = undefined;
       await booking.save();
       return NextResponse.json({ booking });
     } else if (action === 'reject') {
-      // Revert to confirmed, clear pendingChange
-      booking.status = 'confirmed';
-      booking.pendingChange = undefined;
-      await booking.save();
-      // Notify user
+      booking.status = 'cancelled';
       await Notification.create({
         userId: booking.userId,
         type: 'booking',
-        message: `Your booking change request for hall '${booking.hallId.name}' was rejected by the owner.`
+        message: `Your booking for hall '${booking.hallId.name}' was rejected by the owner.`
       });
+      await booking.save();
       return NextResponse.json({ booking });
     } else {
       return NextResponse.json({ error: 'Invalid action' }, { status: 400 });

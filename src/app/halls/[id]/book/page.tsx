@@ -216,6 +216,31 @@ const BookingPage = () => {
 
   const [submitError, setSubmitError] = useState("");
 
+  // Utility function for advance calculation
+  const getAdvanceAmount = (total: number) => Math.min(50000, total * 0.5);
+
+  // Add state for editable advance
+  const minAdvance = getAdvanceAmount(total);
+  const maxAdvance = total;
+  const [advance, setAdvance] = useState('');
+  const [advanceError, setAdvanceError] = useState<string | null>(null);
+
+  const handleAdvanceChange = (value: string) => {
+    setAdvance(value);
+    const num = Number(value);
+    if (!value) {
+      setAdvanceError(null);
+    } else if (isNaN(num)) {
+      setAdvanceError('Please enter a valid number.');
+    } else if (num > maxAdvance) {
+      setAdvanceError('Advance cannot be greater than the total booking amount.');
+    } else if (num < minAdvance) {
+      setAdvanceError(`Advance must be at least ₹${minAdvance.toLocaleString()}.`);
+    } else {
+      setAdvanceError(null);
+    }
+  };
+
   // Replace handleProceedToPay with booking-first, then payment flow
   const handleProceedToPay = async () => {
     if (!user) {
@@ -226,6 +251,11 @@ const BookingPage = () => {
     setFormErrors(errors);
     if (Object.keys(errors).length > 0) {
       window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+    const advanceAmount = Number(advance);
+    if (!advance || isNaN(advanceAmount) || advanceAmount < minAdvance || advanceAmount > maxAdvance) {
+      setAdvanceError('Please enter a valid advance amount.');
       return;
     }
     setSubmitting(true);
@@ -271,13 +301,14 @@ const BookingPage = () => {
         setSubmitting(false);
         return;
       }
-      // 2. Create Razorpay order for payment
+      // 2. Create Razorpay order for ADVANCE payment only
       const paymentRes = await fetch("/api/payments/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           bookingId,
-          amount: total,
+          amount: advanceAmount,
+          type: "advance"
         }),
       });
       const paymentData = await paymentRes.json();
@@ -295,7 +326,8 @@ const BookingPage = () => {
         description: "Venue Booking",
         order_id: paymentData.order.id,
         handler: function (response: any) {
-          alert("Payment successful! Your booking will be confirmed shortly.");
+          // Redirect to pending page after payment
+          router.push(`/bookings/${bookingId}/pending`);
         },
         prefill: {
           name: form.name,
@@ -716,58 +748,92 @@ const BookingPage = () => {
         </a>
       </div>
       {showReviewModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-8 relative border-2 border-gray-200">
-            <button className="absolute top-3 right-3 text-gray-500 hover:text-gray-700 text-3xl font-bold" onClick={() => setShowReviewModal(false)}>&times;</button>
-            <h3 className="text-2xl font-extrabold mb-6 text-gray-900">Review Your Booking</h3>
-            <div className="space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] flex flex-col relative border-2 border-gray-200">
+            {/* Header */}
+            <div className="p-4 border-b border-gray-200 flex-shrink-0">
+              <div className="flex justify-between items-center">
+                <h3 className="text-xl font-extrabold text-gray-900">Review Your Booking</h3>
+                <button className="text-gray-500 hover:text-gray-700 text-2xl font-bold" onClick={() => setShowReviewModal(false)}>&times;</button>
+              </div>
+            </div>
+            
+            {/* Scrollable Content */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-3">
               {/* Booking Summary */}
-              <div ref={summaryRef} className="border-b pb-4 mb-4">
-                <div className="flex justify-between items-center">
-                  <div className="font-bold text-lg">Venue</div>
+              <div ref={summaryRef} className="border-b border-gray-200 pb-3">
+                <div className="flex justify-between items-center mb-1">
+                  <div className="font-bold text-base">Venue</div>
                   <button className="text-blue-600 underline text-sm" onClick={() => { setShowReviewModal(false); summaryRef.current?.scrollIntoView({ behavior: 'smooth' }); }}>Edit</button>
                 </div>
-                <div>{hall ? `${hall.name}, ${hall.location?.city || hall.city}` : "Loading..."}</div>
+                <div className="text-sm text-gray-700">{hall ? `${hall.name}, ${hall.location?.city || hall.city}` : "Loading..."}</div>
               </div>
+              
               {/* Services */}
-              <div ref={servicesRef} className="border-b pb-4 mb-4">
-                <div className="flex justify-between items-center">
-                  <div className="font-bold text-lg">Services</div>
+              <div ref={servicesRef} className="border-b border-gray-200 pb-3">
+                <div className="flex justify-between items-center mb-1">
+                  <div className="font-bold text-base">Services</div>
                   <button className="text-blue-600 underline text-sm" onClick={() => { setShowReviewModal(false); servicesRef.current?.scrollIntoView({ behavior: 'smooth' }); }}>Edit</button>
                 </div>
-                <div>{selectedServices.length === 0 ? "None" : selectedServices.map(s => s.name).join(", ")}</div>
+                <div className="text-sm text-gray-700">{selectedServices.length === 0 ? "None" : selectedServices.map(s => s.name).join(", ")}</div>
               </div>
+              
               {/* Event Manager */}
-              <div ref={eventManagerRef} className="border-b pb-4 mb-4">
-                <div className="flex justify-between items-center">
-                  <div className="font-bold text-lg">Event Manager</div>
+              <div ref={eventManagerRef} className="border-b border-gray-200 pb-3">
+                <div className="flex justify-between items-center mb-1">
+                  <div className="font-bold text-base">Event Manager</div>
                   <button className="text-blue-600 underline text-sm" onClick={() => { setShowReviewModal(false); eventManagerRef.current?.scrollIntoView({ behavior: 'smooth' }); }}>Edit</button>
                 </div>
-                <div>{eventManager ? `Yes (Fee: ₹${EVENT_MANAGER_FEE.toLocaleString()})` : "No"}</div>
+                <div className="text-sm text-gray-700">{eventManager ? `Yes (Fee: ₹${EVENT_MANAGER_FEE.toLocaleString()})` : "No"}</div>
               </div>
+              
               {/* Final Event Details */}
-              <div ref={detailsRef} className="border-b pb-4 mb-4">
-                <div className="flex justify-between items-center">
-                  <div className="font-bold text-lg">Event Details</div>
+              <div ref={detailsRef} className="border-b border-gray-200 pb-3">
+                <div className="flex justify-between items-center mb-1">
+                  <div className="font-bold text-base">Event Details</div>
                   <button className="text-blue-600 underline text-sm" onClick={() => { setShowReviewModal(false); detailsRef.current?.scrollIntoView({ behavior: 'smooth' }); }}>Edit</button>
                 </div>
-                <div><b>Name:</b> {form.name}</div>
-                <div><b>Phone:</b> {form.phone}</div>
-                <div><b>Email:</b> {form.email}</div>
-                <div><b>Date:</b> {form.startDate}</div>
-                <div><b>Time:</b> {form.eventTime}</div>
-                <div><b>Guests:</b> {form.guests}</div>
-                <div><b>Special Requests:</b> {form.specialRequests || "-"}</div>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm text-gray-700">
+                  <div><b>Name:</b> {form.name}</div>
+                  <div><b>Phone:</b> {form.phone}</div>
+                  <div><b>Email:</b> {form.email}</div>
+                  <div><b>Date:</b> {form.startDate}</div>
+                  <div><b>Time:</b> {form.eventTime}</div>
+                  <div><b>Guests:</b> {form.guests}</div>
+                  <div className="col-span-2"><b>Special Requests:</b> {form.specialRequests || "-"}</div>
+                </div>
               </div>
+              
               {/* Cost Summary */}
-              <div className="font-bold text-lg flex justify-between items-center">
+              <div className="font-bold text-lg flex justify-between items-center py-2">
                 <span>Total</span>
                 <span>₹{total.toLocaleString()}</span>
               </div>
+              
+              {/* Advance Payment Info */}
+              <div className="p-3 bg-blue-50 border border-blue-300 rounded text-blue-900">
+                <label className="block mb-2 font-semibold text-sm">
+                  Enter Advance Amount (min: ₹{minAdvance.toLocaleString()}, max: ₹{maxAdvance.toLocaleString()}):
+                  <input
+                    type="number"
+                    value={advance}
+                    onChange={e => handleAdvanceChange(e.target.value)}
+                    className="block w-full border rounded p-2 mt-1 text-base font-bold"
+                  />
+                  {advanceError && (
+                    <div className="text-xs text-red-600 mt-1">{advanceError}</div>
+                  )}
+                </label>
+                <span className="text-xs font-normal text-blue-700">
+                  You must pay at least 50% of total or ₹50,000, whichever is lower.
+                </span>
+              </div>
             </div>
-            <div className="flex justify-end gap-4 mt-8">
-              <button className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300 text-gray-900 font-semibold transition" onClick={() => setShowReviewModal(false)}>Cancel</button>
-              <button className="px-4 py-2 rounded bg-green-600 hover:bg-green-700 text-white font-semibold transition" onClick={async () => { setShowReviewModal(false); setPendingBooking(true); await handleProceedToPay(); setPendingBooking(false); }}>Confirm & Book</button>
+            
+            {/* Footer */}
+            <div className="p-4 border-t border-gray-200 flex justify-end gap-3 flex-shrink-0">
+              <button className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300 text-gray-900 font-semibold transition text-sm" onClick={() => setShowReviewModal(false)}>Cancel</button>
+              <button className="px-4 py-2 rounded bg-green-600 hover:bg-green-700 text-white font-semibold transition text-sm" onClick={async () => { setShowReviewModal(false); setPendingBooking(true); await handleProceedToPay(); setPendingBooking(false); }}>Pay Advance & Request Booking</button>
             </div>
           </div>
         </div>

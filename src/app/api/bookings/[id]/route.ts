@@ -147,7 +147,7 @@ export async function PATCH(
     }
 
     // Otherwise, allow only specialRequests update
-    const allowedUpdates = ['specialRequests'];
+    const allowedUpdates = ['specialRequests', 'finalPaymentStatus', 'finalPaymentMethod'];
     Object.keys(updates).forEach((key) => {
       if (allowedUpdates.includes(key)) {
         booking[key] = updates[key];

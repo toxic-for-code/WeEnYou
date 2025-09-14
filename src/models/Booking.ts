@@ -36,7 +36,15 @@ const bookingSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['pending', 'confirmed', 'cancelled', 'completed', 'pending_approval'],
+      enum: [
+        'pending',
+        'pending_advance',
+        'pending_owner_confirmation',
+        'confirmed',
+        'cancelled',
+        'completed',
+        'pending_approval'
+      ],
       default: 'pending',
     },
     paymentStatus: {
@@ -46,6 +54,20 @@ const bookingSchema = new mongoose.Schema(
     },
     paymentId: {
       type: String,
+    },
+    advancePaid: {
+      type: Boolean,
+      default: false,
+    },
+    finalPaymentMethod: {
+      type: String,
+      enum: ['online', 'offline', null],
+      default: null,
+    },
+    finalPaymentStatus: {
+      type: String,
+      enum: ['pending', 'paid', null],
+      default: null,
     },
     event_manager_id: {
       type: mongoose.Schema.Types.ObjectId,

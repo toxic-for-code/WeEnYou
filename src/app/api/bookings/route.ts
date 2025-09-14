@@ -99,7 +99,10 @@ export async function POST(req: Request) {
       guests,
       specialRequests,
       totalPrice, // This now includes all fees if provided
-      status: 'pending',
+      status: 'pending_advance',
+      advancePaid: false,
+      finalPaymentMethod: null,
+      finalPaymentStatus: null,
     });
 
     // Create service bookings if any

@@ -26,7 +26,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const { bookingId, serviceBookingIds, amount } = await req.json();
+    const { bookingId, serviceBookingIds, amount, type } = await req.json();
 
     if (!bookingId || !amount) {
       return NextResponse.json(
@@ -73,6 +73,17 @@ export async function POST(req: Request) {
       }
     }
 
+    // Enforce minimum advance amount for advance payment
+    if (type === 'advance') {
+      const minAdvance = Math.min(50000, booking.totalPrice * 0.5);
+      if (amount < minAdvance) {
+        return NextResponse.json({ error: `Advance must be at least ₹${minAdvance}` }, { status: 400 });
+      }
+      if (amount > booking.totalPrice) {
+        return NextResponse.json({ error: `Advance cannot be greater than total booking amount (₹${booking.totalPrice})` }, { status: 400 });
+      }
+    }
+
     // Create Razorpay order
     const order = await razorpay.orders.create({
       amount: amount * 100, // in paise
@@ -83,6 +94,7 @@ export async function POST(req: Request) {
         serviceBookingIds: serviceBookingIds ? JSON.stringify(serviceBookingIds) : '',
         userId: session.user.id,
         hall: booking.hallId.name,
+        type: type, // Add payment type to distinguish advance vs final
       },
     });
 

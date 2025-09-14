@@ -27,11 +27,14 @@ interface Booking {
   startDate: string;
   endDate: string;
   totalPrice: number;
-  status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
+  status: 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'pending_owner_confirmation' | 'pending_advance';
   paymentStatus: 'pending' | 'paid' | 'refunded';
   createdAt: string;
   numberOfGuests: number;
   specialRequests?: string;
+  advancePaid?: boolean;
+  finalPaymentStatus?: 'pending' | 'paid' | null;
+  finalPaymentMethod?: 'online' | 'offline' | null;
 }
 
 declare global {
@@ -64,6 +67,9 @@ export default function BookingDetails({ params }: { params: { id: string } }) {
   const [servicePayLoading, setServicePayLoading] = useState(false);
   const [servicePayError, setServicePayError] = useState('');
   const [servicePaySuccess, setServicePaySuccess] = useState('');
+  const [finalPayLoading, setFinalPayLoading] = useState(false);
+  const [finalPayError, setFinalPayError] = useState<string | null>(null);
+  const [finalPaySuccess, setFinalPaySuccess] = useState<string | null>(null);
 
 
   useEffect(() => {
@@ -315,6 +321,109 @@ export default function BookingDetails({ params }: { params: { id: string } }) {
     }
   };
 
+  const handleFinalPayNow = async () => {
+    if (!booking) return;
+    setFinalPayLoading(true);
+    setFinalPayError(null);
+    setFinalPaySuccess(null);
+    try {
+      // Create Razorpay order for remaining amount
+      const advanceAmount = Math.min(50000, booking.totalPrice * 0.5);
+      const remaining = booking.totalPrice - advanceAmount;
+      const res = await fetch('/api/payments/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          bookingId: booking._id,
+          amount: remaining,
+          type: 'final',
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setFinalPayError(data.error || 'Failed to create payment order');
+        setFinalPayLoading(false);
+        return;
+      }
+      const order = data.order;
+      // Load Razorpay script if not loaded
+      if (!window.Razorpay) {
+        await new Promise((resolve, reject) => {
+          const script = document.createElement('script');
+          script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+          script.onload = resolve;
+          script.onerror = reject;
+          document.body.appendChild(script);
+        });
+      }
+      // Open Razorpay checkout
+      const rzp = new window.Razorpay({
+        key: "rzp_test_EvcFsJFi50khcp",
+        amount: order.amount,
+        currency: order.currency,
+        name: booking.hallId.name,
+        description: `Final payment for booking from ${new Date(booking.startDate).toLocaleDateString()} to ${new Date(booking.endDate).toLocaleDateString()}`,
+        order_id: order.id,
+        handler: async function (response: any) {
+          // On payment success, update booking
+          const updateRes = await fetch(`/api/bookings/${booking._id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              finalPaymentStatus: 'paid',
+              finalPaymentMethod: 'online',
+              paymentId: response.razorpay_payment_id,
+            }),
+          });
+          const updateData = await updateRes.json();
+          if (updateRes.ok) {
+            setBooking(updateData.booking);
+            setFinalPaySuccess('Final payment successful!');
+          } else {
+            setFinalPayError(updateData.error || 'Payment succeeded but failed to update booking.');
+          }
+        },
+        prefill: {
+          name: session?.user?.name,
+          email: session?.user?.email,
+        },
+        theme: { color: '#2563eb' },
+      });
+      rzp.open();
+    } catch (err: any) {
+      setFinalPayError(err.message || 'Payment failed.');
+    } finally {
+      setFinalPayLoading(false);
+    }
+  };
+
+  const handlePayOffline = async () => {
+    if (!booking) return;
+    setFinalPayLoading(true);
+    setFinalPayError(null);
+    setFinalPaySuccess(null);
+    try {
+      const updateRes = await fetch(`/api/bookings/${booking._id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          finalPaymentStatus: 'pending',
+          finalPaymentMethod: 'offline',
+        }),
+      });
+      const updateData = await updateRes.json();
+      if (updateRes.ok) {
+        setBooking(updateData.booking);
+        setFinalPaySuccess('You have chosen to pay the remaining amount offline at the venue.');
+      } else {
+        setFinalPayError(updateData.error || 'Failed to update booking.');
+      }
+    } catch (err: any) {
+      setFinalPayError(err.message || 'Failed to update booking.');
+    } finally {
+      setFinalPayLoading(false);
+    }
+  };
 
 
   if (loading) {
@@ -622,6 +731,31 @@ export default function BookingDetails({ params }: { params: { id: string } }) {
               {paySuccess && <p className="text-green-600 mt-2">{paySuccess}</p>}
               {rescheduleError && <p className="text-red-600 mt-2">{rescheduleError}</p>}
               {rescheduleSuccess && <p className="text-green-600 mt-2">{rescheduleSuccess}</p>}
+              {/* Final Payment Options after owner confirmation */}
+              {booking && booking.status === 'confirmed' && booking.advancePaid && booking.finalPaymentStatus !== 'paid' && (
+                <div className="mt-4 p-4 bg-blue-50 border border-blue-300 rounded">
+                  <h4 className="font-semibold mb-2">Booking confirmed! Please pay the remaining amount:</h4>
+                  <div className="mb-2 text-lg font-bold">Remaining: ₹{(booking.totalPrice - Math.min(50000, booking.totalPrice * 0.5)).toLocaleString()}</div>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <button
+                      onClick={handleFinalPayNow}
+                      disabled={finalPayLoading}
+                      className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+                    >
+                      {finalPayLoading ? 'Processing...' : 'Pay Now (Online)'}
+                    </button>
+                    <button
+                      onClick={handlePayOffline}
+                      disabled={finalPayLoading}
+                      className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 disabled:opacity-50"
+                    >
+                      {finalPayLoading ? 'Processing...' : 'Pay Offline at Venue'}
+                    </button>
+                  </div>
+                  {finalPayError && <p className="text-red-600 mt-2">{finalPayError}</p>}
+                  {finalPaySuccess && <p className="text-green-600 mt-2">{finalPaySuccess}</p>}
+                </div>
+              )}
             </div>
           </div>
         </div>

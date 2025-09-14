@@ -8,6 +8,45 @@ import PlanEvent from '@/models/PlanEvent'; // (for type only, not used directly
 
 const TABS = ["Upcoming", "Past", "Cancelled"];
 
+// Helper functions for status display
+const getStatusColor = (status: string) => {
+  switch (status) {
+    case 'confirmed': return 'text-green-600';
+    case 'cancelled': return 'text-red-600';
+    case 'completed': return 'text-blue-600';
+    case 'pending_owner_confirmation': return 'text-blue-600';
+    case 'pending_advance': return 'text-yellow-600';
+    case 'pending_approval': return 'text-orange-600';
+    default: return 'text-yellow-600';
+  }
+};
+
+const getStatusDisplayText = (status: string) => {
+  switch (status) {
+    case 'confirmed': return 'Confirmed';
+    case 'cancelled': return 'Cancelled';
+    case 'completed': return 'Completed';
+    case 'pending_owner_confirmation': return 'Awaiting Owner Confirmation';
+    case 'pending_advance': return 'Pending Advance Payment';
+    case 'pending_approval': return 'Pending Approval';
+    default: return status?.charAt(0).toUpperCase() + status?.slice(1) || 'Pending';
+  }
+};
+
+const getPaymentStatusColor = (paymentStatus: string, advancePaid: boolean) => {
+  if (paymentStatus === 'paid') return 'text-green-600';
+  if (paymentStatus === 'refunded') return 'text-blue-600';
+  if (advancePaid) return 'text-blue-600'; // Advance paid but final payment pending
+  return 'text-yellow-600'; // No payment made
+};
+
+const getPaymentStatusDisplayText = (paymentStatus: string, advancePaid: boolean) => {
+  if (paymentStatus === 'paid') return 'Fully Paid';
+  if (paymentStatus === 'refunded') return 'Refunded';
+  if (advancePaid) return 'Advance Paid'; // Show that advance is paid
+  return 'Pending Payment';
+};
+
 export default function ProfilePage() {
   const { data: session } = useSession();
   // Debug log for profile image
@@ -33,12 +72,8 @@ export default function ProfilePage() {
   const [plannedEvents, setPlannedEvents] = useState([]);
   const [plannedEventsLoading, setPlannedEventsLoading] = useState(true);
 
-  // Placeholder for notifications, rewards, recommendations
+  // Placeholder for notifications, rewards (recommendations removed)
   const rewards = { points: 120, tier: "Gold" };
-  const recommendations = [
-    { id: 1, name: "Sunshine Banquet", link: "/halls/1" },
-    { id: 2, name: "Emerald Palace", link: "/halls/2" },
-  ];
 
   const [search, setSearch] = useState("");
   const [checkIn, setCheckIn] = useState("");
@@ -243,8 +278,8 @@ export default function ProfilePage() {
               <span className="ml-4 font-semibold">Total:</span> ₹{selectedBooking.totalPrice || 0}
             </div>
             <div className="mb-2">
-              <span className="font-semibold">Status:</span> {selectedBooking.status?.charAt(0).toUpperCase() + selectedBooking.status?.slice(1)}
-              <span className="ml-4 font-semibold">Payment:</span> {selectedBooking.paymentStatus?.charAt(0).toUpperCase() + selectedBooking.paymentStatus?.slice(1)}
+              <span className="font-semibold">Status:</span> {getStatusDisplayText(selectedBooking.status)}
+              <span className="ml-4 font-semibold">Payment:</span> {getPaymentStatusDisplayText(selectedBooking.paymentStatus, selectedBooking.advancePaid)}
             </div>
             <div className="mb-2">
               <span className="font-semibold">Services Total:</span> ₹{servicesTotal}
@@ -308,11 +343,11 @@ export default function ProfilePage() {
                 </div>
                 <div>
                   <p className="text-gray-500">Status</p>
-                  <p className={`font-bold ${selectedBooking.status === 'confirmed' ? 'text-green-600' : selectedBooking.status === 'cancelled' ? 'text-red-600' : selectedBooking.status === 'completed' ? 'text-blue-600' : 'text-yellow-600'}`}>{selectedBooking.status?.charAt(0).toUpperCase() + selectedBooking.status?.slice(1)}</p>
+                  <p className={`font-bold ${getStatusColor(selectedBooking.status)}`}>{getStatusDisplayText(selectedBooking.status)}</p>
                 </div>
                 <div>
                   <p className="text-gray-500">Payment</p>
-                  <p className={`font-bold ${selectedBooking.paymentStatus === 'paid' ? 'text-green-600' : selectedBooking.paymentStatus === 'refunded' ? 'text-blue-600' : 'text-yellow-600'}`}>{selectedBooking.paymentStatus?.charAt(0).toUpperCase() + selectedBooking.paymentStatus?.slice(1)}</p>
+                  <p className={`font-bold ${getPaymentStatusColor(selectedBooking.paymentStatus, selectedBooking.advancePaid)}`}>{getPaymentStatusDisplayText(selectedBooking.paymentStatus, selectedBooking.advancePaid)}</p>
                 </div>
               </div>
               {/* Calendar Links */}
@@ -703,18 +738,6 @@ export default function ProfilePage() {
             ))}
           </div>
         )}
-      </div>
-
-      {/* Recommendations */}
-      <div className="mb-8">
-        <h3 className="text-xl font-semibold mb-4">Recommended for You</h3>
-        <div className="flex flex-wrap gap-4">
-          {recommendations.map(r => (
-            <Link key={r.id} href={r.link} className="bg-primary-50 px-4 py-2 rounded shadow hover:bg-primary-100 font-semibold">
-              {r.name}
-            </Link>
-          ))}
-        </div>
       </div>
 
       {/* Security & Support */}

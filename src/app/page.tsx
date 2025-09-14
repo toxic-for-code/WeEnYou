@@ -178,7 +178,9 @@ export default function Home() {
       {/* Navbar */}
       <nav className="sticky top-0 z-40 flex items-center justify-between px-2 py-2 bg-white/95 shadow relative backdrop-blur-md">
         <div className="flex items-center gap-3">
-          <Image src="/logo.png" alt="WeEnYou Logo" width={100} height={48} className="object-contain" style={{ filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.25))' }} />
+          <Link href="/">
+            <Image src="/logo.png" alt="WeEnYou Logo" width={100} height={48} className="object-contain cursor-pointer" style={{ filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.25))' }} />
+          </Link>
         </div>
         <div className="flex gap-6 items-center text-[#22313f] font-medium relative">
           <div
@@ -531,7 +533,7 @@ export default function Home() {
       <section className="py-20 bg-gradient-to-br from-primary-50 to-pink-50">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-12 text-gray-900 animate-fade-in-up">
-            Why Choose Eventify
+            Why Choose WeEnYou
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
             <div className="text-center animate-fade-in-up">
