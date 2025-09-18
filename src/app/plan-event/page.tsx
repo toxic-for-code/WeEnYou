@@ -153,7 +153,7 @@ export default function PlanEventPage() {
       if (!res.ok) {
         throw new Error('Failed to submit. Please try again.');
       }
-      setEstimate(calculateEstimate());
+      // Estimate will be updated by the useEffect when form changes
       setSubmitted(true);
       setForm({
         eventType: '',

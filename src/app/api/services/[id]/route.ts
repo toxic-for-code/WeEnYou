@@ -4,6 +4,8 @@ import { authOptions } from '@/lib/auth';
 import Service from '@/models/Service';
 import { connectDB } from '@/lib/db';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(_req: Request, { params }: { params: { id: string } }) {
   try {
     await connectDB();

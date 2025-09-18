@@ -6,8 +6,10 @@ const messageSchema = new mongoose.Schema({
   serviceId: { type: mongoose.Schema.Types.ObjectId, ref: 'Service' },
   hallId: { type: mongoose.Schema.Types.ObjectId, ref: 'Hall' },
   bookingId: { type: mongoose.Schema.Types.ObjectId, ref: 'Booking' },
+  conversationId: { type: mongoose.Schema.Types.ObjectId, ref: 'Conversation' },
   content: { type: String, required: true },
   read: { type: Boolean, default: false },
+  readAt: { type: Date },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
 });
@@ -22,8 +24,10 @@ interface MessageAttrs {
   serviceId?: mongoose.Types.ObjectId;
   hallId?: mongoose.Types.ObjectId;
   bookingId?: mongoose.Types.ObjectId;
+  conversationId?: mongoose.Types.ObjectId;
   content: string;
   read: boolean;
+  readAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }

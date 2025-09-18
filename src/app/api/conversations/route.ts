@@ -5,6 +5,8 @@ import { connectDB } from '@/lib/db';
 import Conversation from '@/models/Conversation';
 import Message from '@/models/Message';
 
+export const dynamic = 'force-dynamic';
+
 // GET: List all conversations for the authenticated user
 export async function GET(req: Request) {
   try {

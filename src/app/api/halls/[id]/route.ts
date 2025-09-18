@@ -6,6 +6,8 @@ import Hall from '@/models/Hall';
 import Booking from '@/models/Booking';
 import Service from '@/models/Service';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(
   req: Request,
   { params }: { params: { id: string } }

@@ -5,6 +5,8 @@ import { sendEmail } from '@/lib/email';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: NextRequest) {
   console.log('PlanEvent API route called');
   await connectDB();

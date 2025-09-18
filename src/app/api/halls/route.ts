@@ -5,6 +5,8 @@ import { connectDB } from '@/lib/db';
 import Hall from '@/models/Hall';
 import User from '@/models/User';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: Request) {
   try {
     // Check session

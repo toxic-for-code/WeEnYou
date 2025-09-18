@@ -8,6 +8,8 @@ import Notification from '@/models/Notification';
 import Service from '@/models/Service';
 import ServiceBooking from '@/models/ServiceBooking';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);

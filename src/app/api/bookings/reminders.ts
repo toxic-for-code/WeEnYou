@@ -4,6 +4,8 @@ import Booking from '@/models/Booking';
 import Hall from '@/models/Hall';
 import User from '@/models/User';
 import { sendEmail } from '@/lib/email';
+import { HallDoc } from '@/models/Hall';
+import { UserDoc } from '@/models/User';
 
 export async function POST() {
   try {
@@ -17,26 +19,26 @@ export async function POST() {
       reminderSent: false,
       status: { $in: ['confirmed'] },
       startDate: { $gte: later, $lt: soon },
-    }).populate('hallId').populate('userId');
+    }).populate('hallId').populate('userId') as any[];
 
     let remindersSent = 0;
     for (const booking of bookings) {
       // Send to user
-      if (booking.userId && booking.userId.email) {
+      if (booking.userId && (booking.userId as UserDoc).email) {
         await sendEmail({
-          to: booking.userId.email,
-          subject: `Reminder: Your booking at ${booking.hallId.name} is tomorrow!`,
-          html: `<p>Dear ${booking.userId.name || 'User'},</p><p>This is a reminder that your booking at <b>${booking.hallId.name}</b> starts on <b>${new Date(booking.startDate).toLocaleString()}</b>.</p><p>Location: ${booking.hallId.location.address || ''}, ${booking.hallId.location.city}, ${booking.hallId.location.state}</p><p>Thank you for using our platform!</p>`,
+          to: (booking.userId as UserDoc).email,
+          subject: `Reminder: Your booking at ${(booking.hallId as HallDoc).name} is tomorrow!`,
+          html: `<p>Dear ${(booking.userId as UserDoc).name || 'User'},</p><p>This is a reminder that your booking at <b>${(booking.hallId as HallDoc).name}</b> starts on <b>${new Date(booking.startDate).toLocaleString()}</b>.</p><p>Location: ${(booking.hallId as HallDoc).location.address || ''}, ${(booking.hallId as HallDoc).location.city}, ${(booking.hallId as HallDoc).location.state}</p><p>Thank you for using our platform!</p>`,
         });
       }
       // Send to owner
-      if (booking.hallId.ownerId) {
-        const owner = await User.findById(booking.hallId.ownerId);
+      if ((booking.hallId as HallDoc).ownerId) {
+        const owner = await User.findById((booking.hallId as HallDoc).ownerId);
         if (owner && owner.email) {
           await sendEmail({
             to: owner.email,
-            subject: `Reminder: Booking at your hall '${booking.hallId.name}' is tomorrow!`,
-            html: `<p>Dear ${owner.name || 'Owner'},</p><p>This is a reminder that a booking at your hall '<b>${booking.hallId.name}</b>' starts on <b>${new Date(booking.startDate).toLocaleString()}</b>.</p><p>Customer: ${booking.userId.name || ''} (${booking.userId.email})</p><p>Thank you for using our platform!</p>`,
+            subject: `Reminder: Booking at your hall '${(booking.hallId as HallDoc).name}' is tomorrow!`,
+            html: `<p>Dear ${owner.name || 'Owner'},</p><p>This is a reminder that a booking at your hall '<b>${(booking.hallId as HallDoc).name}</b>' starts on <b>${new Date(booking.startDate).toLocaleString()}</b>.</p><p>Customer: ${(booking.userId as UserDoc).name || ''} (${(booking.userId as UserDoc).email})</p><p>Thank you for using our platform!</p>`,
           });
         }
       }

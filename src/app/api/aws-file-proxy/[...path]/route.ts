@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+export const dynamic = 'force-dynamic';
+
 const S3_BASE_URL = 'https://my-weenyou-uploads.s3.eu-north-1.amazonaws.com/';
 
 export async function GET(req: NextRequest, { params }: { params: { path: string[] } }) {

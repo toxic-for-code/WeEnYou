@@ -6,6 +6,8 @@ import Booking from '@/models/Booking';
 import Hall from '@/models/Hall';
 import Notification from '@/models/Notification';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(
   request: Request,
   { params }: { params: { id: string } }

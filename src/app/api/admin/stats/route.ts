@@ -7,6 +7,8 @@ import Booking from '@/models/Booking';
 import User from '@/models/User';
 import Service from '@/models/Service';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(req: Request) {
   try {
     const session = await getServerSession(authOptions);

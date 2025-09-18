@@ -4,6 +4,8 @@ import { authOptions } from '@/lib/auth';
 import { connectDB } from '@/lib/db';
 import mongoose, { Document, Model } from 'mongoose';
 
+export const dynamic = 'force-dynamic';
+
 // Define the Settings schema
 const settingsSchema = new mongoose.Schema({
   platformFee: {

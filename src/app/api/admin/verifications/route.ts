@@ -4,6 +4,8 @@ import Verification from '@/models/Verification';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 
+export const dynamic = 'force-dynamic';
+
 // GET /api/admin/verifications?status=pending|approved|rejected
 export async function GET(req: NextRequest) {
   await connectDB();

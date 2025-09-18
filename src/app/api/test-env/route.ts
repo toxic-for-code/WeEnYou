@@ -7,7 +7,7 @@ export async function GET() {
     await connectDB();
     
     // Get a sample booking to check the database structure
-    const sampleBooking = await Booking.findOne().populate('hallId', 'name');
+    const sampleBooking = await Booking.findOne().populate('hallId', 'name') as any;
     
     return NextResponse.json({
       message: 'Test endpoint working',

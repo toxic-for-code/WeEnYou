@@ -102,8 +102,8 @@ export default async function HallReviewsPage({
             images: review.images,
             createdAt: review.createdAt.toISOString(),
             user: {
-              name: review.userId.name,
-              image: review.userId.image,
+              name: (review.userId as any)?.name || 'User',
+              image: (review.userId as any)?.image || null,
             },
           }))}
           totalReviews={totalReviews}

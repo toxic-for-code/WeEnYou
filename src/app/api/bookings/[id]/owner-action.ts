@@ -6,6 +6,8 @@ import Booking from '@/models/Booking';
 import Notification from '@/models/Notification';
 import { HallDoc } from '@/models/Hall';
 
+export const dynamic = 'force-dynamic';
+
 export async function PATCH(req: Request, { params }: { params: { id: string } }) {
   try {
     const session = await getServerSession(authOptions);

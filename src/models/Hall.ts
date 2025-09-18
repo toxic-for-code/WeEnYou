@@ -26,9 +26,11 @@ export interface IHall extends mongoose.Document {
   availability: {
     date: Date;
     isAvailable: boolean;
+    specialPrice?: number;
   }[];
   verified: boolean;
   featured: boolean;
+  status: 'pending' | 'active' | 'inactive';
   createdAt: Date;
   updatedAt: Date;
   averageRating: number;
@@ -132,6 +134,10 @@ const hallSchema = new mongoose.Schema({
     isAvailable: {
       type: Boolean,
       default: true,
+    },
+    specialPrice: {
+      type: Number,
+      default: null,
     },
   }],
   averageRating: {

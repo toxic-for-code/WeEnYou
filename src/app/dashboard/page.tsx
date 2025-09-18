@@ -448,6 +448,21 @@ export default function Dashboard() {
     }
   };
 
+  const fetchReviews = async (hallId: string) => {
+    setReviewLoading(prev => ({ ...prev, [hallId]: true }));
+    setReviewError(prev => ({ ...prev, [hallId]: '' }));
+    try {
+      const res = await fetch(`/api/halls/${hallId}/reviews`);
+      if (!res.ok) throw new Error('Failed to fetch reviews');
+      const data = await res.json();
+      setHallReviews(prev => ({ ...prev, [hallId]: data.reviews || [] }));
+    } catch (err) {
+      setReviewError(prev => ({ ...prev, [hallId]: 'Failed to fetch reviews' }));
+    } finally {
+      setReviewLoading(prev => ({ ...prev, [hallId]: false }));
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -558,7 +573,14 @@ export default function Dashboard() {
                                 e.stopPropagation();
                                 // Collect all participant IDs
                                 const userId = typeof booking.userId === 'object' ? booking.userId._id : booking.userId;
-                                const ownerId = booking.hallId && booking.hallId.ownerId ? (typeof booking.hallId.ownerId === 'object' ? booking.hallId.ownerId._id : booking.hallId.ownerId) : null;
+                                let ownerId = null;
+                                if (booking.hallId && booking.hallId.ownerId) {
+                                  if (typeof booking.hallId.ownerId === 'object' && booking.hallId.ownerId) {
+                                    ownerId = (booking.hallId.ownerId as any)._id || null;
+                                  } else {
+                                    ownerId = booking.hallId.ownerId;
+                                  }
+                                }
                                 const providerIds = (booking.serviceBookings || []).map(sb => typeof sb.providerId === 'object' ? sb.providerId._id : sb.providerId).filter(Boolean);
                                 // Remove duplicates and current user
                                 const allIds = [userId, ownerId, ...providerIds].filter((id, idx, arr) => id && arr.indexOf(id) === idx && id !== session.user.id);
@@ -767,7 +789,14 @@ export default function Dashboard() {
                               e.stopPropagation();
                               // Collect all participant IDs
                               const userId = typeof booking.userId === 'object' ? booking.userId._id : booking.userId;
-                              const ownerId = booking.hallId && booking.hallId.ownerId ? (typeof booking.hallId.ownerId === 'object' ? booking.hallId.ownerId._id : booking.hallId.ownerId) : null;
+                              let ownerId = null;
+                              if (booking.hallId && booking.hallId.ownerId) {
+                                if (typeof booking.hallId.ownerId === 'object' && booking.hallId.ownerId) {
+                                  ownerId = (booking.hallId.ownerId as any)._id || null;
+                                } else {
+                                  ownerId = booking.hallId.ownerId;
+                                }
+                              }
                               const providerIds = (booking.serviceBookings || []).map(sb => typeof sb.providerId === 'object' ? sb.providerId._id : sb.providerId).filter(Boolean);
                               // Remove duplicates and current user
                               const allIds = [userId, ownerId, ...providerIds].filter((id, idx, arr) => id && arr.indexOf(id) === idx && id !== session.user.id);
@@ -915,7 +944,7 @@ export default function Dashboard() {
                           <div>
                             <h3 className="text-lg font-semibold">{booking.hallId.name}</h3>
                             <p className="text-gray-600">
-                              Booked by: {booking.userId?.name} ({booking.userId?.email}{booking.userId?.phone ? `, ${booking.userId.phone}` : ''})
+                              Booked by: {typeof booking.userId === 'object' ? booking.userId?.name : 'User'} ({typeof booking.userId === 'object' ? booking.userId?.email : ''}{typeof booking.userId === 'object' && booking.userId?.phone ? `, ${booking.userId.phone}` : ''})
                             </p>
                             <p className="text-gray-600">
                               Dates: {format(new Date(booking.startDate), 'dd MMM yyyy')} - {format(new Date(booking.endDate), 'dd MMM yyyy')}
@@ -957,7 +986,14 @@ export default function Dashboard() {
                               e.stopPropagation();
                               // Collect all participant IDs
                               const userId = typeof booking.userId === 'object' ? booking.userId._id : booking.userId;
-                              const ownerId = booking.hallId && booking.hallId.ownerId ? (typeof booking.hallId.ownerId === 'object' ? booking.hallId.ownerId._id : booking.hallId.ownerId) : null;
+                              let ownerId = null;
+                              if (booking.hallId && booking.hallId.ownerId) {
+                                if (typeof booking.hallId.ownerId === 'object' && booking.hallId.ownerId) {
+                                  ownerId = (booking.hallId.ownerId as any)._id || null;
+                                } else {
+                                  ownerId = booking.hallId.ownerId;
+                                }
+                              }
                               const providerIds = (booking.serviceBookings || []).map(sb => typeof sb.providerId === 'object' ? sb.providerId._id : sb.providerId).filter(Boolean);
                               // Remove duplicates and current user
                               const allIds = [userId, ownerId, ...providerIds].filter((id, idx, arr) => id && arr.indexOf(id) === idx && id !== session.user.id);
@@ -1422,7 +1458,7 @@ export default function Dashboard() {
                 {serviceReviews.map((review, idx) => (
                   <li key={review._id || idx} className="py-4">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="font-semibold">{review.userId?.name || 'User'}</span>
+                      <span className="font-semibold">{typeof review.userId === 'object' ? review.userId?.name : 'User'}</span>
                       <span className="text-yellow-500">{'★'.repeat(review.rating)}</span>
                       <span className="text-xs text-gray-400">{new Date(review.createdAt).toLocaleDateString()}</span>
                     </div>

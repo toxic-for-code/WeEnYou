@@ -4,6 +4,8 @@ import { authOptions } from '@/lib/auth';
 import { connectDB } from '@/lib/db';
 import Hall from '@/models/Hall';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);

@@ -4,6 +4,8 @@ import { connectDB } from '@/lib/db';
 import Booking from '@/models/Booking';
 import mongoose, { Document, Model } from 'mongoose';
 
+export const dynamic = 'force-dynamic';
+
 // Address schema for dynamic city info
 const addressSchema = new mongoose.Schema({
   pincode: String,

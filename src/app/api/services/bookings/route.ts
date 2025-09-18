@@ -4,6 +4,8 @@ import { authOptions } from '@/lib/auth';
 import { connectDB } from '@/lib/db';
 import ServiceBooking from '@/models/ServiceBooking';
 
+export const dynamic = 'force-dynamic';
+
 // GET /api/services/bookings - Get all bookings for provider's services
 export async function GET() {
   try {

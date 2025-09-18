@@ -5,6 +5,8 @@ import { connectDB } from '@/lib/db';
 import Service from '@/models/Service';
 import ServiceBooking from '@/models/ServiceBooking';
 
+export const dynamic = 'force-dynamic';
+
 // GET /api/service-bookings - Get service bookings
 // Can be filtered by hallBookingId or get all bookings for a provider
 export async function GET(req: Request) {

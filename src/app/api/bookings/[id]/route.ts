@@ -7,6 +7,8 @@ import ServiceBooking from '@/models/ServiceBooking';
 import Notification from '@/models/Notification';
 import { HallDoc } from '@/models/Hall';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(
   request: Request,
   { params }: { params: { id: string } }

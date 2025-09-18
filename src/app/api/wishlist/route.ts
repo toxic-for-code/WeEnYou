@@ -5,6 +5,8 @@ import { connectDB } from '@/lib/db';
 import User from '@/models/User';
 import Hall from '@/models/Hall';
 
+export const dynamic = 'force-dynamic';
+
 // GET: Get user's wishlist
 export async function GET() {
   try {

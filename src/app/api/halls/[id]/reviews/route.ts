@@ -7,6 +7,8 @@ import Booking from '@/models/Booking';
 import Hall from '@/models/Hall';
 import Notification from '@/models/Notification';
 
+export const dynamic = 'force-dynamic';
+
 // Get reviews for a hall
 export async function GET(
   request: Request,

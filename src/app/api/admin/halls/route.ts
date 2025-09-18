@@ -5,6 +5,8 @@ import { connectDB } from '@/lib/db';
 import Hall from '@/models/Hall';
 import Booking from '@/models/Booking';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);

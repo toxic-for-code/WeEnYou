@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+export const dynamic = 'force-dynamic';
+
 const OWNER_LOCAL_URL = 'http://localhost:3000/uploads/';
 const OWNER_PROD_URL = 'https://owner.weenyou.com/uploads/';
 

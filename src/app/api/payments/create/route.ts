@@ -6,6 +6,8 @@ import Booking from '@/models/Booking';
 import ServiceBooking from '@/models/ServiceBooking';
 import Razorpay from 'razorpay';
 
+export const dynamic = 'force-dynamic';
+
 // Validate environment variables
 if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
   throw new Error('Razorpay environment variables are not configured');
@@ -41,7 +43,7 @@ export async function POST(req: Request) {
     const booking = await Booking.findOne({
       _id: bookingId,
       userId: session.user.id,
-    }).populate('hallId');
+    }).populate('hallId') as any;
 
     if (!booking) {
       return NextResponse.json(

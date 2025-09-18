@@ -5,6 +5,8 @@ import { connectDB } from '@/lib/db';
 import Message from '@/models/Message';
 import Notification from '@/models/Notification';
 
+export const dynamic = 'force-dynamic';
+
 // GET: Fetch messages for a conversation
 export async function GET(req: Request) {
   try {

@@ -6,6 +6,8 @@ import Conversation from '@/models/Conversation';
 // import Message from '@/models/Message'; // DELETED - legacy model
 import Notification from '@/models/Notification';
 
+export const dynamic = 'force-dynamic';
+
 // DEPRECATED: This endpoint is no longer functional due to removal of Message model and migration to group chat system.
 
 // GET: Fetch messages for a conversation (paginated)

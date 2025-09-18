@@ -5,6 +5,8 @@ import { connectDB } from '@/lib/db';
 import Message from '@/models/Message';
 import Conversation from '@/models/Conversation';
 
+export const dynamic = 'force-dynamic';
+
 // PUT: Mark a message as read
 export async function PUT(req: Request, { params }: { params: { id: string } }) {
   try {

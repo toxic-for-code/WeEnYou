@@ -5,6 +5,8 @@ import { connectDB } from '@/lib/db';
 import Review from '@/models/Review';
 import Hall from '@/models/Hall';
 
+export const dynamic = 'force-dynamic';
+
 // POST /api/halls/[id]/reviews/[reviewId]/response
 export async function POST(request: Request, { params }: { params: { id: string, reviewId: string } }) {
   try {

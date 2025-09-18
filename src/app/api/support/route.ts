@@ -4,6 +4,8 @@ import { authOptions } from '@/lib/auth';
 import { connectDB } from '@/lib/db';
 import SupportRequest from '@/models/SupportRequest';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions);

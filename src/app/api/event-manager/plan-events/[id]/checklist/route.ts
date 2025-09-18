@@ -4,6 +4,8 @@ import { authOptions } from '@/lib/auth';
 import { connectDB } from '@/lib/db';
 import PlanEvent from '@/models/PlanEvent';
 
+export const dynamic = 'force-dynamic';
+
 export async function PUT(req: NextRequest, context) {
   await connectDB();
   const session = await getServerSession(authOptions);

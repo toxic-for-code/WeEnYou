@@ -86,6 +86,35 @@ const bookingSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    // Payment-related fields for Razorpay
+    ownerId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+    },
+    ownerName: {
+      type: String,
+    },
+    ownerEmail: {
+      type: String,
+    },
+    ownerPhone: {
+      type: String,
+    },
+    ownerContactId: {
+      type: String,
+    },
+    ownerFundAccountId: {
+      type: String,
+    },
+    ownerBankDetails: {
+      upi: { type: String },
+      name: { type: String },
+      ifsc: { type: String },
+      accountNumber: { type: String },
+    },
+    venuePrice: {
+      type: Number,
+    },
   },
   {
     timestamps: true,
@@ -119,6 +148,20 @@ interface BookingAttrs {
     requestedAt?: Date;
   };
   reminderSent?: boolean;
+  // Payment-related fields for Razorpay
+  ownerId?: mongoose.Types.ObjectId;
+  ownerName?: string;
+  ownerEmail?: string;
+  ownerPhone?: string;
+  ownerContactId?: string;
+  ownerFundAccountId?: string;
+  ownerBankDetails?: {
+    upi?: string;
+    name?: string;
+    ifsc?: string;
+    accountNumber?: string;
+  };
+  venuePrice?: number;
 }
 
 export type BookingDoc = Document & BookingAttrs & { createdAt: Date; updatedAt: Date };

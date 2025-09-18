@@ -5,6 +5,8 @@ import { connectDB } from '@/lib/db';
 import PlanEvent from '@/models/PlanEvent';
 import User from '@/models/User';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(req: NextRequest) {
   await connectDB();
   const session = await getServerSession(authOptions);

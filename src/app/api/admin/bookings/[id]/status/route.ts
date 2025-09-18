@@ -4,6 +4,8 @@ import { authOptions } from '@/lib/auth';
 import { connectDB } from '@/lib/db';
 import Booking from '@/models/Booking';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(
   request: Request,
   { params }: { params: { id: string } }

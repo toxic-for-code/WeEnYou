@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document, models, model } from 'mongoose';
+import mongoose, { Schema, Document, models, model, Model } from 'mongoose';
 
 export interface ISupportRequest extends Document {
   user: Schema.Types.ObjectId;
@@ -16,4 +16,10 @@ const SupportRequestSchema = new Schema<ISupportRequest>({
   createdAt: { type: Date, default: Date.now },
 });
 
-export default (models.SupportRequest as mongoose.Model<ISupportRequest>) || model<ISupportRequest>('SupportRequest', SupportRequestSchema); 
+export type SupportRequestDoc = Document & ISupportRequest;
+
+const SupportRequest: Model<SupportRequestDoc> =
+  (models.SupportRequest as Model<SupportRequestDoc>) ||
+  model<SupportRequestDoc>('SupportRequest', SupportRequestSchema);
+
+export default SupportRequest; 

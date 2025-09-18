@@ -5,6 +5,8 @@ import { connectDB } from '@/lib/db';
 import Service from '@/models/Service';
 import ServiceBooking from '@/models/ServiceBooking';
 
+export const dynamic = 'force-dynamic';
+
 // POST /api/services/book - Book a service
 export async function POST(req: Request) {
   try {

@@ -4,6 +4,8 @@ import { NextResponse } from "next/server";
 import { connectDB } from '@/lib/db';
 import Booking from '@/models/Booking';
 
+export const dynamic = 'force-dynamic';
+
 // Utility functions using existing database connection
 async function getBookingByOrderId(orderId) {
   await connectDB();
@@ -137,7 +139,7 @@ export async function POST(req) {
       // 1. Create Contact (if not already created)
     let contactId = booking.ownerContactId;
     if (!contactId) {
-      const contact = await razorpay.contacts.create({
+      const contact = await (razorpay as any).contacts.create({
         name: booking.ownerName,
         email: booking.ownerEmail,
         contact: booking.ownerPhone,
@@ -152,13 +154,13 @@ export async function POST(req) {
     if (!fundAccountId) {
       let fundAccount;
       if (booking.ownerBankDetails.upi) {
-        fundAccount = await razorpay.fundAccount.create({
+        fundAccount = await (razorpay as any).fundAccount.create({
           contact_id: contactId,
           account_type: "vpa",
           vpa: { address: booking.ownerBankDetails.upi },
         });
       } else {
-        fundAccount = await razorpay.fundAccount.create({
+        fundAccount = await (razorpay as any).fundAccount.create({
           contact_id: contactId,
           account_type: "bank_account",
           bank_account: {
@@ -173,7 +175,7 @@ export async function POST(req) {
     }
 
     // 3. Trigger payout
-    const payout = await razorpay.payouts.create({
+    const payout = await (razorpay as any).payouts.create({
       account_number: process.env.RAZORPAY_PAYOUT_ACCOUNT_NUMBER, // Your virtual account number
       fund_account_id: fundAccountId,
       amount: booking.venuePrice * 100, // paise
