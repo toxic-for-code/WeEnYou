@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { connectDB } from '@/lib/db';
-import mongoose from 'mongoose';
+import mongoose, { Document, Model } from 'mongoose';
 
 // Define the Settings schema
 const settingsSchema = new mongoose.Schema({
@@ -65,8 +65,33 @@ const settingsSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Create or get the model
-const Settings = mongoose.models.Settings || mongoose.model('Settings', settingsSchema);
+interface SettingsAttrs {
+  platformFee: number;
+  currency: 'INR' | 'USD' | 'EUR';
+  bookingTimeSlots: {
+    start: string;
+    end: string;
+  }[];
+  emailTemplates: {
+    bookingConfirmation: string;
+    paymentSuccess: string;
+    bookingCancellation: string;
+    hallVerification: string;
+  };
+  notifications: {
+    emailNotifications: boolean;
+    adminEmailNotifications: boolean;
+    ownerEmailNotifications: boolean;
+  };
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export type SettingsDoc = Document & SettingsAttrs;
+
+const Settings: Model<SettingsDoc> =
+  (mongoose.models.Settings as Model<SettingsDoc>) ||
+  mongoose.model<SettingsDoc>('Settings', settingsSchema);
 
 // GET /api/admin/settings
 export async function GET() {

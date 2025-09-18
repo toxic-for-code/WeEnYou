@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import Hall from '@/models/Hall';
 import { connectDB } from '@/lib/db';
 import Booking from '@/models/Booking';
-import mongoose from 'mongoose';
+import mongoose, { Document, Model } from 'mongoose';
 
 // Address schema for dynamic city info
 const addressSchema = new mongoose.Schema({
@@ -14,7 +14,22 @@ const addressSchema = new mongoose.Schema({
   latitude: Number,
   longitude: Number,
 });
-const Address = mongoose.models.Address || mongoose.model('Address', addressSchema, 'addresses');
+
+interface AddressAttrs {
+  pincode?: string;
+  place?: string;
+  city?: string;
+  state?: string;
+  street_address?: string;
+  latitude?: number;
+  longitude?: number;
+}
+
+export type AddressDoc = Document & AddressAttrs;
+
+const Address: Model<AddressDoc> =
+  (mongoose.models.Address as Model<AddressDoc>) ||
+  mongoose.model<AddressDoc>('Address', addressSchema, 'addresses');
 
 // Static mapping for demonstration; replace with DB lookup if needed
 const cityToPincodes: Record<string, string[]> = {
@@ -82,11 +97,10 @@ export async function GET(req: Request) {
       const center = cityCoordsAgg[0];
       let nearbyPincodes: string[] = [];
       if (center) {
-        // @ts-expect-error Mongoose/TypeScript signature mismatch
-        const addresses = await Address.find({ latitude: { $exists: true }, longitude: { $exists: true } }).lean();
+        const addresses = await Address.find({ latitude: { $exists: true }, longitude: { $exists: true } }).lean() as any[];
         const R = 6371;
         const toRad = (x: number) => x * Math.PI / 180;
-        nearbyPincodes = (addresses as any[]).filter((addr: any) => {
+        nearbyPincodes = addresses.filter((addr: any) => {
           const dLat = toRad(addr.latitude - center.lat);
           const dLng = toRad(addr.longitude - center.lng);
           const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
@@ -109,10 +123,8 @@ export async function GET(req: Request) {
           { 'location.pincode': { $regex: city, $options: 'i' } },
         ]
       };
-      // @ts-expect-error Mongoose/TypeScript signature mismatch
-      let venues1 = await Hall.find(pincodeQuery).lean();
-      // @ts-expect-error Mongoose/TypeScript signature mismatch
-      let venues2 = await Hall.find(regexOrQuery).lean();
+      let venues1 = await Hall.find(pincodeQuery).lean() as any[];
+      let venues2 = await Hall.find(regexOrQuery).lean() as any[];
       // Merge and deduplicate by _id
       const venuesMap = new Map();
       for (const v of [...venues1, ...venues2]) {
@@ -137,7 +149,6 @@ export async function GET(req: Request) {
             venue.distance = Infinity;
           }
         });
-        // @ts-expect-error
         venues.sort((a: any, b: any) => (a.distance ?? Infinity) - (b.distance ?? Infinity));
       }
       // Pagination logic (unchanged)
@@ -236,9 +247,7 @@ export async function GET(req: Request) {
       };
     }
 
-    // Suppress TypeScript linter error for Mongoose .find().lean()
-    // @ts-expect-error Mongoose/TypeScript signature mismatch
-    let venues = await Hall.find(query).lean();
+    let venues = await Hall.find(query).lean() as any[];
     // If city search, sort by distance from city center
     if (city && venues && venues.length > 0) {
       const cityCoordsAgg = await Address.aggregate([
