@@ -1,4 +1,4 @@
-import mongoose, { Schema, model, models } from 'mongoose';
+import mongoose, { Schema, model, models, Document, Model } from 'mongoose';
 
 const PlanEventSchema = new Schema({
   eventType: { type: String, required: true },
@@ -33,4 +33,37 @@ const PlanEventSchema = new Schema({
   createdAt: { type: Date, default: Date.now },
 });
 
-export default models.PlanEvent || model('PlanEvent', PlanEventSchema); 
+interface PlanEventAttrs {
+  eventType: string;
+  city: string;
+  date: string;
+  guests: string;
+  budget: string;
+  venueType: string;
+  services: string[];
+  theme?: string;
+  special?: string;
+  contactTime?: string;
+  eventTag?: string;
+  userId: mongoose.Types.ObjectId;
+  userName: string;
+  userEmail: string;
+  userPhone?: string;
+  event_manager_id?: mongoose.Types.ObjectId;
+  status: 'pending' | 'in_planning' | 'finalized' | 'live' | 'completed' | 'cancelled';
+  checklist: {
+    label: string;
+    completed: boolean;
+    dueDate?: Date;
+    createdAt: Date;
+  }[];
+  createdAt: Date;
+}
+
+export type PlanEventDoc = Document & PlanEventAttrs;
+
+const PlanEvent: Model<PlanEventDoc> =
+  (models.PlanEvent as Model<PlanEventDoc>) ||
+  model<PlanEventDoc>('PlanEvent', PlanEventSchema);
+
+export default PlanEvent; 
