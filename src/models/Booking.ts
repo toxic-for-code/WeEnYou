@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose, { Document, Model } from 'mongoose';
 
 const bookingSchema = new mongoose.Schema(
   {
@@ -97,7 +97,35 @@ bookingSchema.index({ userId: 1, createdAt: -1 });
 bookingSchema.index({ hallId: 1, startDate: 1, endDate: 1 });
 bookingSchema.index({ status: 1 });
 
-const Booking = mongoose.models.Booking || mongoose.model('Booking', bookingSchema);
+interface BookingAttrs {
+  userId: mongoose.Types.ObjectId;
+  hallId: mongoose.Types.ObjectId;
+  startDate: Date;
+  endDate: Date;
+  guests: number;
+  specialRequests?: string;
+  totalPrice: number;
+  status: 'pending' | 'pending_advance' | 'pending_owner_confirmation' | 'confirmed' | 'cancelled' | 'completed' | 'pending_approval';
+  paymentStatus: 'pending' | 'paid' | 'refunded';
+  paymentId?: string;
+  advancePaid?: boolean;
+  finalPaymentMethod?: 'online' | 'offline' | null;
+  finalPaymentStatus?: 'pending' | 'paid' | null;
+  event_manager_id?: mongoose.Types.ObjectId;
+  pendingChange?: {
+    type: 'reschedule' | 'cancel';
+    startDate?: Date;
+    endDate?: Date;
+    requestedAt?: Date;
+  };
+  reminderSent?: boolean;
+}
+
+export type BookingDoc = Document & BookingAttrs & { createdAt: Date; updatedAt: Date };
+
+const Booking: Model<BookingDoc> =
+  (mongoose.models.Booking as Model<BookingDoc>) ||
+  mongoose.model<BookingDoc>('Booking', bookingSchema);
 
 export default Booking; 
  
