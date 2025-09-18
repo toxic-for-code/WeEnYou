@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose, { Document, Model } from 'mongoose';
 
 const serviceSchema = new mongoose.Schema({
   serviceType: { type: String, required: true },
@@ -18,5 +18,31 @@ const serviceSchema = new mongoose.Schema({
   }],
 }, { timestamps: true });
 
-export default mongoose.models.Service || mongoose.model('Service', serviceSchema); 
+interface ServiceAttrs {
+  serviceType: string;
+  name: string;
+  description: string;
+  price: number;
+  contact: string;
+  city: string;
+  state: string;
+  providerId: mongoose.Types.ObjectId;
+  images: string[];
+  verified: boolean;
+  status: 'active' | 'inactive';
+  availability: {
+    date: Date;
+    isAvailable: boolean;
+  }[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export type ServiceDoc = Document & ServiceAttrs;
+
+const Service: Model<ServiceDoc> =
+  (mongoose.models.Service as Model<ServiceDoc>) ||
+  mongoose.model<ServiceDoc>('Service', serviceSchema);
+
+export default Service; 
  

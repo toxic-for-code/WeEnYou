@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose, { Document, Model } from 'mongoose';
 
 const chatRoomSchema = new mongoose.Schema({
   booking_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Booking', required: true, unique: true },
@@ -8,4 +8,18 @@ const chatRoomSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
-export default mongoose.models.ChatRoom || mongoose.model('ChatRoom', chatRoomSchema); 
+interface ChatRoomAttrs {
+  booking_id: mongoose.Types.ObjectId;
+  user_id: mongoose.Types.ObjectId;
+  owner_id: mongoose.Types.ObjectId;
+  provider_id: mongoose.Types.ObjectId;
+  createdAt: Date;
+}
+
+export type ChatRoomDoc = Document & ChatRoomAttrs;
+
+const ChatRoom: Model<ChatRoomDoc> =
+  (mongoose.models.ChatRoom as Model<ChatRoomDoc>) ||
+  mongoose.model<ChatRoomDoc>('ChatRoom', chatRoomSchema);
+
+export default ChatRoom; 

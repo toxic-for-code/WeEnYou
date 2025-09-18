@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose, { Document, Model } from 'mongoose';
 
 const serviceReviewSchema = new mongoose.Schema(
   {
@@ -56,6 +56,24 @@ const serviceReviewSchema = new mongoose.Schema(
 // Ensure a user can only review a service once per booking
 serviceReviewSchema.index({ serviceId: 1, userId: 1, bookingId: 1 }, { unique: true });
 
-const ServiceReview = mongoose.models.ServiceReview || mongoose.model('ServiceReview', serviceReviewSchema);
+interface ServiceReviewAttrs {
+  serviceId: mongoose.Types.ObjectId;
+  userId: mongoose.Types.ObjectId;
+  rating: number;
+  comment: string;
+  images: string[];
+  status: 'pending' | 'approved' | 'rejected';
+  bookingId: mongoose.Types.ObjectId;
+  response: string;
+  flagged: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export type ServiceReviewDoc = Document & ServiceReviewAttrs;
+
+const ServiceReview: Model<ServiceReviewDoc> =
+  (mongoose.models.ServiceReview as Model<ServiceReviewDoc>) ||
+  mongoose.model<ServiceReviewDoc>('ServiceReview', serviceReviewSchema);
 
 export default ServiceReview; 

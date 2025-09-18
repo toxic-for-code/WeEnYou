@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose, { Document, Model } from 'mongoose';
 
 const chatMessageSchema = new mongoose.Schema({
   chat_room_id: { type: mongoose.Schema.Types.ObjectId, ref: 'ChatRoom', required: true },
@@ -9,4 +9,19 @@ const chatMessageSchema = new mongoose.Schema({
   read_by: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
 });
 
-export default mongoose.models.ChatMessage || mongoose.model('ChatMessage', chatMessageSchema); 
+interface ChatMessageAttrs {
+  chat_room_id: mongoose.Types.ObjectId;
+  sender_id: mongoose.Types.ObjectId;
+  sender_role: 'user' | 'owner' | 'provider';
+  content: string;
+  timestamp: Date;
+  read_by: mongoose.Types.ObjectId[];
+}
+
+export type ChatMessageDoc = Document & ChatMessageAttrs;
+
+const ChatMessage: Model<ChatMessageDoc> =
+  (mongoose.models.ChatMessage as Model<ChatMessageDoc>) ||
+  mongoose.model<ChatMessageDoc>('ChatMessage', chatMessageSchema);
+
+export default ChatMessage; 

@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose, { Document, Model } from 'mongoose';
 
 const serviceBookingSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
@@ -27,5 +27,28 @@ serviceBookingSchema.index({ providerId: 1, createdAt: -1 });
 serviceBookingSchema.index({ userId: 1, createdAt: -1 });
 serviceBookingSchema.index({ serviceId: 1 });
 
-export default mongoose.models.ServiceBooking || mongoose.model('ServiceBooking', serviceBookingSchema); 
+interface ServiceBookingAttrs {
+  userId: mongoose.Types.ObjectId;
+  serviceId: mongoose.Types.ObjectId;
+  providerId: mongoose.Types.ObjectId;
+  hallBookingId?: mongoose.Types.ObjectId;
+  hallId?: mongoose.Types.ObjectId;
+  startDate: Date;
+  endDate: Date;
+  totalPrice: number;
+  status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
+  paymentStatus: 'pending' | 'paid' | 'refunded';
+  paymentId?: string;
+  specialRequests?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export type ServiceBookingDoc = Document & ServiceBookingAttrs;
+
+const ServiceBooking: Model<ServiceBookingDoc> =
+  (mongoose.models.ServiceBooking as Model<ServiceBookingDoc>) ||
+  mongoose.model<ServiceBookingDoc>('ServiceBooking', serviceBookingSchema);
+
+export default ServiceBooking; 
  

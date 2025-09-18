@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose, { Document, Model } from 'mongoose';
 
 const messageSchema = new mongoose.Schema({
   from: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
@@ -16,4 +16,22 @@ messageSchema.index({ from: 1, to: 1 });
 messageSchema.index({ serviceId: 1, bookingId: 1 });
 messageSchema.index({ createdAt: 1 });
 
-export default mongoose.models.Message || mongoose.model('Message', messageSchema); 
+interface MessageAttrs {
+  from: mongoose.Types.ObjectId;
+  to: mongoose.Types.ObjectId;
+  serviceId?: mongoose.Types.ObjectId;
+  hallId?: mongoose.Types.ObjectId;
+  bookingId?: mongoose.Types.ObjectId;
+  content: string;
+  read: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export type MessageDoc = Document & MessageAttrs;
+
+const Message: Model<MessageDoc> =
+  (mongoose.models.Message as Model<MessageDoc>) ||
+  mongoose.model<MessageDoc>('Message', messageSchema);
+
+export default Message; 

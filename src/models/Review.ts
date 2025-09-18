@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose, { Document, Model } from 'mongoose';
 
 const reviewSchema = new mongoose.Schema(
   {
@@ -80,7 +80,25 @@ reviewSchema.post('save', async function () {
   }
 });
 
-const Review = mongoose.models.Review || mongoose.model('Review', reviewSchema);
+interface ReviewAttrs {
+  hallId: mongoose.Types.ObjectId;
+  userId: mongoose.Types.ObjectId;
+  rating: number;
+  comment: string;
+  images: string[];
+  status: 'pending' | 'approved' | 'rejected';
+  bookingId: mongoose.Types.ObjectId;
+  response: string;
+  flagged: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export type ReviewDoc = Document & ReviewAttrs;
+
+const Review: Model<ReviewDoc> =
+  (mongoose.models.Review as Model<ReviewDoc>) ||
+  mongoose.model<ReviewDoc>('Review', reviewSchema);
 
 export default Review; 
  
