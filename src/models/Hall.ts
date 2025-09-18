@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose, { Document, Model } from 'mongoose';
 
 export interface IHall extends mongoose.Document {
   name: string;
@@ -187,5 +187,11 @@ hallSchema.index({ rating: -1 });
 hallSchema.index({ status: 1 });
 hallSchema.index({ featured: 1 });
 
-export default mongoose.models.Hall || mongoose.model('Hall', hallSchema); 
+export type HallDoc = Document & IHall;
+
+const Hall: Model<HallDoc> =
+  (mongoose.models.Hall as Model<HallDoc>) ||
+  mongoose.model<HallDoc>('Hall', hallSchema);
+
+export default Hall; 
  
