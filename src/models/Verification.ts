@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document, Types } from 'mongoose';
+import mongoose, { Schema, Document, Types, Model } from 'mongoose';
 
 interface Reference {
   name: string;
@@ -62,4 +62,10 @@ const VerificationSchema = new Schema<IVerification>({
   feedback: { type: String },
 });
 
-export default mongoose.models.Verification || mongoose.model<IVerification>('Verification', VerificationSchema); 
+export type VerificationDoc = Document & IVerification;
+
+const Verification: Model<VerificationDoc> =
+  (mongoose.models.Verification as Model<VerificationDoc>) ||
+  mongoose.model<VerificationDoc>('Verification', VerificationSchema);
+
+export default Verification; 
