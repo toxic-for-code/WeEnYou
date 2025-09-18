@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { connectDB } from '@/lib/db';
 import Booking from '@/models/Booking';
 import Notification from '@/models/Notification';
+import { HallDoc } from '@/models/Hall';
 
 export async function PATCH(req: Request, { params }: { params: { id: string } }) {
   try {
@@ -12,12 +13,12 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
     await connectDB();
-    const booking = await Booking.findById(params.id).populate('hallId');
+    const booking = await Booking.findById(params.id).populate('hallId') as any;
     if (!booking) {
       return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
     }
     // Only hall owner can approve/reject
-    if (booking.hallId.ownerId.toString() !== session.user.id) {
+    if ((booking.hallId as HallDoc).ownerId.toString() !== session.user.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
     // Accept/reject after advance payment (pending_owner_confirmation)
@@ -30,7 +31,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       await Notification.create({
         userId: booking.userId,
         type: 'booking',
-        message: `Your booking for hall '${booking.hallId.name}' was accepted by the owner. Please pay the remaining amount to complete your booking.`
+        message: `Your booking for hall '${(booking.hallId as HallDoc).name}' was accepted by the owner. Please pay the remaining amount to complete your booking.`
       });
       await booking.save();
       return NextResponse.json({ booking });
@@ -39,7 +40,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       await Notification.create({
         userId: booking.userId,
         type: 'booking',
-        message: `Your booking for hall '${booking.hallId.name}' was rejected by the owner.`
+        message: `Your booking for hall '${(booking.hallId as HallDoc).name}' was rejected by the owner.`
       });
       await booking.save();
       return NextResponse.json({ booking });
