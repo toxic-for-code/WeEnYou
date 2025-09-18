@@ -5,6 +5,7 @@ import { connectDB } from '@/lib/db';
 import Booking from '@/models/Booking';
 import ServiceBooking from '@/models/ServiceBooking';
 import Notification from '@/models/Notification';
+import { HallDoc } from '@/models/Hall';
 
 export async function GET(
   request: Request,
@@ -25,7 +26,7 @@ export async function GET(
     const booking = await Booking.findOne({
       _id: params.id,
       userId: session.user.id,
-    }).populate('hallId', 'name images location amenities description ownerId');
+    }).populate('hallId', 'name images location amenities description ownerId') as any;
 
     if (!booking) {
       return NextResponse.json(
@@ -62,7 +63,7 @@ export async function PATCH(
     const booking = await Booking.findOne({
       _id: params.id,
       userId: session.user.id,
-    }).populate('hallId');
+    }).populate('hallId') as any;
 
     if (!booking) {
       return NextResponse.json(
@@ -136,11 +137,11 @@ export async function PATCH(
       booking.pendingChange = pendingChange;
       await booking.save();
       // Notify owner
-      if (booking.hallId.ownerId) {
+      if ((booking.hallId as HallDoc).ownerId) {
         await Notification.create({
-          userId: booking.hallId.ownerId,
+          userId: (booking.hallId as HallDoc).ownerId,
           type: 'booking',
-          message: `Booking for your hall '${booking.hallId.name}' has a pending ${pendingChange.type} request.`,
+          message: `Booking for your hall '${(booking.hallId as HallDoc).name}' has a pending ${pendingChange.type} request.`,
         });
       }
       return NextResponse.json({ booking });
