@@ -135,40 +135,6 @@ export async function POST(
   }
 }
 
-// POST /api/halls/[id]/reviews/[reviewId]/response
-export async function POST_response(request: Request, { params }: { params: { id: string, reviewId: string } }) {
-  try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    await connectDB();
-    const review = await Review.findById(params.reviewId);
-    if (!review) return NextResponse.json({ error: 'Review not found' }, { status: 404 });
-    const hall = await Hall.findById(params.id);
-    if (!hall || hall.ownerId.toString() !== session.user.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
-    const { response } = await request.json();
-    review.response = response;
-    await review.save();
-    return NextResponse.json({ review });
-  } catch (error) {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}
-
-// POST /api/halls/[id]/reviews/[reviewId]/flag
-export async function POST_flag(request: Request, { params }: { params: { id: string, reviewId: string } }) {
-  try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    await connectDB();
-    const review = await Review.findById(params.reviewId);
-    if (!review) return NextResponse.json({ error: 'Review not found' }, { status: 404 });
-    const hall = await Hall.findById(params.id);
-    if (!hall || hall.ownerId.toString() !== session.user.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
-    review.flagged = true;
-    await review.save();
-    return NextResponse.json({ review });
-  } catch (error) {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-} 
+// NOTE: Actions for responding to or flagging a review live in
+// /api/halls/[id]/reviews/[reviewId]/response and /flag route files.
  
