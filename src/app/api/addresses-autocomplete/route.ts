@@ -12,7 +12,20 @@ const addressSchema = new mongoose.Schema({
   latitude: Number,
   longitude: Number,
 });
-const Address = mongoose.models.Address || mongoose.model('Address', addressSchema, 'addresses');
+interface AddressAttrs {
+  pincode?: string;
+  place?: string;
+  city?: string;
+  state?: string;
+  street_address?: string;
+  latitude?: number;
+  longitude?: number;
+}
+type AddressDoc = mongoose.Document & AddressAttrs;
+
+const Address: mongoose.Model<AddressDoc> =
+  (mongoose.models.Address as mongoose.Model<AddressDoc>) ||
+  mongoose.model<AddressDoc>('Address', addressSchema, 'addresses');
 
 export async function GET(req: Request) {
   try {
