@@ -13,14 +13,33 @@
   body {
     @apply antialiased;
   }
+  
+  /* Mobile-first responsive base styles */
+  html {
+    font-size: 14px; /* Base font size for mobile */
+  }
+  
+  @media (min-width: 640px) {
+    html {
+      font-size: 15px; /* Slightly larger for small tablets */
+    }
+  }
+  
+  @media (min-width: 1024px) {
+    html {
+      font-size: 16px; /* Standard desktop font size */
+    }
+  }
 }
 
 @layer components {
   .btn-primary {
-    @apply px-4 py-2 text-white rounded-lg font-semibold shadow-md transition-all duration-200;
+    @apply px-3 py-2 text-white rounded-lg font-semibold shadow-md transition-all duration-200;
     background: linear-gradient(90deg, #1e3a8a 0%, #2563eb 100%); /* Deep blue to vibrant blue */
     box-shadow: 0 2px 8px 0 rgba(30,58,138,0.10);
     border: none;
+    min-height: 44px; /* Touch-friendly minimum height */
+    min-width: 44px; /* Touch-friendly minimum width */
   }
   
   .btn-primary:hover {
@@ -28,22 +47,111 @@
     transform: translateY(-2px) scale(1.04);
     box-shadow: 0 4px 16px 0 rgba(30,58,138,0.18);
   }
+  
+  /* Mobile-specific button styles */
+  @media (max-width: 640px) {
+    .btn-primary {
+      @apply px-4 py-3 text-base;
+      min-height: 48px; /* Larger touch target on mobile */
+    }
+  }
 
   .btn-secondary {
-    @apply px-4 py-2 text-white rounded-lg font-semibold shadow-md transition-all duration-200;
+    @apply px-3 py-2 text-white rounded-lg font-semibold shadow-md transition-all duration-200;
     background: linear-gradient(90deg, #fbbf24 0%, #f59e42 100%); /* Gold to orange */
     color: #22313f;
     border: none;
+    min-height: 44px;
+    min-width: 44px;
   }
+  
   .btn-secondary:hover {
     background: linear-gradient(90deg, #f59e42 0%, #fbbf24 100%);
     color: #22313f;
     transform: translateY(-2px) scale(1.04);
     box-shadow: 0 4px 16px 0 rgba(251,191,36,0.18);
   }
+  
+  /* Mobile-specific secondary button styles */
+  @media (max-width: 640px) {
+    .btn-secondary {
+      @apply px-4 py-3 text-base;
+      min-height: 48px;
+    }
+  }
 
   .input-field {
     @apply w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500;
+    min-height: 44px; /* Touch-friendly input height */
+  }
+  
+  /* Mobile-specific input styles */
+  @media (max-width: 640px) {
+    .input-field {
+      @apply px-4 py-3 text-base;
+      min-height: 48px;
+    }
+  }
+  
+  /* Responsive container utilities */
+  .container-responsive {
+    @apply w-full px-4 mx-auto;
+  }
+  
+  @media (min-width: 640px) {
+    .container-responsive {
+      @apply px-6;
+    }
+  }
+  
+  @media (min-width: 1024px) {
+    .container-responsive {
+      @apply px-8 max-w-7xl;
+    }
+  }
+  
+  /* Mobile-friendly card styles */
+  .card-responsive {
+    @apply bg-white rounded-lg shadow-md p-4;
+  }
+  
+  @media (min-width: 640px) {
+    .card-responsive {
+      @apply p-6;
+    }
+  }
+  
+  /* Responsive text utilities */
+  .text-responsive-xl {
+    @apply text-xl;
+  }
+  
+  @media (min-width: 640px) {
+    .text-responsive-xl {
+      @apply text-2xl;
+    }
+  }
+  
+  @media (min-width: 1024px) {
+    .text-responsive-xl {
+      @apply text-3xl;
+    }
+  }
+  
+  .text-responsive-lg {
+    @apply text-lg;
+  }
+  
+  @media (min-width: 640px) {
+    .text-responsive-lg {
+      @apply text-xl;
+    }
+  }
+  
+  @media (min-width: 1024px) {
+    .text-responsive-lg {
+      @apply text-2xl;
+    }
   }
 }
 

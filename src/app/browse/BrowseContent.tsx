@@ -166,7 +166,7 @@ export default function BrowseContent() {
         </svg>
       </div>
       {/* Hero Section */}
-      <div className="relative w-full h-72 md:h-96 flex items-center justify-center mb-10 overflow-hidden rounded-b-3xl shadow-lg">
+      <div className="relative w-full h-64 sm:h-72 md:h-96 flex items-center justify-center mb-6 sm:mb-10 overflow-hidden rounded-b-3xl shadow-lg">
         {/* Background Image */}
         <Image
           src="/bg.png"
@@ -178,50 +178,50 @@ export default function BrowseContent() {
         {/* Overlay */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/20 z-10" />
         {/* Content */}
-        <div className="relative z-20 text-center px-4 flex flex-col items-center justify-center w-full h-full">
-          <h1 className="text-4xl md:text-6xl font-extrabold text-white drop-shadow-lg mb-4 animate-fade-in">
+        <div className="relative z-20 text-center px-4 sm:px-6 flex flex-col items-center justify-center w-full h-full">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-6xl font-extrabold text-white drop-shadow-lg mb-3 sm:mb-4 animate-fade-in leading-tight">
             Find the Perfect Venue for Your Event
           </h1>
-          <p className="text-lg md:text-2xl text-gray-200 mb-6 max-w-2xl mx-auto animate-fade-in delay-100">
+          <p className="text-sm sm:text-base md:text-lg lg:text-2xl text-gray-200 mb-4 sm:mb-6 max-w-2xl mx-auto animate-fade-in delay-100 leading-relaxed">
             Discover, compare, and book top-rated banquet halls with ease. Make your event unforgettable!
           </p>
           <a
             href="#venues"
-            className="inline-block bg-primary-600 hover:bg-primary-700 text-white font-bold py-4 px-10 rounded-full shadow-lg transition-all duration-200 text-xl animate-fade-in delay-200"
+            className="inline-block bg-primary-600 hover:bg-primary-700 text-white font-bold py-3 px-6 sm:py-4 sm:px-10 rounded-full shadow-lg transition-all duration-200 text-base sm:text-lg lg:text-xl animate-fade-in delay-200"
           >
             Start Browsing
           </a>
         </div>
       </div>
       {/* Filter and Results Section - Full Edge-to-Edge Split */}
-      <div className={`flex w-full min-h-screen flex-1 ${mapView ? 'flex-row' : 'flex-col md:flex-row'} gap-0`}>
+      <div className={`flex w-full min-h-screen flex-1 ${mapView ? 'flex-row' : 'flex-col lg:flex-row'} gap-0`}>
         {/* Filters Sidebar (hide in mapView) */}
         {!mapView && (
-          <aside className="w-full md:w-80 flex-shrink-0 bg-white shadow-md border-r border-gray-200 p-6 min-h-full h-auto">
+          <aside className="w-full lg:w-80 flex-shrink-0 bg-white shadow-md border-r border-gray-200 p-4 sm:p-6 min-h-full h-auto">
             <SearchFilters filters={filters} setFilters={setFilters} />
           </aside>
         )}
         {/* Listings/Results (split in mapView) */}
-        <main className={`flex-1 flex flex-col p-6 ${mapView ? 'w-1/2 max-w-[50vw]' : ''}`} style={mapView ? { minWidth: 0 } : {}}>
+        <main className={`flex-1 flex flex-col p-4 sm:p-6 ${mapView ? 'w-1/2 max-w-[50vw]' : ''}`} style={mapView ? { minWidth: 0 } : {}}>
           {/* Top Bar: Results count, Map View toggle, Sort By dropdown */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
-            <div className="text-2xl font-bold text-gray-800">{totalVenues} Results Found</div>
-            <div className="flex items-center gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6 gap-3 sm:gap-4">
+            <div className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-800">{totalVenues} Results Found</div>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
               {/* Map View Toggle */}
               <div className="flex items-center gap-2">
-                <span className="text-gray-700 font-medium">Map View</span>
+                <span className="text-gray-700 font-medium text-sm sm:text-base">Map View</span>
                 <button
-                  className={`w-10 h-6 rounded-full border-2 border-blue-400 flex items-center transition-colors duration-200 focus:outline-none bg-white ${mapView ? 'bg-blue-100' : ''}`}
+                  className={`w-8 h-5 sm:w-10 sm:h-6 rounded-full border-2 border-blue-400 flex items-center transition-colors duration-200 focus:outline-none bg-white ${mapView ? 'bg-blue-100' : ''}`}
                   onClick={() => setMapView(v => !v)}
                 >
-                  <span className={`w-4 h-4 bg-blue-400 rounded-full shadow transform transition-transform duration-200 ${mapView ? 'translate-x-4' : ''}`}></span>
+                  <span className={`w-3 h-3 sm:w-4 sm:h-4 bg-blue-400 rounded-full shadow transform transition-transform duration-200 ${mapView ? 'translate-x-3 sm:translate-x-4' : ''}`}></span>
                 </button>
               </div>
               {/* Sort By Dropdown */}
               <div className="flex items-center gap-2">
-                <span className="text-gray-700 font-medium">Sort By</span>
+                <span className="text-gray-700 font-medium text-sm sm:text-base">Sort By</span>
                 <select
-                  className="border rounded px-3 py-1 text-gray-700 font-semibold focus:outline-none"
+                  className="border rounded px-2 py-1 sm:px-3 text-gray-700 font-semibold focus:outline-none text-sm sm:text-base"
                   value={sortOption}
                   onChange={e => setSortOption(e.target.value)}
                 >
@@ -249,11 +249,11 @@ export default function BrowseContent() {
                 {venues.map((hall, idx) => (
                   <React.Fragment key={hall._id}>
                     <div
-                      className={`flex flex-col sm:flex-row items-stretch bg-white rounded-2xl shadow-md hover:shadow-2xl hover:scale-[1.01] hover:bg-gray-50 transition-all duration-200 overflow-hidden border border-gray-100 relative group mb-0 ${mapView ? 'p-2 gap-2 min-h-[120px]' : 'p-4 gap-4'}`}
+                      className={`flex flex-col sm:flex-row items-stretch bg-white rounded-2xl shadow-md hover:shadow-2xl hover:scale-[1.01] hover:bg-gray-50 transition-all duration-200 overflow-hidden border border-gray-100 relative group mb-0 ${mapView ? 'p-2 gap-2 min-h-[120px]' : 'p-3 sm:p-4 gap-3 sm:gap-4'}`}
                     >
                       {/* Main image and thumbnails */}
                       <div className={mapView ? "flex flex-row sm:flex-col w-32 sm:w-32 flex-shrink-0" : "flex flex-row sm:flex-col w-full sm:w-64 flex-shrink-0"}>
-                        <div className={mapView ? "relative w-24 sm:w-full h-20 sm:h-24" : "relative w-40 sm:w-full h-32 sm:h-40"}>
+                        <div className={mapView ? "relative w-24 sm:w-full h-20 sm:h-24" : "relative w-32 sm:w-40 md:w-full h-24 sm:h-32 md:h-40"}>
                           <Image
                             src={hall.images?.[imgIndices[idx]] || "/placeholder.jpg"}
                             alt={hall.name || "Venue"}
@@ -284,21 +284,21 @@ export default function BrowseContent() {
                         )}
                       </div>
                       {/* Details and actions */}
-                      <div className={mapView ? "flex-1 flex flex-col sm:flex-row justify-between p-2 gap-2" : "flex-1 flex flex-col sm:flex-row justify-between p-4 gap-4"}>
+                      <div className={mapView ? "flex-1 flex flex-col sm:flex-row justify-between p-2 gap-2" : "flex-1 flex flex-col sm:flex-row justify-between p-3 sm:p-4 gap-3 sm:gap-4"}>
                         {/* Center: Details */}
                         <div className="flex-1 min-w-0">
-                          <h3 className={`${mapView ? 'text-base font-semibold' : 'text-xl font-semibold'} text-gray-900 truncate mb-1`} title={hall.name}>
+                          <h3 className={`${mapView ? 'text-sm sm:text-base font-semibold' : 'text-lg sm:text-xl font-semibold'} text-gray-900 truncate mb-1`} title={hall.name}>
                             {hall.name ? hall.name.charAt(0).toUpperCase() + hall.name.slice(1) : "Venue Name"}
                           </h3>
                           {hall.description && !mapView && (
-                            <div className="text-sm text-gray-600 truncate mb-1">{hall.description}</div>
+                            <div className="text-xs sm:text-sm text-gray-600 truncate mb-1">{hall.description}</div>
                           )}
-                          <div className="text-sm text-gray-500 flex items-center gap-1 mb-1">
-                            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a2 2 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0z" /></svg>
-                            {hall.location?.address ? hall.location.address.charAt(0).toUpperCase() + hall.location.address.slice(1) : (hall.location?.city ? hall.location.city.charAt(0).toUpperCase() + hall.location.city.slice(1) : "Location not specified")}
+                          <div className="text-xs sm:text-sm text-gray-500 flex items-center gap-1 mb-1">
+                            <svg className="w-3 h-3 sm:w-4 sm:h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a2 2 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0z" /></svg>
+                            <span className="truncate">{hall.location?.address ? hall.location.address.charAt(0).toUpperCase() + hall.location.address.slice(1) : (hall.location?.city ? hall.location.city.charAt(0).toUpperCase() + hall.location.city.slice(1) : "Location not specified")}</span>
                             {/* Map link */}
                             {hall.location?.address && (
-                              <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(hall.location.address)}`} target="_blank" rel="noopener noreferrer" className="ml-2 text-primary-600 underline text-xs">View on Map</a>
+                              <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(hall.location.address)}`} target="_blank" rel="noopener noreferrer" className="ml-2 text-primary-600 underline text-xs flex-shrink-0">View on Map</a>
                             )}
                           </div>
                           {/* Capacity, Hall Type, Event Types, Contact, Catering, Parking */}
@@ -347,9 +347,9 @@ export default function BrowseContent() {
                           </div>
                         </div>
                         {/* Right: Price and actions */}
-                        <div className={`flex flex-col items-end justify-between ${mapView ? 'min-w-[100px] gap-1' : 'min-w-[160px] gap-2'}`}>
+                        <div className={`flex flex-col items-end justify-between ${mapView ? 'min-w-[100px] gap-1' : 'min-w-[140px] sm:min-w-[160px] gap-2'}`}>
                           <div className="flex flex-col items-end">
-                            <span className={mapView ? "text-base font-bold text-primary-700" : "text-2xl font-bold text-primary-700"}>
+                            <span className={mapView ? "text-sm sm:text-base font-bold text-primary-700" : "text-lg sm:text-xl lg:text-2xl font-bold text-primary-700"}>
                               {typeof hall.price === 'number'
                                 ? `₹${(hall.price + (hall.price * (typeof hall.platformFeePercent === 'number' ? hall.platformFeePercent : 10) / 100)).toLocaleString('en-IN')}`
                                 : (typeof hall.price === 'string' && hall.price.replace(/[^\d]/g, '').length > 0
@@ -358,26 +358,26 @@ export default function BrowseContent() {
                             </span>
                             {/* Example discount/strike-through price */}
                             {hall.originalPrice && hall.originalPrice > hall.price && (
-                              <span className={mapView ? "text-gray-400 line-through text-xs" : "text-gray-400 line-through text-sm"}>₹{hall.originalPrice.toLocaleString('en-IN')}</span>
+                              <span className={mapView ? "text-gray-400 line-through text-xs" : "text-gray-400 line-through text-xs sm:text-sm"}>₹{hall.originalPrice.toLocaleString('en-IN')}</span>
                             )}
                             {/* Example discount percent */}
                             {hall.originalPrice && hall.originalPrice > hall.price && (
-                              <span className={mapView ? "text-green-600 text-xs font-semibold" : "text-green-600 text-sm font-semibold"}>{Math.round(100 - (hall.price / hall.originalPrice) * 100)}% off</span>
+                              <span className={mapView ? "text-green-600 text-xs font-semibold" : "text-green-600 text-xs sm:text-sm font-semibold"}>{Math.round(100 - (hall.price / hall.originalPrice) * 100)}% off</span>
                             )}
                             {/* Taxes/fees info */}
-                            <span className={mapView ? "text-[10px] text-gray-500" : "text-xs text-gray-500"}>+ taxes & fees</span>
+                            <span className={mapView ? "text-[10px] text-gray-500" : "text-[10px] sm:text-xs text-gray-500"}>+ taxes & fees</span>
                           </div>
-                          <div className="flex flex-row gap-1 w-full sm:w-auto sm:justify-end">
-                            <button className={mapView ? "btn-primary rounded-lg px-2 py-1 text-xs font-semibold shadow-sm w-full sm:w-auto" : "btn-primary rounded-lg px-4 py-2 text-sm font-semibold shadow-sm w-full sm:w-auto"}
+                          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto sm:justify-end">
+                            <button className={mapView ? "btn-primary rounded-lg px-2 py-1 text-xs font-semibold shadow-sm w-full sm:w-auto" : "btn-primary rounded-lg px-3 py-2 sm:px-4 sm:py-2 text-xs sm:text-sm font-semibold shadow-sm w-full sm:w-auto"}
                               onClick={() => router.push(`/halls/${hall._id}`)}
                             >
                               View Details
                             </button>
-                            <button className={mapView ? "rounded-lg px-2 py-1 text-xs font-semibold bg-green-100 text-green-700 hover:bg-green-200 transition-all w-full sm:w-auto" : "rounded-lg px-3 py-2 text-sm font-semibold bg-green-100 text-green-700 hover:bg-green-200 transition-all w-full sm:w-auto"}
+                            <button className={mapView ? "rounded-lg px-2 py-1 text-xs font-semibold bg-green-100 text-green-700 hover:bg-green-200 transition-all w-full sm:w-auto" : "rounded-lg px-3 py-2 text-xs sm:text-sm font-semibold bg-green-100 text-green-700 hover:bg-green-200 transition-all w-full sm:w-auto"}
                               onClick={() => {
                                 const date = filters.dateRangeStart || '';
                                 const guests = filters.capacity || '';
-                                router.push(`/halls/${hall._id}/book${date || guests ? `?${date ? `date=${encodeURIComponent(date)}` : ''}${date && guests ? '&' : ''}${guests ? `guests=${encodeURIComponent(guests)}` : ''}` : ''}`);
+                                router.push(`/halls/${hall._id}/book${date || guests ? `?${date ? `date=${encodeURIComponent(date)}` : ''}${date && guests ? '&' : ''}${guests ? `guests=${encodeURIComponent(guests)}` : ''}` : ''}`); 
                               }}
                             >Book Now</button>
                           </div>

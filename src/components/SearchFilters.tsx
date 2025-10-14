@@ -200,23 +200,23 @@ export default function SearchFilters({ filters, setFilters }: SearchFiltersProp
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6 lg:sticky lg:top-4 relative">
+    <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 lg:sticky lg:top-4 relative">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-lg font-bold text-gray-800">Filters</h2>
+        <h2 className="text-base sm:text-lg font-bold text-gray-800">Filters</h2>
         <button
           onClick={handleClearAll}
-          className="text-sm text-primary-600 hover:underline ml-auto"
+          className="text-xs sm:text-sm text-primary-600 hover:underline ml-auto"
         >
           Clear All
         </button>
       </div>
 
-      <div className={`space-y-6 ${isOpen ? 'block' : 'hidden lg:block'}`}>
+      <div className={`space-y-4 sm:space-y-6 ${isOpen ? 'block' : 'hidden lg:block'}`}>
         {/* Location (collapsible) */}
         <div role="region" aria-labelledby="filter-location-label">
           <button
             type="button"
-            className="w-full flex justify-between items-center py-2"
+            className="w-full flex justify-between items-center py-2 text-sm sm:text-base"
             onClick={() => toggleSection('location')}
             aria-expanded={openSections.location}
             aria-controls="filter-location-panel"
