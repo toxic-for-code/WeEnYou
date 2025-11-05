@@ -18,15 +18,16 @@ export async function GET(
     await connectToDatabase();
     
     // Find vendors who have services in this city (case-insensitive search)
+    // Note: Service model uses 'city' field directly, not 'location.city'
     const services = await Service.find({
       $or: [
-        { 'location.city': { $regex: new RegExp(`^${normalizedCity}$`, 'i') } },
-        { 'location.city': normalizedCity }
+        { city: { $regex: new RegExp(`^${normalizedCity}$`, 'i') } },
+        { city: normalizedCity }
       ],
       status: 'active'
-    }).select('userId').lean();
+    }).select('providerId').lean();
     
-    const vendorIds = [...new Set(services.map(service => service.userId.toString()))];
+    const vendorIds = Array.from(new Set(services.map(service => service.providerId?.toString()).filter(Boolean)));
     
     const vendors = await User.find({
       _id: { $in: vendorIds },
