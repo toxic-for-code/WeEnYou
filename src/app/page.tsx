@@ -179,7 +179,7 @@ export default function Home() {
       <nav className="sticky top-0 z-40 flex items-center justify-between px-2 py-2 bg-white/95 shadow relative backdrop-blur-md">
         <div className="flex items-center gap-3">
           <Link href="/">
-            <Image src="/logo.png" alt="WeEnYou Logo" width={100} height={48} className="object-contain cursor-pointer" style={{ filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.25))' }} />
+            <Image src="/logo.png" alt="WeEnYou Logo" width={100} height={48} className="object-contain cursor-pointer h-auto" style={{ filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.25))' }} />
           </Link>
         </div>
         

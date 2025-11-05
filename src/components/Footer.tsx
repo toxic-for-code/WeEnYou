@@ -4,98 +4,6 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 
-const genericVenues = [
-  { name: 'Banquet Halls', href: 'banquet-halls' },
-  { name: 'Wedding Lawns', href: 'wedding-lawns' },
-  { name: 'Resorts', href: 'resorts' },
-  { name: 'Party Halls', href: 'party-halls' },
-];
-
-const genericVendors = [
-  { name: 'Caterers', href: 'caterers' },
-  { name: 'Decorators', href: 'decorators' },
-  { name: 'Photographers', href: 'photographers' },
-  { name: 'DJs', href: 'djs' },
-];
-
-const footerData = [
-  {
-    city: 'Mumbai',
-    venues: [
-      { name: 'Banquet Halls', href: '/mumbai/banquet-halls' },
-      { name: 'Wedding Lawns', href: '/mumbai/wedding-lawns' },
-      { name: 'Resorts', href: '/mumbai/resorts' },
-      { name: 'Party Halls', href: '/mumbai/party-halls' },
-    ],
-    vendors: genericVendors.map(v => ({ name: v.name, href: `/mumbai/${v.href}` })),
-  },
-  {
-    city: 'Delhi NCR',
-    venues: [
-      { name: 'Banquet Halls', href: '/delhi/banquet-halls' },
-      { name: 'Wedding Lawns', href: '/delhi/wedding-lawns' },
-      { name: 'Resorts', href: '/delhi/resorts' },
-      { name: 'Party Halls', href: '/delhi/party-halls' },
-    ],
-    vendors: genericVendors.map(v => ({ name: v.name, href: `/delhi/${v.href}` })),
-  },
-  {
-    city: 'Patna',
-    venues: [
-      { name: 'Banquet Halls', href: '/patna/banquet-halls' },
-      { name: 'Wedding Lawns', href: '/patna/wedding-lawns' },
-      { name: 'Resorts', href: '/patna/resorts' },
-      { name: 'Party Halls', href: '/patna/party-halls' },
-    ],
-    vendors: genericVendors.map(v => ({ name: v.name, href: `/patna/${v.href}` })),
-  },
-  {
-    city: 'Udaipur',
-    venues: genericVenues.map(v => ({ name: v.name, href: `/udaipur/${v.href}` })),
-    vendors: genericVendors.map(v => ({ name: v.name, href: `/udaipur/${v.href}` })),
-  },
-  {
-    city: 'Jaipur',
-    venues: genericVenues.map(v => ({ name: v.name, href: `/jaipur/${v.href}` })),
-    vendors: genericVendors.map(v => ({ name: v.name, href: `/jaipur/${v.href}` })),
-  },
-  {
-    city: 'Goa',
-    venues: genericVenues.map(v => ({ name: v.name, href: `/goa/${v.href}` })),
-    vendors: genericVendors.map(v => ({ name: v.name, href: `/goa/${v.href}` })),
-  },
-  {
-    city: 'Mussoorie',
-    venues: genericVenues.map(v => ({ name: v.name, href: `/mussoorie/${v.href}` })),
-    vendors: genericVendors.map(v => ({ name: v.name, href: `/mussoorie/${v.href}` })),
-  },
-  {
-    city: 'Kerala',
-    venues: genericVenues.map(v => ({ name: v.name, href: `/kerala/${v.href}` })),
-    vendors: genericVendors.map(v => ({ name: v.name, href: `/kerala/${v.href}` })),
-  },
-  {
-    city: 'Hyderabad',
-    venues: genericVenues.map(v => ({ name: v.name, href: `/hyderabad/${v.href}` })),
-    vendors: genericVendors.map(v => ({ name: v.name, href: `/hyderabad/${v.href}` })),
-  },
-  {
-    city: 'Bengaluru',
-    venues: genericVenues.map(v => ({ name: v.name, href: `/bengaluru/${v.href}` })),
-    vendors: genericVendors.map(v => ({ name: v.name, href: `/bengaluru/${v.href}` })),
-  },
-  {
-    city: 'Kolkata',
-    venues: genericVenues.map(v => ({ name: v.name, href: `/kolkata/${v.href}` })),
-    vendors: genericVendors.map(v => ({ name: v.name, href: `/kolkata/${v.href}` })),
-  },
-  {
-    city: 'Ahmedabad',
-    venues: genericVenues.map(v => ({ name: v.name, href: `/ahmedabad/${v.href}` })),
-    vendors: genericVendors.map(v => ({ name: v.name, href: `/ahmedabad/${v.href}` })),
-  },
-];
-
 const socialLinks = [
   { href: 'https://facebook.com', label: 'Facebook', icon: '📘' },
   { href: 'https://twitter.com', label: 'Twitter', icon: '🐦' },
@@ -113,42 +21,7 @@ export default function Footer() {
   const pathname = usePathname();
   return (
     <footer className="relative w-full bg-black text-white pt-8 sm:pt-12 pb-6 sm:pb-8 mt-8 sm:mt-12 border-t border-gray-800">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6">
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4 sm:gap-6">
-          {footerData.map((city) => (
-            <div key={city.city} className="min-w-[100px] sm:min-w-[110px] max-w-[140px]">
-              <h3 className="font-bold text-sm sm:text-base mb-2">{city.city}</h3>
-              <div className="mb-1">
-                <h4 className="font-semibold text-xs mb-0.5 uppercase tracking-wide text-gray-400">Venues</h4>
-                <ul className="space-y-0.5">
-                  {city.venues.map((venue) => (
-                    <li key={venue.name}>
-                      <Link href={venue.href} className="text-xs text-gray-200 hover:underline">{venue.name}</Link>
-                    </li>
-                  ))}
-                  <li>
-                    <Link href={`/${city.city.toLowerCase().replace(/\s+/g, '')}/venues`} className="text-xs text-gray-200 hover:underline font-bold">All Venues in {city.city}</Link>
-                  </li>
-                </ul>
-              </div>
-              <div>
-                <h4 className="font-semibold text-xs mb-0.5 uppercase tracking-wide text-gray-400">Vendors</h4>
-                <ul className="space-y-0.5">
-                  {city.vendors.map((vendor) => (
-                    <li key={vendor.name}>
-                      <Link href={vendor.href} className="hover:underline text-gray-200 text-xs">{vendor.name}</Link>
-                    </li>
-                  ))}
-                  <li>
-                    <Link href={`/${city.city.toLowerCase().replace(/\s+/g, '')}/vendors`} className="text-xs text-gray-200 hover:underline font-bold">All Vendors in {city.city}</Link>
-                  </li>
-                </ul>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 mt-6 sm:mt-10 flex flex-col md:flex-row justify-between items-center gap-4 sm:gap-6 border-t border-gray-800 pt-4 sm:pt-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col md:flex-row justify-between items-center gap-4 sm:gap-6 pt-4 sm:pt-6">
         <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 md:gap-8 text-xs sm:text-sm text-center sm:text-left">
           <Link href="/about-us" className="hover:underline">About</Link>
           <Link href="/help" className="hover:underline">Contact</Link>
@@ -172,7 +45,7 @@ export default function Footer() {
         </div>
       </div>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 mt-6 sm:mt-8 flex flex-col items-center gap-2">
-        <Image src="/logo.png" alt="WeEnYou Logo" width={200} height={64} className="w-[180px] h-auto sm:w-[220px] mb-2" style={{ filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.25))' }} />
+        <Image src="/logo.png" alt="WeEnYou Logo" width={200} height={64} className="w-[180px] sm:w-[220px] mb-2" style={{ filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.25))', height: 'auto' }} />
         <span className="text-xs text-gray-400 text-center">Making every event memorable. Your trusted event partner.</span>
       </div>
       <div className="text-center text-xs text-gray-500 mt-4 sm:mt-6 px-4 sm:px-6">&copy; {new Date().getFullYear()} WeEnYou. All rights reserved.</div>
