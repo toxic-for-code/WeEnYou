@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+export const dynamic = 'force-dynamic';
 import { connectDB } from '@/lib/db';
 import PlanEvent from '@/models/PlanEvent';
 import User from '@/models/User';
@@ -13,4 +14,4 @@ export async function GET(req: NextRequest) {
   const manager = await User.findById(event.event_manager_id).lean();
   if (!manager) return NextResponse.json({ manager: null });
   return NextResponse.json({ manager: { name: manager.name, email: manager.email, phone: manager.phone } });
-} 
+}

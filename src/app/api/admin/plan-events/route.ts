@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+export const dynamic = 'force-dynamic';
 import { connectDB } from '@/lib/db';
 import PlanEvent from '@/models/PlanEvent';
 import User from '@/models/User';
@@ -14,4 +15,4 @@ export async function GET(req: NextRequest) {
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
-} 
+}

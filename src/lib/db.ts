@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 
 const MONGODB_URI = process.env.MONGODB_URI;
+const MONGODB_DB_NAME = process.env.MONGODB_DB_NAME;
 
 if (!MONGODB_URI) {
   throw new Error('Please define the MONGODB_URI environment variable inside .env');
@@ -27,9 +28,14 @@ export async function connectDB() {
   }
 
   if (!cached.promise) {
-    const opts = {
+    const opts: any = {
       bufferCommands: false,
     };
+
+    // Allow overriding the database name via environment variable
+    if (MONGODB_DB_NAME) {
+      opts.dbName = MONGODB_DB_NAME;
+    }
 
     cached.promise = mongoose.connect(MONGODB_URI!, opts);
   }
@@ -45,5 +51,5 @@ export async function connectDB() {
 }
 
 // Alias for backward compatibility
-export const connectToDatabase = connectDB; 
+export const connectToDatabase = connectDB;
  
