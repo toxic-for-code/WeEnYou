@@ -7,8 +7,8 @@ export async function POST(req: NextRequest) {
   await connectDB();
   try {
     const { city, guests, services = [] } = await req.json();
-    // Find halls in the selected city
-    const halls = await Hall.find({ city, status: 'active' }).lean();
+    // Find halls in the selected city (match Hall schema's location.city)
+    const halls = await Hall.find({ 'location.city': city, status: 'active' }).lean();
     // Find services in the selected city
     const serviceDocs = await Service.find({ city, status: 'active' }).lean();
 
@@ -46,4 +46,4 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
-} 
+}

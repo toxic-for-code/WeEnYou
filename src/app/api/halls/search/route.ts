@@ -56,6 +56,7 @@ function haversine(lat1, lng1, lat2, lng2) {
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
+    const q = searchParams.get('q')?.trim();
     const city = searchParams.get('city')?.trim();
     const useMyLocation = searchParams.get('useMyLocation') === 'true';
     const lng = parseFloat(searchParams.get('lng') || '');
@@ -69,18 +70,11 @@ export async function GET(req: Request) {
 
     await connectDB();
 
-    if (!city && !(useMyLocation && !isNaN(lat) && !isNaN(lng))) {
-      return NextResponse.json({
-        venues: [],
-        pagination: { total: 0, page, limit, pages: 1 }
-      });
-    }
-
     let query: any = { status: 'active' };
 
     // 1. Proximity search if 'Near Me' is selected
     if (useMyLocation && !isNaN(lat) && !isNaN(lng)) {
-      query.geo = {
+      query['location.coordinates'] = {
         $near: {
           $geometry: { type: 'Point', coordinates: [lng, lat] },
           $maxDistance: 10000 // 10km
@@ -156,6 +150,138 @@ export async function GET(req: Request) {
       // Pagination logic (unchanged)
       const total = venues.length;
       const paginatedVenues = venues.slice(skip, skip + limit);
+      return NextResponse.json({
+        venues: paginatedVenues,
+        pagination: {
+          total,
+          page,
+          limit,
+          pages: Math.ceil(total / limit)
+        }
+      });
+    }
+
+    // 2b. Text search fallback when `q` is provided without city
+    if (!city && q) {
+      // Build a fresh query with text search
+      let textQuery: any = { status: 'active', $text: { $search: q } };
+
+      // 3. Capacity filter
+      if (minCapacity) {
+        textQuery.capacity = { $gte: minCapacity };
+      }
+
+      // 4. Date availability filter
+      if (startDate && endDate) {
+        const from = new Date(startDate);
+        const to = new Date(endDate);
+        textQuery.availability = {
+          $not: {
+            $elemMatch: {
+              from: { $lte: to },
+              to: { $gte: from }
+            }
+          }
+        };
+      }
+
+      // 5. Price range filter
+      const priceRange = searchParams.get('priceRange');
+      if (priceRange) {
+        if (priceRange.endsWith('+')) {
+          const min = parseInt(priceRange.replace('+', ''));
+          if (!isNaN(min)) {
+            textQuery.price = { ...(textQuery.price || {}), $gte: min };
+          }
+        } else if (priceRange.includes('-')) {
+          const [min, max] = priceRange.split('-').map(s => parseInt(s));
+          if (!isNaN(min) && !isNaN(max)) {
+            textQuery.price = { ...(textQuery.price || {}), $gte: min, $lte: max };
+          }
+        }
+      }
+
+      // 6. Amenities filter
+      const amenitiesParam = searchParams.get('amenities');
+      if (amenitiesParam) {
+        const amenitiesArr = amenitiesParam.split(',').map(a => a.trim()).filter(Boolean);
+        if (amenitiesArr.length > 0) {
+          textQuery.amenities = { $all: amenitiesArr };
+        }
+      }
+
+      // 7. Minimum rating filter
+      const minRating = parseFloat(searchParams.get('minRating') || '');
+      if (!isNaN(minRating)) {
+        textQuery.$or = [
+          { averageRating: { $gte: minRating } },
+          { rating: { $gte: minRating } }
+        ];
+      }
+
+      // 8. Date range filter (exclude halls with bookings or blocked by owner)
+      if (startDate && endDate) {
+        const from = new Date(startDate);
+        const to = new Date(endDate);
+        const conflictingBookings: any[] = await Booking.find({
+          status: { $in: ['confirmed', 'pending'] },
+          $or: [
+            { startDate: { $lte: to }, endDate: { $gte: from } },
+          ],
+        }).select('hallId');
+        const bookedHallIds = conflictingBookings.map(b => b.hallId);
+        textQuery._id = textQuery._id || {};
+        if (bookedHallIds.length > 0) {
+          textQuery._id.$nin = bookedHallIds;
+        }
+        textQuery['availability'] = {
+          $not: {
+            $elemMatch: {
+              date: { $gte: from, $lte: to },
+              isAvailable: false
+            }
+          }
+        };
+      }
+
+      let venues = await Hall.find(textQuery).lean() as any[];
+
+      // Attach geo for front-end map compatibility and compute distance if applicable
+      venues = venues.map(venue => {
+        const coords = venue?.location?.coordinates?.coordinates;
+        let distance = 0;
+        if (useMyLocation && Array.isArray(coords)) {
+          const [lng2, lat2] = coords;
+          distance = haversine(lat, lng, lat2, lng2);
+        }
+        const score =
+          (venue.rating || 0) * 0.4 +
+          (venue.popularityScore || 0) * 0.3 +
+          (useMyLocation && distance > 0 ? (1 / distance) * 0.3 : 0);
+        const geo = Array.isArray(coords) ? { coordinates: coords } : undefined;
+        return { ...venue, distance, score, geo };
+      });
+
+      // Sort venues based on the 'sort' parameter
+      const sort = searchParams.get('sort') || 'popularity';
+      if (sort === 'price-asc') {
+        venues.sort((a, b) => (a.price ?? Infinity) - (b.price ?? Infinity));
+      } else if (sort === 'price-desc') {
+        venues.sort((a, b) => (b.price ?? -Infinity) - (a.price ?? -Infinity));
+      } else if (sort === 'rating-desc') {
+        venues.sort((a, b) => (b.averageRating ?? b.rating ?? 0) - (a.averageRating ?? a.rating ?? 0));
+      } else {
+        venues.sort((a, b) =>
+          b.score - a.score ||
+          b.rating - a.rating ||
+          b.popularityScore - a.popularityScore ||
+          a.distance - b.distance
+        );
+      }
+
+      const total = venues.length;
+      const paginatedVenues = venues.slice(skip, skip + limit);
+
       return NextResponse.json({
         venues: paginatedVenues,
         pagination: {
@@ -284,16 +410,18 @@ export async function GET(req: Request) {
     console.log('Venue names and capacities:', venues.map(v => ({ name: v.name, capacity: v.capacity })));
 
     venues = venues.map(venue => {
+      const coords = venue?.location?.coordinates?.coordinates;
       let distance = 0;
-      if (useMyLocation && venue.geo && Array.isArray(venue.geo.coordinates)) {
-        const [lng2, lat2] = venue.geo.coordinates;
+      if (useMyLocation && Array.isArray(coords)) {
+        const [lng2, lat2] = coords;
         distance = haversine(lat, lng, lat2, lng2);
       }
       const score =
         (venue.rating || 0) * 0.4 +
         (venue.popularityScore || 0) * 0.3 +
         (useMyLocation && distance > 0 ? (1 / distance) * 0.3 : 0);
-      return { ...venue, distance, score };
+      const geo = Array.isArray(coords) ? { coordinates: coords } : undefined;
+      return { ...venue, distance, score, geo };
     });
 
     // Sort venues based on the 'sort' parameter
@@ -333,4 +461,4 @@ export async function GET(req: Request) {
       { status: 500 }
     );
   }
-} 
+}
