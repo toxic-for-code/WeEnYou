@@ -45,7 +45,7 @@ export default function Footer() {
         </div>
       </div>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 mt-6 sm:mt-8 flex flex-col items-center gap-2">
-        <Image src="/logo.png" alt="WeEnYou Logo" width={200} height={64} className="w-[180px] sm:w-[220px] mb-2" style={{ filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.25))', height: 'auto' }} />
+        <Image src="/logo.png" alt="WeEnYou Logo" width={200} height={64} className="mb-2" style={{ filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.25))' }} />
         <span className="text-xs text-gray-400 text-center">Making every event memorable. Your trusted event partner.</span>
       </div>
       <div className="text-center text-xs text-gray-500 mt-4 sm:mt-6 px-4 sm:px-6">&copy; {new Date().getFullYear()} WeEnYou. All rights reserved.</div>
@@ -70,4 +70,4 @@ export default function Footer() {
       )}
     </footer>
   );
-} 
+}

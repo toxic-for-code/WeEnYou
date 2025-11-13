@@ -126,6 +126,7 @@ export default function HallList({ selectedHall, onHallSelect, filters }: HallLi
               alt={hall.name}
               fill
               className="object-cover"
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
             />
             {session?.user && (
               <button
@@ -181,5 +182,5 @@ export default function HallList({ selectedHall, onHallSelect, filters }: HallLi
       ))}
     </div>
   );
-} 
+}
  
