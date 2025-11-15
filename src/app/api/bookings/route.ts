@@ -21,7 +21,11 @@ export async function POST(req: Request) {
       );
     }
 
-    const { hallId, startDate, endDate, guests, specialRequests, services = [], servicesTotal = 0, totalAmount } = await req.json();
+    // Read full body first to allow optional nested user payload (e.g., { user: { phone } })
+    const body = await req.json();
+    const { hallId, startDate, endDate, guests, specialRequests, services = [], servicesTotal = 0, totalAmount } = body;
+    const userPayload = body?.user || {};
+    const phoneFromBody: string | undefined = typeof userPayload?.phone === 'string' ? userPayload.phone : (typeof body?.phone === 'string' ? body.phone : undefined);
 
     // Removed verbose request body logging
 
@@ -94,6 +98,7 @@ export async function POST(req: Request) {
 
     // Fetch user info for snapshot (phone may not be in session)
     const userDoc = await User.findById(session.user.id).select('phone name email');
+    const normalizedPhone = (phoneFromBody && phoneFromBody.trim()) || undefined;
 
     // Create booking
     const booking = await Booking.create({
@@ -106,7 +111,8 @@ export async function POST(req: Request) {
       specialRequests,
       userName: session.user.name || userDoc?.name,
       userEmail: session.user.email || userDoc?.email,
-      userPhone: userDoc?.phone,
+      // Persist phone entered during booking if provided; otherwise fallback to user's saved phone
+      userPhone: normalizedPhone ?? userDoc?.phone,
       totalPrice, // This now includes all fees if provided
       status: 'pending_advance',
       advancePaid: false,
