@@ -47,6 +47,11 @@ interface Booking {
   endDate: string;
   totalPrice: number;
   status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
+  // Optional hint flag if present from backend
+  advancePaid?: boolean;
+  // Payment amounts from DB
+  advanceAmountPaid?: number;
+  remainingAmount?: number;
 }
 
 interface DashboardStats {
@@ -67,6 +72,12 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [notifications, setNotifications] = useState<any>(null);
   const [supportRequests, setSupportRequests] = useState<any[]>([]);
+  const [summaries, setSummaries] = useState<Record<string, {
+    advancePaid: boolean;
+    advanceAmountPaid: number;
+    remainingAmount?: number;
+    remainingPaymentStatus?: 'pending' | 'paid';
+  }>>({});
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -105,6 +116,41 @@ export default function AdminDashboard() {
       fetchData();
     }
   }, [session]);
+
+  // Fetch payment summaries for recent bookings when they load
+  useEffect(() => {
+    const fetchSummaries = async () => {
+      try {
+        const entries = await Promise.all(
+          recentBookings.map(async (booking) => {
+            try {
+              const res = await fetch('/api/admin/bookings/payment-summary', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: booking.userId._id, hallId: booking.hallId?._id })
+              });
+              const data = await res.json();
+              return [booking._id, data?.summary ?? null] as const;
+            } catch (e) {
+              console.error('Summary fetch failed for booking', booking._id, e);
+              return [booking._id, null] as const;
+            }
+          })
+        );
+        const map: Record<string, any> = {};
+        entries.forEach(([id, data]) => {
+          if (data) map[id] = data;
+        });
+        setSummaries(map);
+      } catch (error) {
+        console.error('Error fetching payment summaries:', error);
+      }
+    };
+
+    if (recentBookings && recentBookings.length > 0) {
+      fetchSummaries();
+    }
+  }, [recentBookings]);
 
   const fetchDashboardStats = async () => {
     try {
@@ -397,6 +443,33 @@ export default function AdminDashboard() {
                           <p className="text-sm text-gray-500">
                             {booking.userId.name}
                           </p>
+                          {/* Payment summary badges */}
+                          <div className="mt-1 flex items-center gap-2">
+                            {(() => {
+                              const summary = summaries[booking._id];
+                              const advancePaid = summary?.advancePaid ?? booking.advancePaid ?? false;
+                              const advancePaidAmt = typeof summary?.advanceAmountPaid === 'number'
+                                ? summary!.advanceAmountPaid
+                                : (typeof booking.advanceAmountPaid === 'number' ? booking.advanceAmountPaid : 0);
+                              const remainingDb = typeof booking.remainingAmount === 'number' ? booking.remainingAmount : undefined;
+                              const remainingSummary = typeof summary?.remainingAmount === 'number' ? summary!.remainingAmount : undefined;
+                              const remaining = summary?.remainingPaymentStatus === 'paid'
+                                ? 0
+                                : (remainingDb ?? remainingSummary ?? Math.max((booking.totalPrice ?? 0) - (advancePaidAmt || 0), 0));
+                              return (
+                                <>
+                                  <span
+                                    className={`px-2 py-1 text-xs font-medium rounded-full ${advancePaid ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}
+                                  >
+                                    Advance Paid: {advancePaid ? 'Yes' : 'No'}
+                                  </span>
+                                  <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
+                                    Remaining: {typeof remaining === 'number' ? `₹${remaining}` : '—'}
+                                  </span>
+                                </>
+                              );
+                            })()}
+                          </div>
                         </div>
                       </div>
                       <div className="text-right">
@@ -538,6 +611,33 @@ export default function AdminDashboard() {
                             {booking.status}
                           </span>
                         </div>
+                        {/* Payment summary badges */}
+                        <div className="mt-1 flex items-center gap-2">
+                          {(() => {
+                            const summary = summaries[booking._id];
+                            const advancePaid = summary?.advancePaid ?? booking.advancePaid ?? false;
+                            const advancePaidAmt = typeof summary?.advanceAmountPaid === 'number'
+                              ? summary!.advanceAmountPaid
+                              : (typeof booking.advanceAmountPaid === 'number' ? booking.advanceAmountPaid : 0);
+                            const remainingDb = typeof booking.remainingAmount === 'number' ? booking.remainingAmount : undefined;
+                            const remainingSummary = typeof summary?.remainingAmount === 'number' ? summary!.remainingAmount : undefined;
+                            const remaining = summary?.remainingPaymentStatus === 'paid'
+                              ? 0
+                              : (remainingDb ?? remainingSummary ?? Math.max((booking.totalPrice ?? 0) - (advancePaidAmt || 0), 0));
+                            return (
+                              <>
+                                <span
+                                  className={`px-2 py-1 text-xs font-medium rounded-full ${advancePaid ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}
+                                >
+                                  Advance Paid: {advancePaid ? 'Yes' : 'No'}
+                                </span>
+                                <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
+                                  Remaining: {typeof remaining === 'number' ? `₹${remaining}` : '—'}
+                                </span>
+                              </>
+                            );
+                          })()}
+                        </div>
                       </div>
                     </div>
                     <div className="text-right">
@@ -600,5 +700,5 @@ export default function AdminDashboard() {
       )}
     </div>
   );
-} 
+}
  

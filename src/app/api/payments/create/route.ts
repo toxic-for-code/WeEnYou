@@ -101,8 +101,8 @@ export async function POST(req: Request) {
     });
 
     // Save the Razorpay orderId in the booking for webhook lookup
-    const updateResult = await Booking.findByIdAndUpdate(bookingId, { $set: { orderId: order.id } });
-    console.log('Updated booking with orderId:', { bookingId, orderId: order.id, updateResult });
+    const updateResult = await Booking.findByIdAndUpdate(bookingId, { $set: { orderId: order.id } }, { new: true });
+    console.log('Updated booking with orderId:', { bookingId, orderId: order.id, updatedStatus: updateResult?.status, updatedAdvancePaid: updateResult?.advancePaid });
 
     return NextResponse.json({ order });
   } catch (error) {
@@ -112,5 +112,5 @@ export async function POST(req: Request) {
       { status: 500 }
     );
   }
-} 
+}
  

@@ -8,7 +8,7 @@ import Link from 'next/link';
 import { Dialog } from '@headlessui/react';
 import { encode as encodeQuery } from 'querystring';
 
-interface Booking {
+  interface Booking {
   _id: string;
   hallId: {
     _id: string;
@@ -27,11 +27,12 @@ interface Booking {
   startDate: string;
   endDate: string;
   totalPrice: number;
-  status: 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'pending_owner_confirmation' | 'pending_advance';
+  status: 'pending' | 'approved' | 'confirmed' | 'cancelled' | 'completed' | 'pending_owner_confirmation' | 'pending_advance';
   paymentStatus: 'pending' | 'paid' | 'refunded';
   createdAt: string;
   numberOfGuests: number;
-  specialRequests?: string;
+    specialRequests?: string;
+    ownerRemarks?: string;
   advancePaid?: boolean;
   finalPaymentStatus?: 'pending' | 'paid' | null;
   finalPaymentMethod?: 'online' | 'offline' | null;
@@ -70,6 +71,10 @@ export default function BookingDetails({ params }: { params: { id: string } }) {
   const [finalPayLoading, setFinalPayLoading] = useState(false);
   const [finalPayError, setFinalPayError] = useState<string | null>(null);
   const [finalPaySuccess, setFinalPaySuccess] = useState<string | null>(null);
+  const [summaryLoading, setSummaryLoading] = useState(false);
+  const [advancePaidAmt, setAdvancePaidAmt] = useState<number>(0);
+  const [remainingAmt, setRemainingAmt] = useState<number>(0);
+  const [autoAttempted, setAutoAttempted] = useState(false);
 
 
   useEffect(() => {
@@ -99,6 +104,52 @@ export default function BookingDetails({ params }: { params: { id: string } }) {
       fetchBooking();
     }
   }, [session, params.id, router]);
+
+  // Fetch payment summary (advance and remaining)
+  useEffect(() => {
+    const fetchSummary = async () => {
+      if (!booking) return;
+      try {
+        setSummaryLoading(true);
+        setAdvancePaidAmt(0);
+        setRemainingAmt(0);
+        const hallId = booking.hallId?._id;
+        const userId = typeof booking.userId === 'string' ? booking.userId : booking.userId?._id;
+        if (!hallId || !userId) {
+          const policyAdvance = booking.advancePaid ? Math.min(50000, (booking.totalPrice || 0) * 0.5) : 0;
+          setAdvancePaidAmt(policyAdvance);
+          setRemainingAmt(Math.max((booking.totalPrice || 0) - policyAdvance, 0));
+          setSummaryLoading(false);
+          return;
+        }
+        const res = await fetch('/api/admin/bookings/payment-summary', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId, hallId })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          const policyAdvance = booking.advancePaid ? Math.min(50000, (booking.totalPrice || 0) * 0.5) : 0;
+          setAdvancePaidAmt(policyAdvance);
+          setRemainingAmt(Math.max((booking.totalPrice || 0) - policyAdvance, 0));
+        } else {
+          const adv = typeof data?.summary?.advanceAmountPaid === 'number' ? data.summary.advanceAmountPaid : 0;
+          const rem = typeof data?.summary?.remainingAmount === 'number'
+            ? data.summary.remainingAmount
+            : Math.max((booking.totalPrice || 0) - adv, 0);
+          setAdvancePaidAmt(adv);
+          setRemainingAmt(rem);
+        }
+      } catch (e) {
+        const policyAdvance = booking.advancePaid ? Math.min(50000, (booking.totalPrice || 0) * 0.5) : 0;
+        setAdvancePaidAmt(policyAdvance);
+        setRemainingAmt(Math.max((booking.totalPrice || 0) - policyAdvance, 0));
+      } finally {
+        setSummaryLoading(false);
+      }
+    };
+    fetchSummary();
+  }, [booking]);
 
   // Fetch service bookings for this booking
   useEffect(() => {
@@ -327,26 +378,20 @@ export default function BookingDetails({ params }: { params: { id: string } }) {
     setFinalPayError(null);
     setFinalPaySuccess(null);
     try {
-      // Create Razorpay order for remaining amount
-      const advanceAmount = Math.min(50000, booking.totalPrice * 0.5);
-      const remaining = booking.totalPrice - advanceAmount;
-      const res = await fetch('/api/payments/create', {
+      // Initiate remaining payment order via backend
+      const res = await fetch('/api/payments/remaining/initiate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          bookingId: booking._id,
-          amount: remaining,
-          type: 'final',
-        }),
+        body: JSON.stringify({ bookingId: booking._id }),
       });
       const data = await res.json();
       if (!res.ok) {
-        setFinalPayError(data.error || 'Failed to create payment order');
+        setFinalPayError(data.error || 'Failed to initiate payment');
         setFinalPayLoading(false);
         return;
       }
-      const order = data.order;
-      // Load Razorpay script if not loaded
+
+      // Ensure Razorpay SDK is loaded
       if (!window.Razorpay) {
         await new Promise((resolve, reject) => {
           const script = document.createElement('script');
@@ -356,31 +401,31 @@ export default function BookingDetails({ params }: { params: { id: string } }) {
           document.body.appendChild(script);
         });
       }
-      // Open Razorpay checkout
+
       const rzp = new window.Razorpay({
-        key: "rzp_test_EvcFsJFi50khcp",
-        amount: order.amount,
-        currency: order.currency,
+        key: (process as any).env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_EvcFsJFi50khcp',
+        amount: data.amount,
+        currency: data.currency || 'INR',
         name: booking.hallId.name,
-        description: `Final payment for booking from ${new Date(booking.startDate).toLocaleDateString()} to ${new Date(booking.endDate).toLocaleDateString()}`,
-        order_id: order.id,
+        description: `Remaining payment for booking from ${new Date(booking.startDate).toLocaleDateString()} to ${new Date(booking.endDate).toLocaleDateString()}`,
+        order_id: data.orderId,
         handler: async function (response: any) {
-          // On payment success, update booking
-          const updateRes = await fetch(`/api/bookings/${booking._id}`, {
-            method: 'PATCH',
+          // Verify remaining payment; API expects BookingPayment id in bookingId field
+          const verifyRes = await fetch('/api/payments/verify-remaining-payment', {
+            method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              finalPaymentStatus: 'paid',
-              finalPaymentMethod: 'online',
-              paymentId: response.razorpay_payment_id,
+              bookingId: data.bookingPaymentId,
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
             }),
           });
-          const updateData = await updateRes.json();
-          if (updateRes.ok) {
-            setBooking(updateData.booking);
-            setFinalPaySuccess('Final payment successful!');
+          const verifyData = await verifyRes.json();
+          if (verifyRes.ok) {
+            setFinalPaySuccess('Remaining amount paid successfully.');
           } else {
-            setFinalPayError(updateData.error || 'Payment succeeded but failed to update booking.');
+            setFinalPayError(verifyData.error || 'Payment verification failed.');
           }
         },
         prefill: {
@@ -396,6 +441,20 @@ export default function BookingDetails({ params }: { params: { id: string } }) {
       setFinalPayLoading(false);
     }
   };
+
+  // Auto-open remaining payment when approved/confirmed and amount is due
+  useEffect(() => {
+    if (
+      !autoAttempted &&
+      booking &&
+      (booking.status === 'confirmed' || booking.status === 'approved') &&
+      (remainingAmt || 0) > 0
+    ) {
+      setAutoAttempted(true);
+      handleFinalPayNow();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [booking?.status, remainingAmt]);
 
   const handlePayOffline = async () => {
     if (!booking) return;
@@ -540,6 +599,14 @@ export default function BookingDetails({ params }: { params: { id: string } }) {
                   <p className="font-medium">₹{hallTotal}</p>
                 </div>
                 <div>
+                  <p className="text-sm text-gray-600">Advance Paid</p>
+                  <p className="font-medium">{summaryLoading ? 'Loading…' : `₹${(advancePaidAmt || 0).toLocaleString()}`}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Remaining</p>
+                  <p className="font-medium">{summaryLoading ? 'Loading…' : `₹${(remainingAmt || 0).toLocaleString()}`}</p>
+                </div>
+                <div>
                   <p className="text-sm text-gray-600">Booking Status</p>
                   <p
                     className={`font-medium ${
@@ -575,6 +642,12 @@ export default function BookingDetails({ params }: { params: { id: string } }) {
                 <div className="mt-6">
                   <p className="text-sm text-gray-600">Special Requests</p>
                   <p className="mt-1 text-gray-900">{booking.specialRequests}</p>
+                </div>
+              )}
+              {booking.ownerRemarks && (
+                <div className="mt-6">
+                  <p className="text-sm text-gray-600">Owner Remarks</p>
+                  <p className="mt-1 text-gray-900">{booking.ownerRemarks}</p>
                 </div>
               )}
               {/* Add to Calendar Links */}
@@ -732,10 +805,10 @@ export default function BookingDetails({ params }: { params: { id: string } }) {
               {rescheduleError && <p className="text-red-600 mt-2">{rescheduleError}</p>}
               {rescheduleSuccess && <p className="text-green-600 mt-2">{rescheduleSuccess}</p>}
               {/* Final Payment Options after owner confirmation */}
-              {booking && booking.status === 'confirmed' && booking.advancePaid && booking.finalPaymentStatus !== 'paid' && (
+              {booking && (booking.status === 'confirmed' || booking.status === 'approved') && booking.advancePaid && booking.finalPaymentStatus !== 'paid' && (
                 <div className="mt-4 p-4 bg-blue-50 border border-blue-300 rounded">
                   <h4 className="font-semibold mb-2">Booking confirmed! Please pay the remaining amount:</h4>
-                  <div className="mb-2 text-lg font-bold">Remaining: ₹{(booking.totalPrice - Math.min(50000, booking.totalPrice * 0.5)).toLocaleString()}</div>
+                  <div className="mb-2 text-lg font-bold">Remaining: ₹{(remainingAmt || Math.max(booking.totalPrice - Math.min(50000, booking.totalPrice * 0.5), 0)).toLocaleString()}</div>
                   <div className="flex flex-col sm:flex-row gap-2">
                     <button
                       onClick={handleFinalPayNow}

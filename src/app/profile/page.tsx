@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { getImageUrl } from '@/lib/imageUtils';
-import PlanEvent from '@/models/PlanEvent'; // (for type only, not used directly)
 
 const TABS = ["Upcoming", "Past", "Cancelled"];
 
@@ -223,6 +222,12 @@ export default function ProfilePage() {
     const [review, setReview] = useState({ rating: 5, comment: '' });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [summaryLoading, setSummaryLoading] = useState(false);
+    const [advancePaidAmt, setAdvancePaidAmt] = useState<number>(0);
+    const [remainingAmt, setRemainingAmt] = useState<number>(0);
+    const [paying, setPaying] = useState(false);
+    const [paySuccess, setPaySuccess] = useState('');
+    const [payError, setPayError] = useState('');
     if (!selectedBooking) return null;
 
     // Calendar event details
@@ -236,9 +241,138 @@ export default function ProfilePage() {
     const icsContent = `BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\nSUMMARY:${eventTitle}\nDTSTART:${startISO}\nDTEND:${endISO}\nDESCRIPTION:${eventDescription}\nLOCATION:${eventLocation}\nEND:VEVENT\nEND:VCALENDAR`;
     const icsUrl = `data:text/calendar;charset=utf-8,${encodeURIComponent(icsContent)}`;
 
-    // Totals (mocked for now)
+    // Totals
     const servicesTotal = selectedBooking.servicesTotal || 0;
     const grandTotal = (selectedBooking.totalPrice || 0) + servicesTotal;
+
+    // Read advance and remaining directly from booking document (DB)
+    useEffect(() => {
+      setSummaryLoading(true);
+      try {
+        const adv = typeof (selectedBooking as any)?.advanceAmountPaid === 'number'
+          ? (selectedBooking as any).advanceAmountPaid
+          : 0;
+        const remFromDb = typeof (selectedBooking as any)?.remainingAmount === 'number'
+          ? (selectedBooking as any).remainingAmount
+          : undefined;
+
+        const rem = typeof remFromDb === 'number'
+          ? remFromDb
+          : Math.max((selectedBooking as any)?.totalPrice || 0 - adv, 0);
+
+        setAdvancePaidAmt(adv);
+        setRemainingAmt(rem);
+      } finally {
+        setSummaryLoading(false);
+      }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectedBooking?._id]);
+
+    // Helper to ensure Razorpay script is present
+    const ensureRazorpay = async () => {
+      if (typeof window !== 'undefined' && (window as any).Razorpay) return true;
+      return new Promise<boolean>((resolve) => {
+        const script = document.createElement('script');
+        script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+        script.onload = () => resolve(true);
+        script.onerror = () => resolve(false);
+        document.body.appendChild(script);
+      });
+    };
+
+    const handlePayRemaining = async () => {
+      setPayError('');
+      setPaySuccess('');
+      setPaying(true);
+      try {
+        // Initiate remaining payment order
+        const res = await fetch('/api/payments/remaining/initiate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ bookingId: (selectedBooking as any)._id })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.error || 'Failed to initiate payment');
+        }
+
+        if (!data.orderId || !data.amount) {
+          throw new Error('Invalid payment response from server');
+        }
+
+        const ok = await ensureRazorpay();
+        if (!ok) {
+          throw new Error('Failed to load Razorpay payment gateway');
+        }
+
+        const razorpayKey = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
+        if (!razorpayKey) {
+          throw new Error('Razorpay key is not configured');
+        }
+
+        const options: any = {
+          key: razorpayKey,
+          amount: data.amount,
+          currency: data.currency || 'INR',
+          name: 'WeEnYou',
+          description: 'Remaining Amount Payment',
+          order_id: data.orderId,
+          prefill: {
+            name: (session?.user as any)?.name || '',
+            email: (session?.user as any)?.email || '',
+            contact: (session?.user as any)?.phone || '',
+          },
+          notes: { bookingId: (selectedBooking as any)._id, type: 'remaining' },
+          handler: async (resp: any) => {
+            try {
+              const verifyRes = await fetch('/api/payments/verify-remaining-payment', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  bookingId: data.bookingPaymentId, // API expects BookingPayment id
+                  razorpay_order_id: resp.razorpay_order_id,
+                  razorpay_payment_id: resp.razorpay_payment_id,
+                  razorpay_signature: resp.razorpay_signature,
+                }),
+              });
+              const verifyData = await verifyRes.json();
+              if (!verifyRes.ok) {
+                throw new Error(verifyData.error || 'Payment verification failed');
+              }
+              setPaySuccess('Remaining amount paid successfully!');
+              // Refresh booking data after successful payment
+              setTimeout(() => {
+                window.location.reload();
+              }, 2000);
+            } catch (err: any) {
+              setPayError(err.message || 'Failed to verify payment');
+            }
+          },
+          modal: {
+            ondismiss: () => {
+              setPaying(false);
+            },
+          },
+        };
+
+        const rzp = new (window as any).Razorpay(options);
+        rzp.on('payment.failed', (response: any) => {
+          console.error('Razorpay payment failed:', response);
+          const errorMsg = response.error?.description || response.error?.reason || 'Payment failed. Please try again.';
+          setPayError(`Payment failed: ${errorMsg}`);
+          setPaying(false);
+        });
+        rzp.on('payment.authorized', (response: any) => {
+          console.log('Payment authorized:', response);
+        });
+        rzp.open();
+      } catch (err: any) {
+        setPayError(err.message || 'Failed to start payment');
+        setPaying(false);
+      }
+    };
+
+    // Removed auto-open payment - user must manually click "Pay Remaining" button
 
     return (
       <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 overflow-y-auto">
@@ -337,15 +471,30 @@ export default function ProfilePage() {
                   <p className="text-gray-500">Guests</p>
                   <p className="font-semibold">{selectedBooking.guests || 'N/A'}</p>
                 </div>
-                <div>
-                  <p className="text-gray-500">Total</p>
-                  <p className="font-semibold">₹{selectedBooking.totalPrice || 0}</p>
+              <div>
+                <p className="text-gray-500">Total</p>
+                <p className="font-semibold">₹{selectedBooking.totalPrice || 0}</p>
+              </div>
+              {/* Owner Remarks */}
+              {selectedBooking?.ownerRemarks && (
+                <div className="mt-2 text-sm">
+                  <p className="text-gray-500">Owner Remarks</p>
+                  <p className="font-semibold text-gray-900">{selectedBooking.ownerRemarks}</p>
                 </div>
-                <div>
-                  <p className="text-gray-500">Status</p>
-                  <p className={`font-bold ${getStatusColor(selectedBooking.status)}`}>{getStatusDisplayText(selectedBooking.status)}</p>
-                </div>
-                <div>
+              )}
+              <div>
+                <p className="text-gray-500">Advance Paid</p>
+                <p className="font-semibold">{summaryLoading ? 'Loading…' : `₹${(advancePaidAmt || 0).toLocaleString()}`}</p>
+              </div>
+              <div>
+                <p className="text-gray-500">Remaining</p>
+                <p className="font-semibold">{summaryLoading ? 'Loading…' : `₹${(remainingAmt || 0).toLocaleString()}`}</p>
+              </div>
+              <div>
+                <p className="text-gray-500">Status</p>
+                <p className={`font-bold ${getStatusColor(selectedBooking.status)}`}>{getStatusDisplayText(selectedBooking.status)}</p>
+              </div>
+              <div>
                   <p className="text-gray-500">Payment</p>
                   <p className={`font-bold ${getPaymentStatusColor(selectedBooking.paymentStatus, selectedBooking.advancePaid)}`}>{getPaymentStatusDisplayText(selectedBooking.paymentStatus, selectedBooking.advancePaid)}</p>
                 </div>
@@ -385,6 +534,17 @@ export default function ProfilePage() {
           <div className="p-4 print:hidden flex gap-2 flex-wrap justify-between">
             <button className="btn-secondary text-base w-full py-2 font-semibold rounded-lg shadow-sm" onClick={() => setShowBookingModal(false)}>Close</button>
             <button className="btn-primary text-base w-full py-2 font-semibold rounded-lg shadow-sm" onClick={() => window.print()}>Download/Print</button>
+            {(selectedBooking?.status === 'confirmed' || selectedBooking?.status === 'approved') && (remainingAmt || 0) > 0 && (
+              <button
+                className="btn-primary text-base w-full py-2 font-semibold rounded-lg shadow-sm"
+                onClick={handlePayRemaining}
+                disabled={paying}
+              >
+                {paying ? 'Opening Payment…' : 'Pay Remaining'}
+              </button>
+            )}
+            {payError && <div className="text-red-600 text-sm w-full">{payError}</div>}
+            {paySuccess && <div className="text-green-600 text-sm w-full">{paySuccess}</div>}
           </div>
         </div>
       </div>
@@ -821,4 +981,4 @@ export default function ProfilePage() {
     </div>
     </div>
   );
-} 
+}

@@ -7,6 +7,7 @@ import Booking from '@/models/Booking';
 import Notification from '@/models/Notification';
 import Service from '@/models/Service';
 import ServiceBooking from '@/models/ServiceBooking';
+import User from '@/models/User';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,8 +23,7 @@ export async function POST(req: Request) {
 
     const { hallId, startDate, endDate, guests, specialRequests, services = [], servicesTotal = 0, totalAmount } = await req.json();
 
-    // Log the incoming request body for debugging
-    console.log('Booking request body:', { hallId, startDate, endDate, guests, specialRequests, services, servicesTotal });
+    // Removed verbose request body logging
 
     // Validate required fields
     if (!hallId || !startDate || !endDate || !guests) {
@@ -92,14 +92,21 @@ export async function POST(req: Request) {
     // Use totalAmount from frontend if provided, else fallback to hallPrice
     const totalPrice = typeof totalAmount === 'number' ? totalAmount : hallPrice;
 
+    // Fetch user info for snapshot (phone may not be in session)
+    const userDoc = await User.findById(session.user.id).select('phone name email');
+
     // Create booking
     const booking = await Booking.create({
       userId: session.user.id,
       hallId,
+      ownerId: hall.ownerId,
       startDate,
       endDate,
       guests,
       specialRequests,
+      userName: session.user.name || userDoc?.name,
+      userEmail: session.user.email || userDoc?.email,
+      userPhone: userDoc?.phone,
       totalPrice, // This now includes all fees if provided
       status: 'pending_advance',
       advancePaid: false,
@@ -195,5 +202,5 @@ export async function GET() {
       { status: 500 }
     );
   }
-} 
+}
  
