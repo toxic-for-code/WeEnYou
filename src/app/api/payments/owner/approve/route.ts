@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server';
-import connectToDB from '@/lib/db';
+import { connectDB } from '@/lib/db';
 import BookingPayment from '@/models/BookingPayment';
 import { razorpay } from '@/lib/razorpay';
 
 export async function POST(req: Request) {
   try {
-    await connectToDB();
+    await connectDB();
     const body = await req.json();
     const { bookingId } = body as { bookingId: string };
     if (!bookingId) return NextResponse.json({ error: 'Missing bookingId.' }, { status: 400 });
