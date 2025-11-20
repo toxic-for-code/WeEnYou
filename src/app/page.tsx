@@ -91,11 +91,35 @@ export default function Home() {
   ];
 
   useEffect(() => {
-    fetch('/api/halls/featured')
-      .then(res => res.json())
-      .then(data => setFeaturedHalls(data.halls || []))
-      .catch(() => setFeaturedHalls([]))
-      .finally(() => setLoadingHalls(false));
+    const fetchFeaturedHalls = async () => {
+      try {
+        setLoadingHalls(true);
+        const res = await fetch('/api/halls/featured');
+        
+        if (!res.ok) {
+          console.error('[Homepage] Featured halls API error:', res.status, res.statusText);
+          const errorData = await res.json().catch(() => ({}));
+          console.error('[Homepage] Error details:', errorData);
+          setFeaturedHalls([]);
+          return;
+        }
+        
+        const data = await res.json();
+        console.log('[Homepage] Featured halls response:', { 
+          count: data.halls?.length || 0, 
+          halls: data.halls?.map((h: any) => ({ id: h._id, name: h.name, featured: h.featured, status: h.status })) || []
+        });
+        
+        setFeaturedHalls(data.halls || []);
+      } catch (error) {
+        console.error('[Homepage] Failed to fetch featured halls:', error);
+        setFeaturedHalls([]);
+      } finally {
+        setLoadingHalls(false);
+      }
+    };
+    
+    fetchFeaturedHalls();
   }, []);
 
   // Auto-scroll carousel
@@ -389,7 +413,7 @@ export default function Home() {
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H5a2 2 0 01-2-2V5zm0 8a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H5a2 2 0 01-2-2v-2zm8-8a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zm0 8a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2zm8-8a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zm0 8a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
                         </svg>
-                        +91 9313 9313 93
+                        +91 98315 11897
                       </a>
                       <Link href="/help" className="block py-2 text-sm text-[#22313f] hover:text-[#1a2433]">Help</Link>
                       <Link href="/about-us" className="block py-2 text-sm text-[#22313f] hover:text-[#1a2433]">About Us</Link>
