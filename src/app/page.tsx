@@ -97,22 +97,14 @@ export default function Home() {
         const res = await fetch('/api/halls/featured');
         
         if (!res.ok) {
-          console.error('[Homepage] Featured halls API error:', res.status, res.statusText);
-          const errorData = await res.json().catch(() => ({}));
-          console.error('[Homepage] Error details:', errorData);
           setFeaturedHalls([]);
           return;
         }
         
         const data = await res.json();
-        console.log('[Homepage] Featured halls response:', { 
-          count: data.halls?.length || 0, 
-          halls: data.halls?.map((h: any) => ({ id: h._id, name: h.name, featured: h.featured, status: h.status })) || []
-        });
-        
         setFeaturedHalls(data.halls || []);
       } catch (error) {
-        console.error('[Homepage] Failed to fetch featured halls:', error);
+        console.error('Failed to fetch featured halls:', error);
         setFeaturedHalls([]);
       } finally {
         setLoadingHalls(false);
