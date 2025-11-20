@@ -325,29 +325,9 @@ const BookingPage = () => {
         name: "WeEnYou",
         description: "Venue Booking",
         order_id: paymentData.order.id,
-        handler: async function (response: any) {
-          try {
-            // Immediately verify advance and flip booking state
-            const verifyRes = await fetch('/api/bookings/verify-advance-payment', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                bookingId,
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature: response.razorpay_signature,
-              }),
-            });
-            const verifyData = await verifyRes.json();
-            if (!verifyRes.ok) {
-              console.error('Advance verify failed:', verifyData);
-            }
-          } catch (e) {
-            console.error('Verify advance error:', e);
-          } finally {
-            // Redirect to pending page after payment (UI shows awaiting owner confirmation)
-            router.push(`/bookings/${bookingId}/pending`);
-          }
+        handler: function (response: any) {
+          // Redirect to pending page after payment
+          router.push(`/bookings/${bookingId}/pending`);
         },
         prefill: {
           name: form.name,
@@ -862,4 +842,4 @@ const BookingPage = () => {
   );
 };
 
-export default BookingPage;
+export default BookingPage; 

@@ -7,7 +7,6 @@ import Booking from '@/models/Booking';
 import Notification from '@/models/Notification';
 import Service from '@/models/Service';
 import ServiceBooking from '@/models/ServiceBooking';
-import User from '@/models/User';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,13 +20,10 @@ export async function POST(req: Request) {
       );
     }
 
-    // Read full body first to allow optional nested user payload (e.g., { user: { phone } })
-    const body = await req.json();
-    const { hallId, startDate, endDate, guests, specialRequests, services = [], servicesTotal = 0, totalAmount } = body;
-    const userPayload = body?.user || {};
-    const phoneFromBody: string | undefined = typeof userPayload?.phone === 'string' ? userPayload.phone : (typeof body?.phone === 'string' ? body.phone : undefined);
+    const { hallId, startDate, endDate, guests, specialRequests, services = [], servicesTotal = 0, totalAmount } = await req.json();
 
-    // Removed verbose request body logging
+    // Log the incoming request body for debugging
+    console.log('Booking request body:', { hallId, startDate, endDate, guests, specialRequests, services, servicesTotal });
 
     // Validate required fields
     if (!hallId || !startDate || !endDate || !guests) {
@@ -96,23 +92,14 @@ export async function POST(req: Request) {
     // Use totalAmount from frontend if provided, else fallback to hallPrice
     const totalPrice = typeof totalAmount === 'number' ? totalAmount : hallPrice;
 
-    // Fetch user info for snapshot (phone may not be in session)
-    const userDoc = await User.findById(session.user.id).select('phone name email');
-    const normalizedPhone = (phoneFromBody && phoneFromBody.trim()) || undefined;
-
     // Create booking
     const booking = await Booking.create({
       userId: session.user.id,
       hallId,
-      ownerId: hall.ownerId,
       startDate,
       endDate,
       guests,
       specialRequests,
-      userName: session.user.name || userDoc?.name,
-      userEmail: session.user.email || userDoc?.email,
-      // Persist phone entered during booking if provided; otherwise fallback to user's saved phone
-      userPhone: normalizedPhone ?? userDoc?.phone,
       totalPrice, // This now includes all fees if provided
       status: 'pending_advance',
       advancePaid: false,
@@ -208,5 +195,5 @@ export async function GET() {
       { status: 500 }
     );
   }
-}
+} 
  

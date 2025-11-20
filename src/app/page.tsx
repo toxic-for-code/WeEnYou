@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { getImageUrl } from '@/lib/imageUtils';
 import { useRouter } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
-import { MapPinIcon, CalendarIcon, UsersIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import { MapPinIcon, CalendarIcon, UsersIcon, MagnifyingGlassIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 
 // Removed eventTypes, now using date range
 const capacities = ['Any cap', '50+', '100+', '200+', '500+', '1000+'];
@@ -30,6 +30,11 @@ export default function Home() {
   const vendorsMenuTimeout = useRef<NodeJS.Timeout | null>(null);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [nearMeLoading, setNearMeLoading] = useState(false);
+
+  // Carousel auto-scroll state
+  const carouselRef = useRef<HTMLDivElement>(null);
+  const [isPaused, setIsPaused] = useState(false);
+  const autoScrollIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Autocomplete for city input
   const [citySuggestions, setCitySuggestions] = useState<string[]>([]);
@@ -92,6 +97,60 @@ export default function Home() {
       .catch(() => setFeaturedHalls([]))
       .finally(() => setLoadingHalls(false));
   }, []);
+
+  // Auto-scroll carousel
+  useEffect(() => {
+    if (!carouselRef.current || featuredHalls.length === 0 || isPaused) {
+      if (autoScrollIntervalRef.current) {
+        clearInterval(autoScrollIntervalRef.current);
+        autoScrollIntervalRef.current = null;
+      }
+      return;
+    }
+
+    const scrollContainer = carouselRef.current;
+    const scrollStep = 380; // Card width + gap
+
+    autoScrollIntervalRef.current = setInterval(() => {
+      if (!scrollContainer) return;
+      
+      const currentScroll = scrollContainer.scrollLeft;
+      const maxScroll = scrollContainer.scrollWidth - scrollContainer.clientWidth;
+      
+      if (currentScroll >= maxScroll - 10) {
+        // Reset to start for infinite scroll effect
+        scrollContainer.scrollTo({ left: 0, behavior: 'auto' });
+      } else {
+        scrollContainer.scrollBy({ left: scrollStep, behavior: 'smooth' });
+      }
+    }, 3000); // Scroll every 3 seconds
+
+    return () => {
+      if (autoScrollIntervalRef.current) {
+        clearInterval(autoScrollIntervalRef.current);
+        autoScrollIntervalRef.current = null;
+      }
+    };
+  }, [featuredHalls.length, isPaused]);
+
+  // Navigation functions
+  const scrollLeft = () => {
+    if (carouselRef.current) {
+      const scrollStep = 380;
+      carouselRef.current.scrollBy({ left: -scrollStep, behavior: 'smooth' });
+      setIsPaused(true);
+      setTimeout(() => setIsPaused(false), 5000); // Resume after 5 seconds
+    }
+  };
+
+  const scrollRight = () => {
+    if (carouselRef.current) {
+      const scrollStep = 380;
+      carouselRef.current.scrollBy({ left: scrollStep, behavior: 'smooth' });
+      setIsPaused(true);
+      setTimeout(() => setIsPaused(false), 5000); // Resume after 5 seconds
+    }
+  };
 
   // Testimonials (static for now)
   const testimonials = [
@@ -514,63 +573,97 @@ export default function Home() {
 
       {/* Featured Venues */}
       <section className="py-8 sm:py-12 md:py-16 bg-white">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <h2 className="text-2xl sm:text-3xl font-bold text-center mb-6 sm:mb-8 md:mb-10">Featured Venues</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
-            {loadingHalls ? (
-              <div className="col-span-3 text-center text-gray-500">Loading featured venues...</div>
-            ) : featuredHalls.length === 0 ? (
-              <div className="col-span-3 text-center text-gray-500">No featured venues found.</div>
-            ) : featuredHalls.slice(0, 3).map((hall, i) => (
-              <div key={hall._id || i} className="bg-[#f6f5f2] rounded-xl shadow-lg p-3 sm:p-4 flex flex-col transition-transform duration-200 hover:scale-105 hover:shadow-2xl">
-                <Image
-                  src={hall.images && hall.images[0] ? hall.images[0] : '/placeholder.jpg'}
-                  alt={hall.name}
-                  width={400}
-                  height={160}
-                  className="h-32 sm:h-40 w-full object-cover rounded mb-3 sm:mb-4"
-                  style={{objectFit:'cover'}}
-                  priority={i === 0}
-                  loading={i === 0 ? undefined : 'lazy'}
-                />
-                <div className="font-semibold text-base sm:text-lg mb-1">{hall.name}</div>
-                <div className="text-gray-500 text-xs sm:text-sm mb-1 line-clamp-2">{hall.description}</div>
-                <div className="flex flex-col sm:flex-row sm:items-center text-gray-600 text-xs mb-1 gap-1 sm:gap-2">
-                  <span className="flex items-center gap-1">
-                    <svg className="w-3 h-3 sm:w-4 sm:h-4 text-gray-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                    {hall.location?.city}, {hall.location?.state}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <svg className="w-3 h-3 sm:w-4 sm:h-4 text-gray-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16" /></svg>
-                    {hall.capacity || 'N/A'} guests
-                  </span>
-                </div>
-                <div className="flex items-center text-xs text-gray-600 mb-1 gap-2">
-                  <span className="flex items-center gap-1">
-                    <svg className="w-3 h-3 sm:w-4 sm:h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.967a1 1 0 00.95.69h4.178c.969 0 1.371 1.24.588 1.81l-3.385 2.46a1 1 0 00-.364 1.118l1.287 3.966c.3.922-.755 1.688-1.54 1.118l-3.385-2.46a1 1 0 00-1.175 0l-3.385 2.46c-.784.57-1.838-.196-1.54-1.118l1.287-3.966a1 1 0 00-.364-1.118l-3.385-2.46c-.783-.57-.38-1.81.588-1.81h4.178a1 1 0 00.95-.69l1.286-3.967z" /></svg>
-                    {hall.averageRating?.toFixed(1) || 'N/A'}
-                  </span>
-                  <span className="text-gray-400">({hall.totalReviews || 0} reviews)</span>
-                </div>
-                <div className="flex flex-wrap gap-1 text-xs text-gray-500 mb-2">
-                  {Array.isArray(hall.amenities) && hall.amenities.slice(0, 2).map((amenity, idx) => (
-                    <span key={idx} className="bg-gray-200 rounded px-1.5 sm:px-2 py-0.5 text-xs">{amenity}</span>
+          {loadingHalls ? (
+            <div className="text-center text-gray-500">Loading featured venues...</div>
+          ) : featuredHalls.length === 0 ? (
+            <div className="text-center text-gray-500">No featured venues found.</div>
+          ) : (
+            <div className="relative group">
+              {/* Left Navigation Button */}
+              <button
+                onClick={scrollLeft}
+                onMouseEnter={() => setIsPaused(true)}
+                onMouseLeave={() => setIsPaused(false)}
+                className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white rounded-full p-2 sm:p-3 shadow-lg hover:bg-gray-50 transition-all opacity-70 sm:opacity-0 sm:group-hover:opacity-100 hover:scale-110 active:scale-95"
+                aria-label="Scroll left"
+              >
+                <ChevronLeftIcon className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700" />
+              </button>
+
+              {/* Right Navigation Button */}
+              <button
+                onClick={scrollRight}
+                onMouseEnter={() => setIsPaused(true)}
+                onMouseLeave={() => setIsPaused(false)}
+                className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white rounded-full p-2 sm:p-3 shadow-lg hover:bg-gray-50 transition-all opacity-70 sm:opacity-0 sm:group-hover:opacity-100 hover:scale-110 active:scale-95"
+                aria-label="Scroll right"
+              >
+                <ChevronRightIcon className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700" />
+              </button>
+
+              {/* Carousel Container */}
+              <div
+                ref={carouselRef}
+                onMouseEnter={() => setIsPaused(true)}
+                onMouseLeave={() => setIsPaused(false)}
+                className="overflow-x-auto pb-4 carousel-scroll scrollbar-hide"
+              >
+                <div className="flex gap-4 sm:gap-6 md:gap-8">
+                  {featuredHalls.map((hall, i) => (
+                    <div key={hall._id || i} className="bg-[#f6f5f2] rounded-xl shadow-lg p-3 sm:p-4 flex flex-col transition-transform duration-200 hover:scale-105 hover:shadow-2xl flex-shrink-0 w-[280px] sm:w-[320px] md:w-[360px]">
+                      <Image
+                        src={hall.images && hall.images[0] ? hall.images[0] : '/placeholder.jpg'}
+                        alt={hall.name}
+                        width={400}
+                        height={160}
+                        className="h-32 sm:h-40 w-full object-cover rounded mb-3 sm:mb-4"
+                        style={{objectFit:'cover'}}
+                        priority={i === 0}
+                        loading={i === 0 ? undefined : 'lazy'}
+                      />
+                      <div className="font-semibold text-base sm:text-lg mb-1">{hall.name}</div>
+                      <div className="text-gray-500 text-xs sm:text-sm mb-1 line-clamp-2">{hall.description}</div>
+                      <div className="flex flex-col sm:flex-row sm:items-center text-gray-600 text-xs mb-1 gap-1 sm:gap-2">
+                        <span className="flex items-center gap-1">
+                          <svg className="w-3 h-3 sm:w-4 sm:h-4 text-gray-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                          {hall.location?.city}, {hall.location?.state}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <svg className="w-3 h-3 sm:w-4 sm:h-4 text-gray-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16" /></svg>
+                          {hall.capacity || 'N/A'} guests
+                        </span>
+                      </div>
+                      <div className="flex items-center text-xs text-gray-600 mb-1 gap-2">
+                        <span className="flex items-center gap-1">
+                          <svg className="w-3 h-3 sm:w-4 sm:h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.967a1 1 0 00.95.69h4.178c.969 0 1.371 1.24.588 1.81l-3.385 2.46a1 1 0 00-.364 1.118l1.287 3.966c.3.922-.755 1.688-1.54 1.118l-3.385-2.46a1 1 0 00-1.175 0l-3.385 2.46c-.784.57-1.838-.196-1.54-1.118l1.287-3.966a1 1 0 00-.364-1.118l-3.385-2.46c-.783-.57-.38-1.81.588-1.81h4.178a1 1 0 00.95-.69l1.286-3.967z" /></svg>
+                          {hall.averageRating?.toFixed(1) || 'N/A'}
+                        </span>
+                        <span className="text-gray-400">({hall.totalReviews || 0} reviews)</span>
+                      </div>
+                      <div className="flex flex-wrap gap-1 text-xs text-gray-500 mb-2">
+                        {Array.isArray(hall.amenities) && hall.amenities.slice(0, 2).map((amenity, idx) => (
+                          <span key={idx} className="bg-gray-200 rounded px-1.5 sm:px-2 py-0.5 text-xs">{amenity}</span>
+                        ))}
+                        {Array.isArray(hall.amenities) && hall.amenities.length > 2 && (
+                          <span className="bg-gray-200 rounded px-1.5 sm:px-2 py-0.5 text-xs">+{hall.amenities.length - 2} more</span>
+                        )}
+                      </div>
+                      <div className="text-gray-800 font-medium mb-2 text-sm sm:text-base">₹{hall.price ? hall.price.toLocaleString() : 'N/A'}{hall.priceType === 'per plate' ? ' per plate' : ''}</div>
+                      <a
+                        href={`/halls/${hall._id}`}
+                        className="mt-auto border border-primary-600 text-primary-600 bg-transparent hover:bg-primary-50 font-semibold py-2 sm:py-2 px-3 sm:px-4 rounded transition text-center block text-sm sm:text-base"
+                        style={{ marginTop: 'auto' }}
+                      >
+                        Book Now
+                      </a>
+                    </div>
                   ))}
-                  {Array.isArray(hall.amenities) && hall.amenities.length > 2 && (
-                    <span className="bg-gray-200 rounded px-1.5 sm:px-2 py-0.5 text-xs">+{hall.amenities.length - 2} more</span>
-                  )}
                 </div>
-                <div className="text-gray-800 font-medium mb-2 text-sm sm:text-base">₹{hall.price ? hall.price.toLocaleString() : 'N/A'}{hall.priceType === 'per plate' ? ' per plate' : ''}</div>
-                <a
-                  href={`/halls/${hall._id}`}
-                  className="mt-auto border border-primary-600 text-primary-600 bg-transparent hover:bg-primary-50 font-semibold py-2 sm:py-2 px-3 sm:px-4 rounded transition text-center block text-sm sm:text-base"
-                  style={{ marginTop: 'auto' }}
-                >
-                  Book Now
-                </a>
               </div>
-            ))}
-          </div>
+            </div>
+          )}
         </div>
       </section>
 

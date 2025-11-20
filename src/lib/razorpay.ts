@@ -11,26 +11,8 @@ if (!key_id || !key_secret) {
 export const razorpay = new Razorpay({ key_id, key_secret });
 
 export function verifySignature({ orderId, paymentId, signature }: { orderId: string; paymentId: string; signature: string; }) {
-  if (!key_secret) {
-    console.error('Razorpay signature verification failed: RAZORPAY_KEY_SECRET is missing');
-    return false;
-  }
-  try {
-    const hmac = crypto.createHmac('sha256', key_secret);
-    hmac.update(`${orderId}|${paymentId}`);
-    const generatedSignature = hmac.digest('hex');
-    const match = generatedSignature === signature;
-    if (!match) {
-      console.error('Razorpay signature mismatch', {
-        orderId,
-        paymentId,
-        expectedSignature: generatedSignature,
-        receivedSignature: signature,
-      });
-    }
-    return match;
-  } catch (err) {
-    console.error('Error during Razorpay signature verification', err);
-    return false;
-  }
+  const hmac = crypto.createHmac('sha256', key_secret);
+  hmac.update(`${orderId}|${paymentId}`);
+  const generatedSignature = hmac.digest('hex');
+  return generatedSignature === signature;
 }

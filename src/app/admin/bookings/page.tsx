@@ -7,7 +7,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Dialog } from '@headlessui/react';
 
-  interface Booking {
+interface Booking {
   _id: string;
   hallId: {
     _id: string;
@@ -29,12 +29,7 @@ import { Dialog } from '@headlessui/react';
   totalPrice: number;
   status: 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'pending_approval';
   paymentStatus: 'pending' | 'paid' | 'refunded';
-  advancePaid?: boolean;
-  // Payment amounts from DB
-    advanceAmountPaid?: number;
-    remainingAmount?: number;
-    ownerRemarks?: string;
-    createdAt: string;
+  createdAt: string;
   pendingChange?: {
     type: 'reschedule' | 'cancel';
     startDate?: string;
@@ -58,13 +53,6 @@ export default function AdminBookings() {
   const [messages, setMessages] = useState<any[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
-  const [summaries, setSummaries] = useState<Record<string, {
-    advancePaid: boolean;
-    advanceAmountPaid?: number;
-    remainingAmount?: number;
-    remainingPaymentStatus?: string;
-    source?: string;
-  }>>({});
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -81,25 +69,6 @@ export default function AdminBookings() {
       const res = await fetch('/api/admin/bookings');
       const data = await res.json();
       setBookings(data.bookings);
-      // Fetch payment summaries per booking
-      const summaryPromises = (data.bookings || []).map(async (b: Booking) => {
-        try {
-          const sres = await fetch('/api/admin/bookings/payment-summary', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: b.userId?._id, hallId: b.hallId?._id }),
-          });
-          if (!sres.ok) throw new Error('summary fetch failed');
-          const sdata = await sres.json();
-          return { id: b._id, summary: sdata.summary } as { id: string; summary: any };
-        } catch {
-          return { id: b._id, summary: undefined };
-        }
-      });
-      const results = await Promise.all(summaryPromises);
-      const byId: Record<string, any> = {};
-      results.forEach(r => { if (r.summary) byId[r.id] = r.summary; });
-      setSummaries(byId);
     } catch (err) {
       setError('Failed to fetch bookings');
     } finally {
@@ -148,11 +117,10 @@ export default function AdminBookings() {
   const handleOwnerAction = async (bookingId: string, action: 'approve' | 'reject') => {
     setActionLoading(bookingId + action);
     try {
-      const remarks = typeof window !== 'undefined' ? (window.prompt('Add remarks for the user (optional):') || '') : '';
       const res = await fetch(`/api/bookings/${bookingId}/owner-action`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, remarks }),
+        body: JSON.stringify({ action }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to update booking');
@@ -315,30 +283,6 @@ export default function AdminBookings() {
                   <p>Booked on: {new Date(booking.createdAt).toLocaleDateString()}</p>
                 </div>
 
-                {/* Payment Summary */}
-                <div className="mt-4 flex flex-wrap items-center gap-3">
-                  <span className={`px-3 py-1 rounded text-sm ${((summaries[booking._id]?.advancePaid) || booking.advancePaid || ['pending_owner_confirmation','confirmed','completed'].includes(booking.status)) ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                    Advance Paid: {((summaries[booking._id]?.advancePaid) || booking.advancePaid || ['pending_owner_confirmation','confirmed','completed'].includes(booking.status)) ? 'Yes' : 'No'}
-                  </span>
-                  {(() => {
-                    const s = summaries[booking._id];
-                    const advancePaidAmt = typeof s?.advanceAmountPaid === 'number'
-                      ? s!.advanceAmountPaid as number
-                      : (typeof booking.advanceAmountPaid === 'number' ? booking.advanceAmountPaid : 0);
-                    const remainingDb = typeof booking.remainingAmount === 'number' ? booking.remainingAmount : undefined;
-                    const remainingSummary = typeof s?.remainingAmount === 'number' ? s!.remainingAmount as number : undefined;
-                    const remaining = s?.remainingPaymentStatus === 'paid'
-                      ? 0
-                      : (remainingDb ?? remainingSummary ?? Math.max((booking.totalPrice || 0) - (advancePaidAmt || 0), 0));
-                    const display = typeof remaining === 'number' ? `₹${remaining}` : '—';
-                    return (
-                      <span className="px-3 py-1 rounded text-sm bg-blue-100 text-blue-800">
-                        Remaining: {display}
-                      </span>
-                    );
-                  })()}
-                </div>
-
                 {/* Pending Approval Actions */}
                 {booking.status === 'pending_approval' && booking.pendingChange && (
                   <div className="mt-4 p-4 bg-yellow-50 border border-yellow-400 rounded">
@@ -467,5 +411,5 @@ export default function AdminBookings() {
       </Dialog>
     </div>
   );
-}
+} 
  

@@ -2,63 +2,35 @@ import { NextResponse } from 'next/server';
 import { connectDB } from '@/lib/db';
 import Hall from '@/models/Hall';
 
-// Clean, stable featured halls route with optional debug mode
 export async function GET(req: Request) {
   try {
     await connectDB();
 
-    const url = new URL(req.url);
-    const debugMode = url.searchParams.get('debug') === '1';
+    // Get only featured and active halls
+    let halls = await Hall.find({ 
+      featured: true, 
+      status: 'active' 
+    })
+      .sort({ averageRating: -1, createdAt: -1 })
+      .limit(6);
 
-    const filter = { featured: true };
-
-    // Use a straightforward query without accidental filters or sorting
-    const halls = await Hall.find(filter).limit(50);
-
+    // Debug: if none found, fall back to any featured halls regardless of status,
+    // and log useful information to help diagnose data issues.
     if (!halls || halls.length === 0) {
-      if (debugMode) {
-        const sampleAny = await Hall.find({}, 'name featured status _id').limit(5);
-        return NextResponse.json(
-          {
-            halls: [],
-            message: 'No featured halls found',
-            debug: {
-              featuredCount: 0,
-              sampleAny,
-            },
-          },
-          { status: 404 }
-        );
+      const allFeatured = await Hall.find({ featured: true })
+        .sort({ averageRating: -1, createdAt: -1 })
+        .limit(6);
+      console.warn('[Featured API] No active featured halls found.\n' +
+        `Counts → active: 0, any-featured: ${allFeatured.length}`);
+      if (allFeatured.length > 0) {
+        console.warn('[Featured API] Example statuses:', allFeatured.map(h => ({ id: h._id.toString(), status: h.status, verified: h.verified })));
+        halls = allFeatured; // safe fallback to show featured content
       }
-
-      return NextResponse.json(
-        { halls: [], message: 'No featured halls found' },
-        { status: 404 }
-      );
-    }
-
-    if (debugMode) {
-      const sampleFirst = halls.slice(0, 3).map((h: any) => ({
-        _id: h._id,
-        name: h.name,
-        featured: h.featured,
-        status: h.status,
-      }));
-      return NextResponse.json({
-        halls,
-        debug: {
-          featuredCount: halls.length,
-          sampleFirst,
-        },
-      });
     }
 
     return NextResponse.json({ halls });
-  } catch (err: any) {
-    console.error('FEATURED ROUTE ERROR:', err);
-    return NextResponse.json(
-      { error: err?.message || 'Server error', halls: [] },
-      { status: 500 }
-    );
+  } catch (error) {
+    console.error('Error fetching featured halls:', error);
+    return NextResponse.json({ error: 'Failed to fetch featured halls' }, { status: 500 });
   }
 }

@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server';
-import { connectDB } from '@/lib/db';
+import connectToDB from '@/lib/db';
 import BookingPayment from '@/models/BookingPayment';
 import { verifySignature } from '@/lib/razorpay';
 
 export async function POST(req: Request) {
   try {
-    await connectDB();
+    await connectToDB();
     const body = await req.json();
     const {
       userId,

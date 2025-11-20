@@ -7,20 +7,6 @@ const bookingSchema = new mongoose.Schema(
       ref: 'User',
       required: true,
     },
-    // Snapshot of user info at booking time (helps with notifications/auditing)
-    userName: {
-      type: String,
-      trim: true,
-    },
-    userEmail: {
-      type: String,
-      trim: true,
-      lowercase: true,
-    },
-    userPhone: {
-      type: String,
-      trim: true,
-    },
     hallId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Hall',
@@ -40,10 +26,6 @@ const bookingSchema = new mongoose.Schema(
       min: 1,
     },
     specialRequests: {
-      type: String,
-      trim: true,
-    },
-    ownerRemarks: {
       type: String,
       trim: true,
     },
@@ -73,20 +55,9 @@ const bookingSchema = new mongoose.Schema(
     paymentId: {
       type: String,
     },
-    orderId: {
-      type: String,
-      index: true,
-    },
     advancePaid: {
       type: Boolean,
       default: false,
-    },
-    // Numeric tracking for payments
-    advanceAmountPaid: {
-      type: Number,
-    },
-    remainingAmount: {
-      type: Number,
     },
     finalPaymentMethod: {
       type: String,
@@ -157,24 +128,16 @@ bookingSchema.index({ status: 1 });
 
 interface BookingAttrs {
   userId: mongoose.Types.ObjectId;
-  userName?: string;
-  userEmail?: string;
-  userPhone?: string;
   hallId: mongoose.Types.ObjectId;
   startDate: Date;
   endDate: Date;
   guests: number;
   specialRequests?: string;
-  ownerRemarks?: string;
   totalPrice: number;
   status: 'pending' | 'pending_advance' | 'pending_owner_confirmation' | 'confirmed' | 'cancelled' | 'completed' | 'pending_approval';
   paymentStatus: 'pending' | 'paid' | 'refunded';
   paymentId?: string;
-  orderId?: string;
   advancePaid?: boolean;
-  // Numeric tracking for payments
-  advanceAmountPaid?: number;
-  remainingAmount?: number;
   finalPaymentMethod?: 'online' | 'offline' | null;
   finalPaymentStatus?: 'pending' | 'paid' | null;
   event_manager_id?: mongoose.Types.ObjectId;
@@ -207,5 +170,5 @@ const Booking: Model<BookingDoc> =
   (mongoose.models.Booking as Model<BookingDoc>) ||
   mongoose.model<BookingDoc>('Booking', bookingSchema);
 
-export default Booking;
+export default Booking; 
  

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { razorpay } from '@/lib/razorpay';
-import { connectDB } from '@/lib/db';
+import connectToDB from '@/lib/db';
 import Hall from '@/models/Hall';
 
 function calcRequiredAdvance(totalAmount: number) {
@@ -9,7 +9,7 @@ function calcRequiredAdvance(totalAmount: number) {
 
 export async function POST(req: Request) {
   try {
-    await connectDB();
+    await connectToDB();
     const body = await req.json();
     const { userId, hallId, totalAmount, advance } = body as { userId: string; hallId: string; totalAmount: number; advance: number; };
 

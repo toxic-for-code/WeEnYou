@@ -140,7 +140,7 @@ export default function OwnerAuthPage() {
       </section>
       <button
         className="fixed left-1/2 -translate-x-1/2 bottom-6 bg-red-500 hover:bg-red-600 text-white text-lg font-semibold px-16 py-3 rounded-full shadow transition w-[90vw] max-w-2xl z-50"
-        onClick={() => { window.location.href = 'https://owner.weenyou.com/'; }}
+        onClick={() => window.open('http://localhost:3001/', '_blank')}
         style={{ position: 'fixed' }}
       >
         Join WeEnYou
@@ -156,4 +156,4 @@ export default function OwnerAuthPage() {
       `}</style>
     </div>
   );
-}
+} 
