@@ -32,8 +32,8 @@ async function updateStatus(id, status) {
 
 export default function EventManagerEventDetails() {
   const params = useParams();
-  const { id } = params;
-  const [event, setEvent] = useState(null);
+  const id = (params as any)?.id as string;
+  const [event, setEvent] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [newTask, setNewTask] = useState('');
   const [statusUpdating, setStatusUpdating] = useState(false);

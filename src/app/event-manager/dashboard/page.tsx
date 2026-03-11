@@ -9,7 +9,7 @@ async function fetchAssignedEvents() {
 
 export default function EventManagerDashboard() {
   const { data: session } = useSession();
-  const [events, setEvents] = useState([]);
+  const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

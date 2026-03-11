@@ -31,7 +31,7 @@ export default function BrowseContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [venues, setVenues] = useState<any[]>([]);
-  const [page, setPage] = useState(Number(searchParams.get('page')) || 1);
+  const [page, setPage] = useState(Number(searchParams?.get('page') ?? '1') || 1);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
   const [imgIndices, setImgIndices] = useState<number[]>([]);
@@ -39,21 +39,21 @@ export default function BrowseContent() {
   const [mapView, setMapView] = useState(false); // Default to list only
   const [sortOption, setSortOption] = useState('popularity');
   const [searchAsMove, setSearchAsMove] = useState(true);
-  const [mapBounds, setMapBounds] = useState(null);
-  const mapRef = useRef(null);
-  const markersRef = useRef([]);
-  const clustererRef = useRef(null);
+  const [mapBounds, setMapBounds] = useState<{ sw: { lat: number; lng: number }; ne: { lat: number; lng: number } } | null>(null);
+  const mapRef = useRef<google.maps.Map | null>(null);
+  const markersRef = useRef<any[]>([]);
+  const clustererRef = useRef<any | null>(null);
 
   // Filter state for SearchFilters
   const [filters, setFilters] = useState({
-    location: searchParams.get('city') || '',
+    location: searchParams?.get('city') || '',
     date: '',
     capacity: '',
     priceRange: '',
     amenities: [],
     minRating: '',
-    dateRangeStart: searchParams.get('dateRangeStart') || '',
-    dateRangeEnd: searchParams.get('dateRangeEnd') || '',
+    dateRangeStart: searchParams?.get('dateRangeStart') || '',
+    dateRangeEnd: searchParams?.get('dateRangeEnd') || '',
   });
 
   useEffect(() => {
@@ -61,26 +61,26 @@ export default function BrowseContent() {
       setLoading(true);
       const params = new URLSearchParams();
       // Forward all relevant filters from the page URL to the API
-      if (searchParams.get('city')) params.set('city', searchParams.get('city')!);
-      if (searchParams.get('location')) params.set('city', searchParams.get('location')!);
-      if (searchParams.get('q')) params.set('q', searchParams.get('q')!);
-      if (searchParams.get('minCapacity')) params.set('minCapacity', searchParams.get('minCapacity')!);
-      if (searchParams.get('priceRange')) params.set('priceRange', searchParams.get('priceRange')!);
-      if (searchParams.get('minRating')) params.set('minRating', searchParams.get('minRating')!);
-      if (searchParams.get('amenities')) params.set('amenities', searchParams.get('amenities')!);
-      if (searchParams.get('dateRangeStart')) params.set('startDate', searchParams.get('dateRangeStart')!);
-      if (searchParams.get('dateRangeEnd')) params.set('endDate', searchParams.get('dateRangeEnd')!);
-      if (searchParams.get('useMyLocation')) params.set('useMyLocation', searchParams.get('useMyLocation')!);
-      if (searchParams.get('lat')) params.set('lat', searchParams.get('lat')!);
-      if (searchParams.get('lng')) params.set('lng', searchParams.get('lng')!);
+      if (searchParams?.get('city')) params.set('city', searchParams.get('city')!);
+      if (searchParams?.get('location')) params.set('city', searchParams.get('location')!);
+      if (searchParams?.get('q')) params.set('q', searchParams.get('q')!);
+      if (searchParams?.get('minCapacity')) params.set('minCapacity', searchParams.get('minCapacity')!);
+      if (searchParams?.get('priceRange')) params.set('priceRange', searchParams.get('priceRange')!);
+      if (searchParams?.get('minRating')) params.set('minRating', searchParams.get('minRating')!);
+      if (searchParams?.get('amenities')) params.set('amenities', searchParams.get('amenities')!);
+      if (searchParams?.get('dateRangeStart')) params.set('startDate', searchParams.get('dateRangeStart')!);
+      if (searchParams?.get('dateRangeEnd')) params.set('endDate', searchParams.get('dateRangeEnd')!);
+      if (searchParams?.get('useMyLocation')) params.set('useMyLocation', searchParams.get('useMyLocation')!);
+      if (searchParams?.get('lat')) params.set('lat', searchParams.get('lat')!);
+      if (searchParams?.get('lng')) params.set('lng', searchParams.get('lng')!);
       params.set('page', page.toString());
       params.set('limit', '100');
       params.set('sort', sortOption);
       if (mapBounds) {
-        params.set('swLat', mapBounds.sw.lat);
-        params.set('swLng', mapBounds.sw.lng);
-        params.set('neLat', mapBounds.ne.lat);
-        params.set('neLng', mapBounds.ne.lng);
+        params.set('swLat', mapBounds.sw.lat.toString());
+        params.set('swLng', mapBounds.sw.lng.toString());
+        params.set('neLat', mapBounds.ne.lat.toString());
+        params.set('neLng', mapBounds.ne.lng.toString());
       }
       const res = await fetch(`/api/halls/search?${params.toString()}`);
       const data = await res.json();

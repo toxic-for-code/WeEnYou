@@ -151,7 +151,7 @@ export async function POST(req) {
 
     // 2. Create Fund Account (if not already created)
     let fundAccountId = booking.ownerFundAccountId;
-    if (!fundAccountId) {
+    if (!fundAccountId && booking.ownerBankDetails) {
       let fundAccount;
       if (booking.ownerBankDetails.upi) {
         fundAccount = await (razorpay as any).fundAccount.create({
@@ -178,13 +178,13 @@ export async function POST(req) {
     const payout = await (razorpay as any).payouts.create({
       account_number: process.env.RAZORPAY_PAYOUT_ACCOUNT_NUMBER, // Your virtual account number
       fund_account_id: fundAccountId,
-      amount: booking.venuePrice * 100, // paise
+      amount: (booking.venuePrice ?? 0) * 100, // paise
       currency: "INR",
-      mode: booking.ownerBankDetails.upi ? "upi" : "imps",
+      mode: booking.ownerBankDetails && booking.ownerBankDetails.upi ? "upi" : "imps",
       purpose: "vendor_payment",
       queue_if_low_balance: true,
       narration: "Venue Booking Payout",
-      notes: { bookingId: booking._id.toString() },
+      notes: { bookingId: (booking._id as any).toString() },
     });
     await savePayoutToBooking(booking._id, payout.id, payout.status);
     return NextResponse.json({ status: "Payout triggered and paymentStatus set to paid" });

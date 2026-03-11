@@ -61,7 +61,7 @@ export default function Footer() {
       {/* Sticky Feedback Button (hidden on /plan-event) */}
       {pathname !== '/plan-event' && (
         <button
-          onClick={() => window.open('mailto:feedback@weenyou.com', '_blank')}
+          onClick={() => window.open('mailto:support@weenyou.com', '_blank')}
           className="fixed bottom-16 right-4 sm:bottom-24 sm:right-6 z-50 bg-green-600 hover:bg-green-700 text-white px-3 py-2 sm:px-5 sm:py-2 rounded-full shadow-lg transition-colors text-xs sm:text-sm"
           style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.2)' }}
         >

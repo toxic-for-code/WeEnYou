@@ -14,7 +14,7 @@ interface City {
 
 export default function CategoryPage() {
   const params = useParams();
-  const category = params.category as string;
+  const category = (params as any)?.category as string;
   
   const [cities, setCities] = useState<City[]>([]);
   const [loading, setLoading] = useState(true);

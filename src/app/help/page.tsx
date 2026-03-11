@@ -104,7 +104,7 @@ export default function HelpPage() {
             <button className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded shadow transition" type="submit" disabled={loading || !session}>{loading ? 'Sending...' : 'Send Message'}</button>
           </form>
           <div className="mt-4 text-gray-600 text-sm">
-            Or email us at <a href="mailto:support@eventhall.com" className="text-primary-600 underline">support@eventhall.com</a>
+            Or email us at <a href="mailto:support@weenyou.com" className="text-primary-600 underline">support@weenyou.com</a>
           </div>
         </section>
 
@@ -144,9 +144,9 @@ export default function HelpPage() {
         <section className="bg-white rounded-xl shadow p-6 text-center">
           <h2 className="text-xl font-bold flex items-center gap-2 mb-4 justify-center"><span>💡</span> Feedback</h2>
           <p className="mb-2">We value your feedback! Please let us know how we can improve your experience by contacting support or using the feedback form above.</p>
-          <a href="mailto:feedback@weenyou.com" className="inline-block mt-2 bg-pink-500 hover:bg-pink-600 text-white font-semibold px-6 py-2 rounded-full shadow transition">Send Feedback</a>
+          <a href="mailto:Contact.weenyou@gmail.com" className="inline-block mt-2 bg-pink-500 hover:bg-pink-600 text-white font-semibold px-6 py-2 rounded-full shadow transition">Send Feedback</a>
         </section>
       </div>
     </div>
   );
-} 
+}

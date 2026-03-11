@@ -93,16 +93,16 @@ export default function PrivacyPage() {
           <li>Request deletion of your account and data</li>
           <li>Opt out of promotional communications</li>
         </ul>
-        <p className="mb-6 text-gray-700">To exercise these rights, simply contact us at:<br />📧 <b><a href="mailto:support@weenyou.com" className="text-blue-600 underline">support@weenyou.com</a></b></p>
+        <p className="mb-6 text-gray-700">To exercise these rights, simply contact us at:<br />📧 <b><a href="mailto:Contact.weenyou@gmail.com" className="text-blue-600 underline">Contact.weenyou@gmail.com</a></b></p>
         <hr className="my-6 border-gray-200" />
 
         <h2 className="text-xl font-bold text-gray-800 mb-2 flex items-center gap-2">📞 7. Contact Us</h2>
         <p className="mb-2 text-gray-700">If you have questions about this Privacy Policy or your personal data, reach out to us:</p>
         <ul className="list-disc list-inside mb-2 text-gray-700 space-y-1">
-          <li>📧 <b>Email:</b> <a href="mailto:support@weenyou.com" className="text-blue-600 underline">support@weenyou.com</a></li>
-          <li>📞 <b>Phone:</b> +91-XXXXXXXXXX</li>
+          <li>📧 <b>Email:</b> <a href="mailto:Contact.weenyou@gmail.com" className="text-blue-600 underline">Contact.weenyou@gmail.com</a></li>
+          <li>📞 <b>Phone:</b> +91-9831511897</li>
         </ul>
       </div>
     </div>
   );
-} 
+}

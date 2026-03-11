@@ -573,12 +573,12 @@ export default function Dashboard() {
                                 e.stopPropagation();
                                 // Collect all participant IDs
                                 const userId = typeof booking.userId === 'object' ? booking.userId._id : booking.userId;
-                                let ownerId = null;
+                                let ownerId: string | null = null;
                                 if (booking.hallId && booking.hallId.ownerId) {
                                   if (typeof booking.hallId.ownerId === 'object' && booking.hallId.ownerId) {
-                                    ownerId = (booking.hallId.ownerId as any)._id || null;
+                                    ownerId = ((booking.hallId.ownerId as any)._id || null) as string | null;
                                   } else {
-                                    ownerId = booking.hallId.ownerId;
+                                    ownerId = booking.hallId.ownerId as string;
                                   }
                                 }
                                 const providerIds = (booking.serviceBookings || []).map(sb => typeof sb.providerId === 'object' ? sb.providerId._id : sb.providerId).filter(Boolean);
@@ -789,12 +789,12 @@ export default function Dashboard() {
                               e.stopPropagation();
                               // Collect all participant IDs
                               const userId = typeof booking.userId === 'object' ? booking.userId._id : booking.userId;
-                              let ownerId = null;
+                              let ownerId: string | null = null;
                               if (booking.hallId && booking.hallId.ownerId) {
                                 if (typeof booking.hallId.ownerId === 'object' && booking.hallId.ownerId) {
-                                  ownerId = (booking.hallId.ownerId as any)._id || null;
+                                  ownerId = ((booking.hallId.ownerId as any)._id || null) as string | null;
                                 } else {
-                                  ownerId = booking.hallId.ownerId;
+                                  ownerId = booking.hallId.ownerId as string;
                                 }
                               }
                               const providerIds = (booking.serviceBookings || []).map(sb => typeof sb.providerId === 'object' ? sb.providerId._id : sb.providerId).filter(Boolean);
@@ -986,12 +986,12 @@ export default function Dashboard() {
                               e.stopPropagation();
                               // Collect all participant IDs
                               const userId = typeof booking.userId === 'object' ? booking.userId._id : booking.userId;
-                              let ownerId = null;
+                              let ownerId: string | null = null;
                               if (booking.hallId && booking.hallId.ownerId) {
                                 if (typeof booking.hallId.ownerId === 'object' && booking.hallId.ownerId) {
-                                  ownerId = (booking.hallId.ownerId as any)._id || null;
+                                  ownerId = ((booking.hallId.ownerId as any)._id || null) as string | null;
                                 } else {
-                                  ownerId = booking.hallId.ownerId;
+                                  ownerId = booking.hallId.ownerId as string;
                                 }
                               }
                               const providerIds = (booking.serviceBookings || []).map(sb => typeof sb.providerId === 'object' ? sb.providerId._id : sb.providerId).filter(Boolean);

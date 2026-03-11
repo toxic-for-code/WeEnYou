@@ -53,7 +53,8 @@ interface Service {
 }
 
 export default function HallDetail() {
-  const { id } = useParams();
+  const params = useParams();
+  const id = (params as any)?.id as string;
   const { data: session } = useSession();
   const [hall, setHall] = useState<Hall | null>(null);
   const [loading, setLoading] = useState(true);
@@ -100,7 +101,7 @@ export default function HallDetail() {
   const totalPrice = cart.reduce((sum, s) => sum + s.price, 0);
 
   const handleMessageOwner = async () => {
-    if (!session || !hall.ownerId?._id) return;
+    if (!session || !hall?.ownerId?._id) return;
     const res = await fetch('/api/conversations', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

@@ -10,7 +10,7 @@ export async function POST(req: Request) {
     const { bookingId } = body as { bookingId: string };
     if (!bookingId) return NextResponse.json({ error: 'Missing bookingId.' }, { status: 400 });
 
-    const booking = await BookingPayment.findById(bookingId);
+    const booking = await BookingPayment.findById(bookingId).lean().exec();
     if (!booking) return NextResponse.json({ error: 'Booking not found.' }, { status: 404 });
     if ((booking.remainingAmount ?? 0) <= 0) return NextResponse.json({ error: 'No remaining amount to collect.' }, { status: 400 });
 
@@ -19,7 +19,7 @@ export async function POST(req: Request) {
       currency: 'INR',
       receipt: `rem_${Date.now()}`,
       notes: {
-        bookingId: booking._id.toString(),
+        bookingId: (booking._id as any).toString(),
         type: 'remaining',
       },
     });

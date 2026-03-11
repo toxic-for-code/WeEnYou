@@ -355,10 +355,10 @@ const BookingPage = () => {
   const servicesToShow = showAllServices ? services : services.slice(0, 4);
 
   // Add refs for each section
-  const summaryRef = useRef(null);
-  const servicesRef = useRef(null);
-  const eventManagerRef = useRef(null);
-  const detailsRef = useRef(null);
+  const summaryRef = useRef<HTMLDivElement | null>(null);
+  const servicesRef = useRef<HTMLDivElement | null>(null);
+  const eventManagerRef = useRef<HTMLDivElement | null>(null);
+  const detailsRef = useRef<HTMLDivElement | null>(null);
 
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [pendingBooking, setPendingBooking] = useState(false);

@@ -21,8 +21,8 @@ async function assignEventManager(eventId, managerId) {
 }
 
 export default function AdminPlanEventsPage() {
-  const [events, setEvents] = useState([]);
-  const [managers, setManagers] = useState([]);
+  const [events, setEvents] = useState<any[]>([]);
+  const [managers, setManagers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [assigning, setAssigning] = useState(null);
   const [expanded, setExpanded] = useState<string | null>(null);

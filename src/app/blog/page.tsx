@@ -98,7 +98,7 @@ export default function BlogPage() {
       <section className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
         <div className="rounded-lg bg-gray-50 border border-gray-200 p-6">
           <h3 className="text-base sm:text-lg font-semibold text-gray-900">Have an idea to share?</h3>
-          <p className="mt-1 text-sm text-gray-600">Send us your tips and event hacks at feedback@weenyou.com.</p>
+          <p className="mt-1 text-sm text-gray-600">Send us your tips and event hacks at Contact.weenyou@gmail.com.</p>
         </div>
       </section>
     </div>

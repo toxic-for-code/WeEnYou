@@ -26,7 +26,7 @@ export async function POST(req: Request) {
     booking.status = 'completed';
     await booking.save();
 
-    return NextResponse.json({ message: 'Remaining amount paid. Booking Completed.', bookingId: booking._id.toString() });
+    return NextResponse.json({ message: 'Remaining amount paid. Booking Completed.', bookingId: (booking._id as any).toString() });
   } catch (e: any) {
     console.error('verify-remaining-payment error', e);
     return NextResponse.json({ error: 'Failed to verify remaining payment.' }, { status: 500 });

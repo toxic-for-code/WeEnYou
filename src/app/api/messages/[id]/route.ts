@@ -25,7 +25,7 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
     if (conversation && conversation.lastMessage && conversation.lastMessage.toString() === messageId) {
       const lastMsg = await Message.findOne({ conversationId: conversation._id }).sort({ createdAt: -1 });
       conversation.lastMessage = lastMsg && lastMsg._id && typeof lastMsg._id === 'object' && 'toString' in lastMsg._id && lastMsg._id.toString() !== '[object Object]' && lastMsg._id.toString().length > 0 ? (lastMsg._id as any) : null;
-      conversation.lastMessageAt = lastMsg ? lastMsg.createdAt : null;
+      conversation.lastMessageAt = lastMsg ? lastMsg.createdAt : undefined;
       await conversation.save();
     }
     return NextResponse.json({ success: true });

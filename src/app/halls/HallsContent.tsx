@@ -8,7 +8,7 @@ export default function HallsContent() {
 
   useEffect(() => {
     // Build the query string from current params
-    const params = searchParams.toString();
+    const params = searchParams?.toString() ?? "";
     router.replace(`/browse${params ? `?${params}` : ""}`);
   }, [router, searchParams]);
 

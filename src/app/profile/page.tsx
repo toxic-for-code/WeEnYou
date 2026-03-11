@@ -51,16 +51,16 @@ export default function ProfilePage() {
   const { data: session } = useSession();
   // Debug log for profile image
   console.log('Profile image:', session?.user?.image);
-  const [bookings, setBookings] = useState([]);
+  const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState("Upcoming");
   const [showEdit, setShowEdit] = useState(false);
   const [showBookingModal, setShowBookingModal] = useState(false);
-  const [selectedBooking, setSelectedBooking] = useState(null);
+  const [selectedBooking, setSelectedBooking] = useState<any | null>(null);
   const [showSupport, setShowSupport] = useState(false);
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [show2FA, setShow2FA] = useState(false);
-  const [notifications, setNotifications] = useState([]);
+  const [notifications, setNotifications] = useState<any[]>([]);
   const [notifLoading, setNotifLoading] = useState(true);
   const [notifError, setNotifError] = useState('');
   const [showCancelReason, setShowCancelReason] = useState(false);
@@ -69,7 +69,7 @@ export default function ProfilePage() {
   const [showReschedule, setShowReschedule] = useState(false);
   const [rescheduleDate, setRescheduleDate] = useState('');
   const [rescheduleBookingId, setRescheduleBookingId] = useState<string | null>(null);
-  const [plannedEvents, setPlannedEvents] = useState([]);
+  const [plannedEvents, setPlannedEvents] = useState<any[]>([]);
   const [plannedEventsLoading, setPlannedEventsLoading] = useState(true);
 
   // Placeholder for notifications, rewards (recommendations removed)
@@ -220,7 +220,7 @@ export default function ProfilePage() {
   const BookingModal = () => {
     const [action, setAction] = useState<'none' | 'reschedule' | 'review'>('none');
     const [rescheduleDate, setRescheduleDate] = useState('');
-    const [review, setReview] = useState({ rating: 5, comment: '' });
+    const [review, setReview] = useState<{ rating: number; comment: string }>({ rating: 5, comment: '' });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     if (!selectedBooking) return null;

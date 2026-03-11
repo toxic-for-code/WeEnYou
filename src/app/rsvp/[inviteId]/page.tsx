@@ -5,13 +5,13 @@ import { useSearchParams } from 'next/navigation';
 export default function RSVPPage({ params }: { params: { inviteId: string } }) {
   const searchParams = useSearchParams();
   const [response, setResponse] = useState('Yes');
-  const [guestEmail, setGuestEmail] = useState(searchParams.get('email') || '');
+  const [guestEmail, setGuestEmail] = useState(searchParams?.get('email') || '');
   const [guestCount, setGuestCount] = useState(1);
   const [specialRequests, setSpecialRequests] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const eventDate = searchParams.get('eventDate') || '';
+  const eventDate = searchParams?.get('eventDate') || '';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

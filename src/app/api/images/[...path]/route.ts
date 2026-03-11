@@ -35,8 +35,8 @@ export async function GET(
     let imagePath2 = process.env.SUBDOMAIN_UPLOAD_PATH 
       ? join(process.env.SUBDOMAIN_UPLOAD_PATH, imagePath)
       : join(process.cwd(), '..', 'subdomain-public', 'uploads', imagePath);
-    
-    let finalPath = null;
+
+    let finalPath: string | null = null;
     
     // Check which path exists
     if (existsSync(imagePath1)) {

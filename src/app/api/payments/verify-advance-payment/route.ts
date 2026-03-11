@@ -46,7 +46,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       message: 'Booking Request Sent!\nThank you for  your payment.\nPlease wait for the owner to accept  your request.\nYou’ll be notified once it’s accepted.',
-      bookingId: booking._id.toString(),
+      bookingId: (booking._id as any).toString(),
     });
   } catch (e: any) {
     console.error('verify-advance-payment error', e);

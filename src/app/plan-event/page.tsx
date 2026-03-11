@@ -43,7 +43,19 @@ async function fetchAssignedManager(userId) {
 }
 
 export default function PlanEventPage() {
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<{
+    eventType: string;
+    city: string;
+    date: string;
+    guests: string;
+    budget: string;
+    venueType: string;
+    services: string[];
+    theme: string;
+    special: string;
+    contactTime: string;
+    eventTag: string;
+  }>({
     eventType: '',
     city: '',
     date: '',
@@ -57,7 +69,17 @@ export default function PlanEventPage() {
     eventTag: '',    // new
   });
   const [submitted, setSubmitted] = useState(false);
-  const [estimate, setEstimate] = useState({ min: 0, max: 0, breakdown: null });
+  const [estimate, setEstimate] = useState<{
+    min: number;
+    max: number;
+    breakdown: null | {
+      hallMin?: number;
+      hallMax?: number;
+      serviceMin?: number;
+      serviceMax?: number;
+      guestCost?: number;
+    };
+  }>({ min: 0, max: 0, breakdown: null });
   const [showModal, setShowModal] = useState(false);
   const [modalMsg, setModalMsg] = useState('');
   const [openFaq, setOpenFaq] = useState([false, false]);

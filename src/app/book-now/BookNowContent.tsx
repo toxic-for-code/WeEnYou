@@ -6,7 +6,7 @@ import Image from 'next/image';
 
 export default function BookNowContent() {
   const searchParams = useSearchParams();
-  const hallId = searchParams.get('hall');
+  const hallId = searchParams?.get('hall') ?? null;
   const [hall, setHall] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');

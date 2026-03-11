@@ -96,7 +96,7 @@ export default async function HallReviewsPage({
         <ReviewSection
           hallId={params.id}
           initialReviews={reviews.map((review) => ({
-            _id: review._id.toString(),
+            _id: (review._id as any).toString(),
             rating: review.rating,
             comment: review.comment,
             images: review.images,
