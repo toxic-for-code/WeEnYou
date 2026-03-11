@@ -75,7 +75,7 @@ export default function BecomeAPartnerPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-white px-4 py-8">
+    <div className="page-mobile-first min-h-screen flex flex-col items-center justify-center bg-white px-4 sm:px-6 py-8 w-full min-w-0 overflow-x-hidden">
       <h1 className="text-4xl font-bold text-center mb-2">Become a Partner</h1>
       <p className="text-lg text-center mb-8 text-gray-700 max-w-2xl">
         Whether you're a photographer, caterer, decorator, or provide any event-related service — WeEnYou gives you the tools and visibility to grow your business. Partner with us and reach thousands of event planners looking for trusted vendors like you.

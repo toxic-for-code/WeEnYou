@@ -23,25 +23,25 @@ export default function BookNowContent() {
   }, [hallId]);
 
   if (!hallId) {
-    return <div className="container mx-auto px-4 py-8">No hall selected. Please select a hall to book.</div>;
+    return <div className="page-mobile-first container mx-auto px-4 py-8 text-center sm:text-left">No hall selected. Please select a hall to book.</div>;
   }
 
   if (loading) {
-    return <div className="container mx-auto px-4 py-8">Loading...</div>;
+    return <div className="page-mobile-first container mx-auto px-4 py-8">Loading...</div>;
   }
 
   if (error) {
-    return <div className="container mx-auto px-4 py-8 text-red-600">{error}</div>;
+    return <div className="page-mobile-first container mx-auto px-4 py-8 text-red-600">{error}</div>;
   }
 
   if (!hall) {
-    return <div className="container mx-auto px-4 py-8">Hall not found.</div>;
+    return <div className="page-mobile-first container mx-auto px-4 py-8">Hall not found.</div>;
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-2xl">
-      <h1 className="text-3xl font-bold mb-6">Book Now</h1>
-      <div className="mb-6 flex gap-4 items-center">
+    <div className="page-mobile-first container mx-auto px-4 sm:px-6 py-6 sm:py-8 max-w-2xl w-full min-w-0">
+      <h1 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6">Book Now</h1>
+      <div className="mb-6 flex flex-col sm:flex-row gap-4 items-stretch sm:items-center">
         <div className="relative w-32 h-32 flex-shrink-0">
           <Image src={hall.images[0]} alt={hall.name} fill className="object-cover rounded-lg" />
         </div>

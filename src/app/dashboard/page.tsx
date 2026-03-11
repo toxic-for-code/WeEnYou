@@ -472,7 +472,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto py-12 px-4">
+    <div className="page-mobile-first max-w-7xl mx-auto py-6 sm:py-12 px-4 sm:px-6 w-full min-w-0 overflow-x-hidden">
       {/* My Bookings Section - Only for regular users */}
       {session?.user?.role === 'user' && (
         <div className="mb-12">

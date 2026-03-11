@@ -2,8 +2,8 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import ClientLayout from '@/components/ClientLayout'
-import AuthButtons from '@/components/AuthButtons'
 import Footer from '@/components/Footer'
+import MobileNavbar from '@/components/mobile/MobileNavbar'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 
@@ -24,10 +24,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} font-sans`}>
+      <body className={`${inter.variable} font-sans antialiased`}>
         <ClientLayout>
-          {/* <Navbar /> Removed to eliminate the top navigation bar */}
-          <main className="min-h-screen bg-gray-50">
+          <MobileNavbar />
+          <main className="min-h-screen bg-gray-50 min-w-0 w-full overflow-x-hidden">
             {children}
           </main>
           <Footer />

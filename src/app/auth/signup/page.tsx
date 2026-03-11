@@ -51,7 +51,7 @@ export default function SignUp() {
 
   if (session.data?.user) {
     return (
-      <div className="min-h-screen flex items-center justify-start relative py-12 px-4 sm:px-6 lg:px-8">
+      <div className="page-mobile-first min-h-screen flex items-center justify-center md:justify-start relative py-8 sm:py-12 px-4 sm:px-6 lg:px-8 w-full min-w-0">
         <Image src="/signin.png" alt="Background" fill priority className="object-cover object-center absolute inset-0 w-full h-full z-0" />
         <div className="max-w-md w-full bg-white/30 backdrop-blur-md rounded-2xl shadow-2xl p-8 space-y-8 border border-gray-100 animate-fade-in z-20 relative ml-0 md:ml-12 flex flex-col items-center justify-center">
           <Image src="/logo.png" alt="EventHall Logo" width={64} height={64} className="mb-2" style={{ filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.25))' }} />
@@ -64,7 +64,7 @@ export default function SignUp() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-start relative py-12 px-4 sm:px-6 lg:px-8">
+    <div className="page-mobile-first min-h-screen flex items-center justify-center md:justify-start relative py-8 sm:py-12 px-4 sm:px-6 lg:px-8 w-full min-w-0">
       <Image src="/signin.png" alt="Background" fill priority className="object-cover object-center absolute inset-0 w-full h-full z-0" />
       <div className="max-w-md w-full bg-white/30 backdrop-blur-md rounded-2xl shadow-2xl p-8 space-y-8 border border-gray-100 animate-fade-in z-20 relative ml-0 md:ml-12">
         <div className="flex flex-col items-center">

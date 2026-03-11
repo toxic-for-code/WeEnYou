@@ -135,7 +135,7 @@ export default function HallDetail() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="page-mobile-first min-h-screen bg-gray-50 py-4 sm:py-8 w-full min-w-0 overflow-x-hidden">
       <div className="container mx-auto px-4">
         {/* Image Gallery */}
         <div className="bg-white rounded-lg shadow-md overflow-hidden mb-8">

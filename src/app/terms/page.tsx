@@ -2,9 +2,9 @@ import React from 'react';
 
 export default function TermsPage() {
   return (
-    <div className="min-h-screen bg-gray-50 flex items-start justify-center py-12 px-2">
-      <div className="bg-white max-w-4xl w-full rounded-xl shadow-lg border border-gray-200 p-8 md:p-12">
-        <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 flex items-center gap-2 mb-2">📄 WeEnYou Terms & Conditions</h1>
+    <div className="page-mobile-first min-h-screen bg-gray-50 flex items-start justify-center py-8 sm:py-12 px-4 sm:px-6">
+      <div className="bg-white max-w-4xl w-full min-w-0 rounded-xl shadow-lg border border-gray-200 p-4 sm:p-8 md:p-12">
+        <h1 className="text-xl sm:text-2xl md:text-4xl font-extrabold text-gray-900 flex items-center gap-2 mb-2">📄 WeEnYou Terms & Conditions</h1>
         <div className="text-sm text-gray-500 font-medium text-right mb-6">Last Updated: <span className="font-semibold">13 July 2025</span></div>
         <p className="text-gray-700 text-base mb-6">Welcome to WeEnYou! By accessing or using our website, mobile app, or services, you agree to be bound by these Terms and Conditions. Please read them carefully before using our platform.<br /><br />These Terms apply to all users of WeEnYou, including customers, vendors, venue owners, and visitors.</p>
         <hr className="my-6 border-gray-200" />

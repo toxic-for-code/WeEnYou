@@ -86,8 +86,8 @@ export default function EventManagerEventDetails() {
   if (!event) return <div className="p-8 text-red-600">Event not found or you do not have access.</div>;
 
   return (
-    <div className="p-8 max-w-3xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4">Event Details</h1>
+    <div className="page-mobile-first p-4 sm:p-8 max-w-3xl mx-auto w-full min-w-0">
+      <h1 className="text-xl sm:text-2xl font-bold mb-4">Event Details</h1>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
         <div><b>Event Type:</b> {event.eventType}</div>
         <div><b>City:</b> {event.city}</div>

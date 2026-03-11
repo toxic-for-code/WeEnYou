@@ -35,8 +35,8 @@ export default function WishlistPage() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-6">My Wishlist</h1>
+    <div className="page-mobile-first max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8 w-full min-w-0">
+      <h1 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6">My Wishlist</h1>
       {wishlist.length === 0 ? (
         <div className="text-gray-600">You have no halls in your wishlist.</div>
       ) : (

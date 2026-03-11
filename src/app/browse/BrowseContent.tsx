@@ -153,7 +153,7 @@ export default function BrowseContent() {
 
   // Layout: split view
   return (
-    <div className="min-h-screen bg-gradient-to-b from-yellow-50 via-white to-gray-50 font-sans relative overflow-x-hidden">
+    <div className="page-mobile-first min-h-screen bg-gradient-to-b from-yellow-50 via-white to-gray-50 font-sans relative overflow-x-hidden">
       {/* Animated Background Pattern */}
       <div className="absolute inset-0 w-full h-full pointer-events-none z-0">
         <svg width="100%" height="100%" className="opacity-10 animate-pulse" style={{position:'absolute',top:0,left:0}}>

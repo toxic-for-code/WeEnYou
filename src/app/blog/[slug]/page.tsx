@@ -67,7 +67,7 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
   if (!post) return notFound();
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="page-mobile-first min-h-screen bg-white w-full min-w-0 overflow-x-hidden">
       <section className="bg-gradient-to-b from-gray-50 to-white border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
           <div className="flex items-center text-xs text-gray-600 gap-2">

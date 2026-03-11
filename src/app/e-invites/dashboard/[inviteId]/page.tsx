@@ -36,8 +36,8 @@ export default function InviteDashboardPage({ params }: { params: { inviteId: st
   }, [params.inviteId]);
 
   return (
-    <div className="min-h-screen bg-white flex flex-col items-center py-16">
-      <h1 className="text-3xl font-bold mb-6 text-blue-900">RSVP Responses</h1>
+    <div className="page-mobile-first min-h-screen bg-white flex flex-col items-center py-8 sm:py-16 px-4 w-full min-w-0 overflow-x-hidden">
+      <h1 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6 text-blue-900 text-center">RSVP Responses</h1>
       {loading ? (
         <div>Loading...</div>
       ) : error ? (

@@ -49,20 +49,20 @@ export default function Footer() {
         <span className="text-xs text-gray-400 text-center">Making every event memorable. Your trusted event partner.</span>
       </div>
       <div className="text-center text-xs text-gray-500 mt-4 sm:mt-6 px-4 sm:px-6">&copy; {new Date().getFullYear()} WeEnYou. All rights reserved.</div>
-      {/* Sticky Back to Top Button */}
+      {/* Sticky Back to Top - touch-friendly on mobile */}
       <button
         onClick={scrollToTop}
-        className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 bg-gray-800 hover:bg-gray-700 text-white p-2 sm:p-3 rounded-full shadow-lg transition-colors"
+        className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 bg-gray-800 hover:bg-gray-700 text-white rounded-full shadow-lg transition-colors min-h-[48px] min-w-[48px] sm:min-h-[44px] sm:min-w-[44px] flex items-center justify-center p-0"
         aria-label="Back to top"
         style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.2)' }}
       >
         <span className="text-lg sm:text-xl">↑</span>
       </button>
-      {/* Sticky Feedback Button (hidden on /plan-event) */}
+      {/* Sticky Feedback Button - touch-friendly (hidden on /plan-event) */}
       {pathname !== '/plan-event' && (
         <button
           onClick={() => window.open('mailto:support@weenyou.com', '_blank')}
-          className="fixed bottom-16 right-4 sm:bottom-24 sm:right-6 z-50 bg-green-600 hover:bg-green-700 text-white px-3 py-2 sm:px-5 sm:py-2 rounded-full shadow-lg transition-colors text-xs sm:text-sm"
+          className="fixed bottom-20 right-4 sm:bottom-24 sm:right-6 z-50 bg-green-600 hover:bg-green-700 text-white rounded-full shadow-lg transition-colors text-xs sm:text-sm min-h-[48px] min-w-[48px] sm:min-h-[44px] sm:min-w-auto sm:px-5 sm:py-2 flex items-center justify-center px-4"
           style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.2)' }}
         >
           Feedback

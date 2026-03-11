@@ -40,7 +40,7 @@ export default function EInvitesPage() {
 
   if (customizing) {
     return (
-      <div className="min-h-screen bg-white flex flex-col items-center py-16">
+      <div className="page-mobile-first min-h-screen bg-white flex flex-col items-center py-8 sm:py-16 px-4 w-full min-w-0 overflow-x-hidden">
         <h1 className="text-4xl font-bold mb-4 text-blue-900">Send E-Invites</h1>
         <InviteCustomizer template={customizing} onBack={() => setCustomizing(null)} />
       </div>
@@ -48,7 +48,7 @@ export default function EInvitesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white flex flex-col items-center py-16">
+    <div className="page-mobile-first min-h-screen bg-white flex flex-col items-center py-8 sm:py-16 px-4 w-full min-w-0 overflow-x-hidden">
       <h1 className="text-4xl font-bold mb-4 text-blue-900">Send E-Invites</h1>
       <p className="text-lg text-gray-700 mb-8 max-w-xl text-center">
         Create beautiful, personalized event invitations and send them to your guests via email or WhatsApp. Track RSVPs, set reminders, and make your event unforgettable!

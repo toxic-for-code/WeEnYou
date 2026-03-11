@@ -116,7 +116,7 @@ export default function ProfilePage() {
 
   if (!session?.user) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="page-mobile-first min-h-screen flex items-center justify-center w-full min-w-0">
         <div className="bg-white p-8 rounded shadow text-center">
           <h2 className="text-2xl font-bold mb-4">Please sign in to view your profile</h2>
           <Link href="/auth/signin" className="text-primary-600 hover:underline">Sign In</Link>
@@ -612,7 +612,7 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="page-mobile-first min-h-screen bg-gray-50 w-full min-w-0 overflow-x-hidden">
       {/* OYO-style Search Bar */}
       <nav className="w-full bg-white shadow-sm py-3 px-4 flex items-center justify-between gap-4 sticky top-0 z-40">
         <div className="flex items-center gap-2">

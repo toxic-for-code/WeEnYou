@@ -209,7 +209,7 @@ export default function PlanEventPage() {
   };
 
   return (
-    <div className="min-h-screen w-full py-8 px-2 flex flex-col items-center relative" style={{ background: 'linear-gradient(120deg, #f8f6f1 0%, #f3e9d2 50%, #f7e7ce 100%)' }}>
+    <div className="page-mobile-first min-h-screen w-full min-w-0 overflow-x-hidden py-6 sm:py-8 px-4 sm:px-6 flex flex-col items-center relative" style={{ background: 'linear-gradient(120deg, #f8f6f1 0%, #f3e9d2 50%, #f7e7ce 100%)' }}>
       {/* 1. Add shimmer overlay to the background (top of the main div) */}
       <div className="pointer-events-none fixed inset-0 z-0" aria-hidden="true">
         <div className="absolute inset-0 bg-gradient-to-br from-white/60 via-yellow-100/40 to-pink-100/40 animate-shimmer" style={{backgroundSize:'400% 400%', animation:'shimmer 8s ease-in-out infinite'}} />

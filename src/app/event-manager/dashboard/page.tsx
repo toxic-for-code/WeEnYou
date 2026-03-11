@@ -25,11 +25,12 @@ export default function EventManagerDashboard() {
   if (loading) return <div className="p-8">Loading your assigned events...</div>;
 
   return (
-    <div className="p-8">
-      <h1 className="text-2xl font-bold mb-6">My Assigned Events</h1>
+    <div className="page-mobile-first p-4 sm:p-8 w-full min-w-0 overflow-x-hidden">
+      <h1 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">My Assigned Events</h1>
       {events.length === 0 ? (
         <div>No events assigned to you yet.</div>
       ) : (
+        <div className="overflow-x-auto -mx-4 sm:mx-0">
         <table className="min-w-full border">
           <thead>
             <tr className="bg-blue-100">
@@ -56,6 +57,7 @@ export default function EventManagerDashboard() {
             ))}
           </tbody>
         </table>
+        </div>
       )}
     </div>
   );

@@ -85,8 +85,8 @@ export default function CategoryPage() {
 
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold mb-6">{categoryName} Across India</h1>
+      <div className="page-mobile-first container mx-auto px-4 py-8">
+        <h1 className="text-2xl sm:text-3xl font-bold mb-6">{categoryName} Across India</h1>
         <div className="flex justify-center items-center min-h-[300px]">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
         </div>
@@ -96,8 +96,8 @@ export default function CategoryPage() {
 
   if (error) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold mb-6">{categoryName} Across India</h1>
+      <div className="page-mobile-first container mx-auto px-4 py-8">
+        <h1 className="text-2xl sm:text-3xl font-bold mb-6">{categoryName} Across India</h1>
         <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-6">
           <p className="text-red-700">{error}</p>
         </div>
@@ -106,8 +106,8 @@ export default function CategoryPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-6">{categoryName} Across India</h1>
+    <div className="page-mobile-first container mx-auto px-4 sm:px-6 py-6 sm:py-8 w-full min-w-0">
+      <h1 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6">{categoryName} Across India</h1>
       
       {cities.length === 0 ? (
         <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">

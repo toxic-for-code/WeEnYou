@@ -78,7 +78,7 @@ export default function OwnerAuthPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-white px-4 py-8">
+    <div className="page-mobile-first min-h-screen flex flex-col items-center justify-center bg-white px-4 sm:px-6 py-8 w-full min-w-0 overflow-x-hidden">
       <h1 className="text-4xl font-bold text-center mb-2">Explore the world of WeEnYou!</h1>
       <p className="text-lg text-center mb-8 text-gray-700">Transparent policies and easy payments for your growth, always!</p>
       <div className="relative w-full max-w-5xl mb-12 min-h-[360px] flex items-center">

@@ -101,7 +101,7 @@ export default function ProvideServicePage() {
   };
 
   return (
-    <div className="max-w-xl mx-auto py-12 px-4">
+    <div className="page-mobile-first max-w-xl mx-auto py-6 sm:py-12 px-4 sm:px-6 w-full min-w-0">
       <h1 className="text-3xl font-bold mb-6">List Your Service</h1>
       <form onSubmit={handleSubmit} className="space-y-6 bg-white p-6 rounded-lg shadow">
         {error && <div className="bg-red-100 text-red-700 p-2 rounded">{error}</div>}

@@ -32,19 +32,19 @@ const features = [
 
 export default function AboutUsPage() {
   return (
-    <div className="relative min-h-screen bg-gray-50">
-      {/* Hero Section */}
-      <div className="relative h-72 md:h-96 flex items-center justify-center bg-[url('/bg.png')] bg-cover bg-center">
+    <div className="page-mobile-first relative min-h-screen bg-gray-50">
+      {/* Hero Section - mobile-first height */}
+      <div className="relative min-h-[280px] h-72 md:h-96 flex items-center justify-center bg-[url('/bg.png')] bg-cover bg-center">
         <div className="absolute inset-0 bg-black/60" />
-        <div className="relative z-10 flex flex-col items-center text-center text-white animate-fade-in-up">
+        <div className="relative z-10 flex flex-col items-center text-center text-white animate-fade-in-up px-4">
           <Image src="/logo.png" alt="WeEnYou Logo" width={120} height={40} className="mb-4 drop-shadow-lg" />
-          <h1 className="text-4xl md:text-5xl font-extrabold mb-2 tracking-tight">We Enable You to Celebrate</h1>
-          <p className="text-lg md:text-xl max-w-xl mx-auto font-medium">Discover, compare, and book the perfect venues and trusted vendors for every celebration—effortlessly.</p>
+          <h1 className="text-2xl sm:text-3xl md:text-5xl font-extrabold mb-2 tracking-tight">We Enable You to Celebrate</h1>
+          <p className="text-base sm:text-lg md:text-xl max-w-xl mx-auto font-medium">Discover, compare, and book the perfect venues and trusted vendors for every celebration—effortlessly.</p>
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="max-w-3xl mx-auto px-4 py-12 text-gray-900 animate-fade-in">
+      {/* Main Content - single column on mobile */}
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-12 text-gray-900 animate-fade-in">
         <section className="mb-10">
           <h2 className="text-2xl md:text-3xl font-bold mb-4 text-center text-green-700">Your Dream Event, One Click Away</h2>
           <p className="mb-4 text-center text-lg text-gray-700">

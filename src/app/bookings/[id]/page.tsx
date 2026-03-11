@@ -450,7 +450,7 @@ export default function BookingDetails({ params }: { params: { id: string } }) {
   const icsUrl = `data:text/calendar;charset=utf-8,${encodeURIComponent(icsContent)}`;
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="page-mobile-first min-h-screen bg-gray-50 py-4 sm:py-8 px-4 sm:px-6 w-full min-w-0 overflow-x-hidden">
       <div className="container mx-auto px-4">
         <div className="max-w-4xl mx-auto">
           <div className="bg-white rounded-lg shadow-md overflow-hidden">

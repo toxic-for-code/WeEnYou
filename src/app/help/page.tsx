@@ -45,17 +45,17 @@ export default function HelpPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-pink-50 pb-16">
-      {/* Hero Section */}
-      <div className="max-w-3xl mx-auto flex flex-col items-center text-center py-10 px-4">
+    <div className="page-mobile-first min-h-screen bg-gradient-to-br from-blue-50 to-pink-50 pb-24">
+      {/* Hero Section - mobile-first */}
+      <div className="max-w-3xl mx-auto flex flex-col items-center text-center py-8 sm:py-10 px-4">
         <div className="flex items-center justify-center mb-4">
           <Image src="/phone-call.png" alt="Support" width={56} height={56} className="drop-shadow-lg" />
         </div>
-        <h1 className="text-4xl font-extrabold text-blue-900 mb-2">Help & Support</h1>
-        <p className="text-lg text-gray-700 mb-4">We're here to help you have a smooth and memorable event experience. Browse FAQs, guides, or contact our friendly team!</p>
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-blue-900 mb-2">Help & Support</h1>
+        <p className="text-base sm:text-lg text-gray-700 mb-4">We're here to help you have a smooth and memorable event experience. Browse FAQs, guides, or contact our friendly team!</p>
       </div>
 
-      <div className="max-w-3xl mx-auto grid gap-8 px-4">
+      <div className="max-w-3xl mx-auto grid gap-6 sm:gap-8 px-4 sm:px-6">
         {/* FAQs */}
         <section className="bg-white rounded-xl shadow p-6">
           <h2 className="text-xl font-bold flex items-center gap-2 mb-4"><span>❓</span> Frequently Asked Questions</h2>
@@ -68,8 +68,8 @@ export default function HelpPage() {
           </ul>
         </section>
 
-        {/* Contact Support */}
-        <section className="bg-white rounded-xl shadow p-6">
+        {/* Contact Support - touch-friendly form */}
+        <section className="bg-white rounded-xl shadow p-4 sm:p-6">
           <h2 className="text-xl font-bold flex items-center gap-2 mb-4"><span>📞</span> Contact Support</h2>
           {!session && (
             <div className="mb-4 text-red-600 font-semibold">You must be signed in to contact support.</div>
@@ -101,7 +101,7 @@ export default function HelpPage() {
             </div>
             {supportError && <div className="text-red-600 text-sm">{supportError}</div>}
             {supportSuccess && <div className="text-green-600 text-sm">{supportSuccess}</div>}
-            <button className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded shadow transition" type="submit" disabled={loading || !session}>{loading ? 'Sending...' : 'Send Message'}</button>
+            <button className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 sm:py-2 rounded shadow transition min-h-[48px] w-full sm:w-auto" type="submit" disabled={loading || !session}>{loading ? 'Sending...' : 'Send Message'}</button>
           </form>
           <div className="mt-4 text-gray-600 text-sm">
             Or email us at <a href="mailto:support@weenyou.com" className="text-primary-600 underline">support@weenyou.com</a>

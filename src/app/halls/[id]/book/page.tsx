@@ -393,7 +393,7 @@ const BookingPage = () => {
 
   if (loading) {
     return (
-      <div className="relative min-h-screen w-full bg-gradient-to-br from-gray-50 via-white to-gray-100 flex flex-col items-center justify-start py-8 px-2 md:px-8">
+      <div className="page-mobile-first relative min-h-screen w-full min-w-0 overflow-x-hidden bg-gradient-to-br from-gray-50 via-white to-gray-100 flex flex-col items-center justify-start py-4 sm:py-8 px-4 md:px-8">
         <div className="w-full max-w-7xl flex flex-col md:flex-row gap-8">
           {/* Left Column Skeleton */}
           <div className="flex-1 min-w-0 space-y-8">
@@ -495,7 +495,7 @@ const BookingPage = () => {
   };
 
   return (
-    <div className="relative min-h-screen w-full bg-gradient-to-br from-gray-50 via-white to-gray-100 flex flex-col items-center justify-start py-8 px-2 md:px-8">
+    <div className="page-mobile-first relative min-h-screen w-full min-w-0 overflow-x-hidden bg-gradient-to-br from-gray-50 via-white to-gray-100 flex flex-col items-center justify-start py-4 sm:py-8 px-4 md:px-8">
       <div className="w-full max-w-7xl flex flex-col md:flex-row gap-8">
         {/* Left Column */}
         <div className="flex-1 min-w-0 space-y-8">

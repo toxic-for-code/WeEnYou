@@ -180,7 +180,7 @@ export default function ListYourHallPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white">
+    <div className="page-mobile-first min-h-screen bg-gradient-to-br from-blue-50 to-white w-full min-w-0 overflow-x-hidden">
       {/* Navbar */}
       <nav className="w-full flex items-center justify-between px-6 py-4 bg-white shadow-sm fixed top-0 left-0 z-40">
         <div className="text-xl font-bold text-blue-900">WeEnYou</div>

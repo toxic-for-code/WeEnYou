@@ -45,7 +45,7 @@ export default function RSVPPage({ params }: { params: { inviteId: string } }) {
 
   if (submitted) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-blue-50 py-16">
+      <div className="page-mobile-first min-h-screen flex flex-col items-center justify-center bg-blue-50 py-8 sm:py-16 px-4 w-full min-w-0">
         <div className="bg-white p-8 rounded-lg shadow border border-blue-100 max-w-md w-full text-center">
           <h1 className="text-2xl font-bold text-blue-900 mb-4">Thank you for your RSVP!</h1>
           <p className="text-gray-700">We look forward to seeing you at the event.</p>
@@ -55,7 +55,7 @@ export default function RSVPPage({ params }: { params: { inviteId: string } }) {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-blue-50 py-16">
+    <div className="page-mobile-first min-h-screen flex flex-col items-center justify-center bg-blue-50 py-8 sm:py-16 px-4 w-full min-w-0">
       <form onSubmit={handleSubmit} className="bg-white p-8 rounded-lg shadow border border-blue-100 max-w-md w-full">
         <h1 className="text-2xl font-bold text-blue-900 mb-4">RSVP</h1>
         <input type="hidden" name="eventDate" value={eventDate} />

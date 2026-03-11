@@ -121,6 +121,35 @@
     }
   }
   
+  /* Mobile-first page container (360px+ default, no horizontal scroll) */
+  .page-mobile-first {
+    @apply w-full min-w-0 max-w-full overflow-x-hidden;
+    padding-left: env(safe-area-inset-left, 0);
+    padding-right: env(safe-area-inset-right, 0);
+  }
+
+  /* Single-column stack on mobile, row on md+ */
+  .stack-mobile {
+    @apply flex flex-col gap-4;
+  }
+  @media (min-width: 768px) {
+    .stack-mobile {
+      @apply flex-row flex-wrap;
+    }
+  }
+
+  /* Touch-friendly tap targets (min 44px) */
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  @media (max-width: 767px) {
+    .touch-target {
+      min-height: 48px;
+      min-width: 48px;
+    }
+  }
+
   /* Responsive text utilities */
   .text-responsive-xl {
     @apply text-xl;
