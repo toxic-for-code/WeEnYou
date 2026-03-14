@@ -103,7 +103,7 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
         <div className="mt-10 flex items-center justify-between">
           <Link href="/blog" className="text-primary-600 hover:text-primary-700 font-medium">← Back to Blog</Link>
           <a
-            href="mailto:Contact.weenyou@gmail.com"
+            href="mailto:support@weenyou.com"
             className="text-sm text-gray-600 hover:text-gray-800"
           >
             Share your tips

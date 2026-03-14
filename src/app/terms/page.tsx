@@ -84,8 +84,8 @@ export default function TermsPage() {
         <h2 className="text-lg font-bold text-gray-800 mb-2 flex items-center gap-2">📩 9. Contact Us</h2>
         <p className="mb-2 text-gray-700">If you have any questions about these Terms & Conditions, contact our support team:</p>
         <ul className="list-disc list-inside mb-2 text-gray-700 space-y-1">
-          <li>📧 Email: <a href="mailto:Contact.weenyou@gmail.com" className="text-blue-600 underline font-semibold">Contact.weenyou@gmail.com</a></li>
-          <li>📞 Phone: +91-9831511897</li>
+          <li>📧 Email: <a href="mailto:support@weenyou.com" className="text-blue-600 underline font-semibold">support@weenyou.com</a></li>
+          <li>📞 Phone: +91-9678097461</li>
         </ul>
       </div>
     </div>

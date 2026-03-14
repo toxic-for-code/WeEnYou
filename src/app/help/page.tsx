@@ -144,7 +144,7 @@ export default function HelpPage() {
         <section className="bg-white rounded-xl shadow p-6 text-center">
           <h2 className="text-xl font-bold flex items-center gap-2 mb-4 justify-center"><span>💡</span> Feedback</h2>
           <p className="mb-2">We value your feedback! Please let us know how we can improve your experience by contacting support or using the feedback form above.</p>
-          <a href="mailto:Contact.weenyou@gmail.com" className="inline-block mt-2 bg-pink-500 hover:bg-pink-600 text-white font-semibold px-6 py-2 rounded-full shadow transition">Send Feedback</a>
+          <a href="mailto:support@weenyou.com" className="inline-block mt-2 bg-pink-500 hover:bg-pink-600 text-white font-semibold px-6 py-2 rounded-full shadow transition">Send Feedback</a>
         </section>
       </div>
     </div>

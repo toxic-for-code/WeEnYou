@@ -576,7 +576,7 @@ export default function ListYourHallPage() {
             )}
             <div className="mt-4">
               <span className="block text-gray-700 font-semibold">Or email:</span>
-              <a href="mailto:Contact.weenyou@gmail.com" className="text-blue-600 underline font-semibold break-all">Contact.weenyou@gmail.com</a>
+              <a href="mailto:support@weenyou.com" className="text-blue-600 underline font-semibold break-all">support@weenyou.com</a>
             </div>
           </div>
         </div>
