@@ -51,14 +51,51 @@ const BookingPage = () => {
   // Update validation logic
   const validateForm = () => {
     const errors: any = {};
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
     if (!form.name.trim()) errors.name = 'Name is required.';
-    if (!form.phone.trim() || !/^[0-9]{10,}$/.test(form.phone.trim())) errors.phone = 'Valid phone number is required.';
+    if (!form.phone.trim() || !/^[0-9]{10,}$/.test(form.phone.trim())) errors.phone = 'Valid phone number (min 10 digits) is required.';
     if (!form.email.trim() || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(form.email.trim())) errors.email = 'Valid email is required.';
-    if (!form.startDate) errors.startDate = 'Start date is required.';
-    if (!form.endDate) errors.endDate = 'End date is required.';
-    if (form.startDate && form.endDate && new Date(form.endDate) < new Date(form.startDate)) errors.endDate = 'End date cannot be before start date.';
-    if (!form.eventTime) errors.eventTime = 'Event time is required.';
-    if (!form.guests || isNaN(Number(form.guests)) || Number(form.guests) <= 0) errors.guests = 'Number of guests is required.';
+    
+    // Date Validation
+    if (!form.startDate) {
+      errors.startDate = 'Start date is required.';
+    } else {
+      const start = new Date(form.startDate);
+      if (start < today) errors.startDate = 'Date cannot be in the past.';
+    }
+
+    if (!form.endDate) {
+      errors.endDate = 'End date is required.';
+    } else if (form.startDate) {
+      const start = new Date(form.startDate);
+      const end = new Date(form.endDate);
+      if (end < start) errors.endDate = 'End date cannot be earlier than start date.';
+    }
+
+    // Time Validation
+    if (!form.eventTime) {
+      errors.eventTime = 'Event time is required.';
+    } else if (form.startDate) {
+      const start = new Date(form.startDate);
+      const now = new Date();
+      if (start.toDateString() === now.toDateString()) {
+        const [hours, minutes] = form.eventTime.split(':').map(Number);
+        const selectedTime = new Date();
+        selectedTime.setHours(hours, minutes, 0, 0);
+        if (selectedTime < now) errors.eventTime = 'Time cannot be in the past for today.';
+      }
+    }
+
+    // Guest Validation
+    const gCount = Number(form.guests);
+    if (!form.guests || isNaN(gCount) || gCount <= 0) {
+      errors.guests = 'Number of guests must be greater than 0.';
+    } else if (hall?.capacity && gCount > hall.capacity) {
+      errors.guests = `Capacity exceeded (Max: ${hall.capacity} guests).`;
+    }
+
     return errors;
   };
 
@@ -71,11 +108,17 @@ const BookingPage = () => {
   // Pre-fill from query params
   useEffect(() => {
     if (searchParams) {
+      const qStartDate = searchParams.get("startDate") || searchParams.get("date");
+      const qEndDate = searchParams.get("endDate") || searchParams.get("date");
+      const qGuests = searchParams.get("guests");
+      const qSpecialRequests = searchParams.get("specialRequests");
+
       setForm((prev) => ({
         ...prev,
-        startDate: searchParams.get("date") || prev.startDate,
-        endDate: searchParams.get("date") || prev.endDate, // Assuming endDate is the same as startDate for single-day
-        guests: searchParams.get("guests") || prev.guests,
+        startDate: qStartDate || prev.startDate,
+        endDate: qEndDate || prev.endDate,
+        guests: qGuests || prev.guests,
+        specialRequests: qSpecialRequests || prev.specialRequests,
       }));
     }
   }, [searchParams]);
@@ -164,25 +207,46 @@ const BookingPage = () => {
 
   // Cost calculation
   const guestsCount = parseInt(form.guests) || 0;
-  // Owner's price
-  const ownerVenuePrice = hall?.basePrice || hall?.price || 0;
-  // Platform fee (silent)
+  
+  // Date-based calculation
+  const getDays = () => {
+    if (!form.startDate || !form.endDate) return 1;
+    const start = new Date(form.startDate);
+    const end = new Date(form.endDate);
+    const diff = end.getTime() - start.getTime();
+    if (diff < 0) return 1;
+    return Math.max(1, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+  };
+
+  const totalDays = getDays();
+  
+  // Base Venue Price (Daily)
+  const dailyPrice = hall?.price || hall?.basePrice || 0;
+  const venueRental = dailyPrice * totalDays;
+  
+  // Platform Fee (Charged once based on ONE day's price)
   const platformFeePercent = typeof hall?.platformFeePercent === 'number' ? hall.platformFeePercent : 10;
-  const platformFee = Math.round(ownerVenuePrice * (platformFeePercent / 100));
-  // Admin-set price (shown as Venue Price)
-  const adminVenuePrice = ownerVenuePrice + platformFee;
-  const taxOnPlatformFee = Math.round(platformFee * 0.18);
-  const taxOnEventManagerFee = eventManager ? Math.round(EVENT_MANAGER_FEE * 0.18) : 0;
-  const totalTaxes = taxOnPlatformFee + taxOnEventManagerFee;
+  const platformFee = Math.round(dailyPrice * (platformFeePercent / 100));
+
+  // Taxes (18% on platform fee - existing rule)
+  const taxAmount = Math.round(platformFee * 0.18);
+  
+  // Services Price
   const servicesPrice = selectedServices.reduce((sum, s) => {
     if (s.serviceType === "Catering" || s.id === "catering") {
       return sum + guestsCount * (s.price || s.avgPrice);
     }
     return sum + (s.price || s.avgPrice);
   }, 0);
+
+  // Event Manager Price
   const eventManagerPrice = eventManager ? EVENT_MANAGER_FEE : 0;
-  const subtotal = adminVenuePrice + servicesPrice + eventManagerPrice;
-  const total = subtotal + totalTaxes - discount;
+
+  // Subtotal
+  const subtotal = venueRental + platformFee + taxAmount + servicesPrice + eventManagerPrice;
+  
+  // Total including discount
+  const total = Math.max(0, subtotal - discount);
 
   // Handlers
   const handleServiceToggle = (service: any) => {
@@ -197,7 +261,14 @@ const BookingPage = () => {
 
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+    setForm((prev) => {
+      const updated = { ...prev, [name]: value };
+      // Auto-validate/reset end date if start date changes
+      if (name === 'startDate' && updated.endDate && new Date(updated.endDate) < new Date(value)) {
+        updated.endDate = value;
+      }
+      return updated;
+    });
   };
 
   const handleEventManagerDetailsChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -219,28 +290,6 @@ const BookingPage = () => {
   // Utility function for advance calculation
   const getAdvanceAmount = (total: number) => Math.min(50000, total * 0.5);
 
-  // Add state for editable advance
-  const minAdvance = getAdvanceAmount(total);
-  const maxAdvance = total;
-  const [advance, setAdvance] = useState('');
-  const [advanceError, setAdvanceError] = useState<string | null>(null);
-
-  const handleAdvanceChange = (value: string) => {
-    setAdvance(value);
-    const num = Number(value);
-    if (!value) {
-      setAdvanceError(null);
-    } else if (isNaN(num)) {
-      setAdvanceError('Please enter a valid number.');
-    } else if (num > maxAdvance) {
-      setAdvanceError('Advance cannot be greater than the total booking amount.');
-    } else if (num < minAdvance) {
-      setAdvanceError(`Advance must be at least ₹${minAdvance.toLocaleString()}.`);
-    } else {
-      setAdvanceError(null);
-    }
-  };
-
   // Replace handleProceedToPay with booking-first, then payment flow
   const handleProceedToPay = async () => {
     if (!user) {
@@ -253,115 +302,33 @@ const BookingPage = () => {
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
-    const advanceAmount = Number(advance);
-    if (!advance || isNaN(advanceAmount) || advanceAmount < minAdvance || advanceAmount > maxAdvance) {
-      setAdvanceError('Please enter a valid advance amount.');
-      return;
-    }
-    setSubmitting(true);
-    setError("");
-    setSubmitError("");
-    try {
-      // 1. Create booking first
-      const bookingBody = {
-        hallId,
-        startDate: form.startDate,
-        endDate: form.endDate,
-        guests: guestsCount,
-        specialRequests: form.specialRequests,
-        services: selectedServices.map((s) => ({
-          name: s.name,
-          price: s.price || s.avgPrice,
-        })),
-        servicesTotal: servicesPrice,
-        eventManager,
-        eventManagerDetails,
-        user: {
-          name: form.name,
-          email: form.email,
-          phone: form.phone,
-        },
-        totalAmount: total,
-      };
-      const bookingRes = await fetch("/api/bookings", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(bookingBody),
-      });
-      if (!bookingRes.ok) {
-        const errData = await bookingRes.json();
-        setSubmitError(errData.error || "Booking creation failed");
-        setSubmitting(false);
-        return;
-      }
-      const bookingData = await bookingRes.json();
-      const bookingId = bookingData.booking?._id || bookingData.bookingId;
-      if (!bookingId) {
-        setSubmitError("Booking creation failed: No booking ID returned");
-        setSubmitting(false);
-        return;
-      }
-      // 2. Create Razorpay order for ADVANCE payment only
-      const paymentRes = await fetch("/api/payments/create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          bookingId,
-          amount: advanceAmount,
-          type: "advance"
-        }),
-      });
-      const paymentData = await paymentRes.json();
-      if (!paymentData.order || !paymentData.order.id) {
-        setSubmitError("Failed to create payment order. Please try again.");
-        setSubmitting(false);
-        return;
-      }
-      // 3. Open Razorpay Checkout
-      const options = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
-        amount: paymentData.order.amount,
-        currency: paymentData.order.currency,
-        name: "WeEnYou",
-        description: "Venue Booking",
-        order_id: paymentData.order.id,
-        handler: function (response: any) {
-          // Redirect to pending page after payment
-          router.push(`/bookings/${bookingId}/pending`);
-        },
-        prefill: {
-          name: form.name,
-          email: form.email,
-          contact: form.phone,
-        },
-        theme: { color: "#3399cc" },
-      };
-      // Wait for Razorpay script to be loaded
-      if (window.Razorpay) {
-        // @ts-ignore
-        const rzp = new window.Razorpay(options);
-        rzp.open();
-      } else {
-        setSubmitError("Payment system not loaded. Please try again in a moment.");
-      }
-    } catch (err: any) {
-      setSubmitError(err.message || "Booking failed");
-    } finally {
-      setSubmitting(false);
-    }
+    
+    // Save booking data to localStorage for the review page
+    const bookingDraft = {
+      hallId,
+      form,
+      selectedServices,
+      eventManager,
+      eventManagerDetails,
+      // Pass calculated totals to the review page
+      dailyPrice,
+      totalDays,
+      venueRental,
+      platformFee,
+      taxAmount,
+      servicesPrice,
+      total
+    };
+    localStorage.setItem('booking_review_data', JSON.stringify(bookingDraft));
+    
+    // Navigate to review page
+    router.push(`/halls/${hallId}/book/review`);
   };
 
   const [showAllServices, setShowAllServices] = useState(false);
   const servicesToShow = showAllServices ? services : services.slice(0, 4);
 
   // Add refs for each section
-  const summaryRef = useRef<HTMLDivElement | null>(null);
-  const servicesRef = useRef<HTMLDivElement | null>(null);
-  const eventManagerRef = useRef<HTMLDivElement | null>(null);
-  const detailsRef = useRef<HTMLDivElement | null>(null);
-
-  const [showReviewModal, setShowReviewModal] = useState(false);
-  const [pendingBooking, setPendingBooking] = useState(false);
 
   // Add state for draft loaded
   const [draftLoaded, setDraftLoaded] = useState(false);
@@ -495,12 +462,12 @@ const BookingPage = () => {
   };
 
   return (
-    <div className="page-mobile-first relative min-h-screen w-full min-w-0 overflow-x-hidden bg-gradient-to-br from-gray-50 via-white to-gray-100 flex flex-col items-center justify-start py-4 sm:py-8 px-4 md:px-8">
-      <div className="w-full max-w-7xl flex flex-col md:flex-row gap-8">
+    <div className="page-mobile-first relative min-h-screen w-full min-w-0 overflow-x-hidden bg-gradient-to-br from-gray-50 via-white to-gray-100 py-4 sm:py-8 px-4 sm:px-6 md:px-8 pb-32 md:pb-8">
+      <div className="w-full max-w-7xl mx-auto flex flex-col md:flex-row gap-8">
         {/* Left Column */}
-        <div className="flex-1 min-w-0 space-y-8">
+        <div className="flex-1 min-w-0 space-y-6 md:space-y-8 overflow-hidden">
           {/* 1. Booking Summary */}
-          <section className="bg-white rounded-2xl shadow-2xl p-6 flex gap-6 items-center border border-gray-200">
+          <section className="bg-white rounded-2xl shadow-lg p-4 sm:p-6 flex flex-col sm:flex-row gap-4 sm:gap-6 items-center border border-gray-200 max-w-full overflow-hidden">
             {/* Venue Image */}
             {hall?.images?.[0] && (
               <div className="w-28 h-28 relative flex-shrink-0 overflow-hidden rounded-xl border-2 border-gray-200 shadow-md">
@@ -516,7 +483,9 @@ const BookingPage = () => {
                 <li>✅ <b>Venue:</b> {hall ? `${hall.name}, ${hall.location?.city || hall.city}` : "Loading..."}</li>
                 <li>📅 <b>Date & Time:</b> {form.startDate ? form.startDate : 'Not selected'}{form.eventTime ? (', ' + form.eventTime) : ''}</li>
                 <li>👥 <b>Guests:</b> {form.guests ? form.guests : 'Not provided'}</li>
-                <li>💰 <b>Base Price:</b> ₹{adminVenuePrice.toLocaleString()}</li>
+                <li>💰 <b>Venue Rental:</b> ₹{dailyPrice.toLocaleString()} {totalDays > 1 ? `x ${totalDays} days` : '(1 day)'} — ₹{venueRental.toLocaleString()}</li>
+                <li>🛡️ <b>Platform Fee:</b> ₹{platformFee.toLocaleString()} (one-time)</li>
+                <li>⚖️ <b>Taxes:</b> ₹{taxAmount.toLocaleString()}</li>
                 <li>🛎️ <b>Selected Services:</b> {selectedServices.length === 0 ? "None yet" : selectedServices.map(s => s.name).join(", ")}</li>
               </ul>
               <div className="mt-3">
@@ -525,8 +494,8 @@ const BookingPage = () => {
             </div>
           </section>
           {/* 2. Add Nearby Services */}
-          <section className="bg-white rounded-2xl shadow-2xl p-6 border border-gray-200">
-            <h2 className="text-2xl font-extrabold mb-3 flex items-center gap-3 text-gray-900">🧩 Add Nearby Services</h2>
+          <section className="bg-white rounded-2xl shadow-lg p-4 sm:p-6 border border-gray-200 max-w-full overflow-hidden">
+            <h2 className="text-xl sm:text-2xl font-extrabold mb-3 flex items-center gap-3 text-gray-900">🧩 Add Nearby Services</h2>
             <p className="text-base text-gray-500 mb-3">Need other services? We've found trusted vendors near your venue.</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {servicesToShow.map(service => (
@@ -567,107 +536,162 @@ const BookingPage = () => {
             )}
           </section>
           {/* 3. Event Manager Option */}
-          <section className="bg-white rounded-2xl shadow-2xl p-6 border border-gray-200">
-            <div className="flex items-center gap-3 mb-3">
-              <h2 className="text-2xl font-extrabold flex items-center gap-2 text-gray-900">🧑‍💼 Event Manager (Optional)</h2>
+          <section className="bg-white rounded-2xl shadow-xl p-4 sm:p-6 border border-gray-200 max-w-full overflow-hidden">
+            <div className="flex items-center gap-3 mb-4">
+              <h2 className="text-xl sm:text-2xl font-extrabold flex items-center gap-2 text-gray-900">🧑‍💼 Event Manager</h2>
               <input
                 type="checkbox"
-                className="accent-gray-700 ml-2 scale-125"
+                className="accent-primary-600 scale-125 cursor-pointer"
                 checked={eventManager}
                 onChange={() => setEventManager(v => !v)}
               />
-              <span className="text-base">Yes, assign me an Event Manager</span>
             </div>
-            {eventManager && (
-              <div className="space-y-3 mt-2">
-                <div className="flex gap-3">
-                  <label className="flex-1 text-base">📅 Preferred Contact Date
-                    <input type="date" name="contactDate" value={eventManagerDetails.contactDate} onChange={handleEventManagerDetailsChange} className="block w-full border rounded p-2 mt-1" />
+            <div className={`overflow-hidden transition-all duration-500 ease-in-out ${eventManager ? 'max-h-[500px] opacity-100 mt-4' : 'max-h-0 opacity-0'}`}>
+              <div className="space-y-4 pt-2 border-t border-gray-100">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <label className="block text-sm font-bold text-gray-700">📅 Preferred Contact Date
+                    <input type="date" name="contactDate" min={new Date().toISOString().split('T')[0]} value={eventManagerDetails.contactDate} onChange={handleEventManagerDetailsChange} className="block w-full border border-gray-200 rounded-xl p-3 mt-1.5 focus:ring-2 focus:ring-primary-500 outline-none transition-all" />
                   </label>
-                  <label className="flex-1 text-base">👥 Expected Guests
-                    <input type="number" name="guests" value={eventManagerDetails.guests} onChange={handleEventManagerDetailsChange} className="block w-full border rounded p-2 mt-1" />
-                  </label>
-                </div>
-                <div className="flex gap-3">
-                  <label className="flex-1 text-base">🕘 Event Start Time
-                    <input type="time" name="startTime" value={eventManagerDetails.startTime} onChange={handleEventManagerDetailsChange} className="block w-full border rounded p-2 mt-1" />
+                  <label className="block text-sm font-bold text-gray-700">👥 Expected Guests
+                    <input type="number" name="guests" value={eventManagerDetails.guests} onChange={handleEventManagerDetailsChange} className="block w-full border border-gray-200 rounded-xl p-3 mt-1.5 focus:ring-2 focus:ring-primary-500 outline-none transition-all" placeholder="e.g. 150" />
                   </label>
                 </div>
-                <label className="text-base">💬 Special Notes
-                  <textarea name="notes" value={eventManagerDetails.notes} onChange={handleEventManagerDetailsChange} className="block w-full border rounded p-2 mt-1" rows={2} />
+                <label className="block text-sm font-bold text-gray-700">🕘 Event Start Time
+                  <input type="time" name="startTime" value={eventManagerDetails.startTime} onChange={handleEventManagerDetailsChange} className="block w-full border border-gray-200 rounded-xl p-3 mt-1.5 focus:ring-2 focus:ring-primary-500 outline-none transition-all" />
                 </label>
-                <div className="text-gray-700 font-bold mt-2 text-base">💰 Event Manager Service Fee: ₹{EVENT_MANAGER_FEE.toLocaleString()} <span className="text-xs font-normal">(includes pre-event coordination + on-ground support)</span></div>
+                <label className="block text-sm font-bold text-gray-700">💬 Special Notes
+                  <textarea name="notes" value={eventManagerDetails.notes} onChange={handleEventManagerDetailsChange} className="block w-full border border-gray-200 rounded-xl p-3 mt-1.5 focus:ring-2 focus:ring-primary-500 outline-none transition-all" rows={3} placeholder="Any specific requirements for the manager..." />
+                </label>
+                <div className="bg-primary-50 p-4 rounded-xl border border-primary-100">
+                  <div className="text-primary-900 font-bold text-sm sm:text-base flex items-center justify-between">
+                    <span>Service Fee</span>
+                    <span>₹{EVENT_MANAGER_FEE.toLocaleString()}</span>
+                  </div>
+                  <p className="text-[11px] text-primary-700 mt-1 uppercase tracking-wider font-bold">Includes pre-event coordination + on-ground support</p>
+                </div>
               </div>
-            )}
+            </div>
           </section>
-          {/* 4. Final Event Details */}
-          <section className="bg-white rounded-2xl shadow-2xl p-6 border border-gray-200">
-            <h2 className="text-2xl font-extrabold mb-3 flex items-center gap-3 text-gray-900">📋 Final Event Details</h2>
-            <form className="space-y-3">
-              <div className="flex gap-3">
-                <label className="flex-1 text-base">Name
-                  <input type="text" name="name" value={form.name} onChange={handleFormChange} className={`block w-full border rounded p-2 mt-1 ${formErrors.name ? 'border-red-500' : ''}`} required />
-                  {formErrors.name && <span className="text-xs text-red-600">{formErrors.name}</span>}
-                </label>
-                <label className="flex-1 text-base">Phone
-                  <input type="tel" name="phone" value={form.phone} onChange={handleFormChange} className={`block w-full border rounded p-2 mt-1 ${formErrors.phone ? 'border-red-500' : ''}`} required />
-                  {formErrors.phone && <span className="text-xs text-red-600">{formErrors.phone}</span>}
+
+          {/* 4. Booking Form (Organized into Sections) */}
+          <section className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden max-w-full">
+            <div className="p-4 sm:p-6 bg-gray-50 border-b border-gray-100">
+              <h2 className="text-xl sm:text-2xl font-extrabold text-gray-900 flex items-center gap-3">📋 Booking Details</h2>
+            </div>
+            
+            <div className="p-4 sm:p-6 space-y-8">
+              {/* Section 1: Contact Information */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 pb-2 border-b border-gray-100">
+                  <div className="w-1.5 h-6 bg-primary-500 rounded-full" />
+                  <h3 className="text-lg font-bold text-gray-800">Contact Information</h3>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <label className="block text-sm font-bold text-gray-700 w-full max-w-full">Full Name
+                    <div className="w-full overflow-hidden mt-1.5">
+                      <input type="text" name="name" value={form.name} onChange={handleFormChange} className={`block w-full border rounded-xl p-3 focus:ring-2 focus:ring-primary-500 outline-none transition-all ${formErrors.name ? 'border-red-500 bg-red-50' : 'border-gray-200'}`} required placeholder="John Doe" style={{ width: '100%', maxWidth: '100%' }} />
+                    </div>
+                    {formErrors.name && <span className="text-xs text-red-600 mt-1 block">{formErrors.name}</span>}
+                  </label>
+                  <label className="block text-sm font-bold text-gray-700 w-full max-w-full">Phone Number
+                    <div className="w-full overflow-hidden mt-1.5">
+                      <input type="tel" name="phone" value={form.phone} onChange={handleFormChange} className={`block w-full border rounded-xl p-3 focus:ring-2 focus:ring-primary-500 outline-none transition-all ${formErrors.phone ? 'border-red-500 bg-red-50' : 'border-gray-200'}`} required placeholder="9876543210" style={{ width: '100%', maxWidth: '100%' }} />
+                    </div>
+                    {formErrors.phone && <span className="text-xs text-red-600 mt-1 block">{formErrors.phone}</span>}
+                  </label>
+                </div>
+                <label className="block text-sm font-bold text-gray-700 w-full max-w-full">Email Address
+                  <div className="w-full overflow-hidden mt-1.5">
+                    <input type="email" name="email" value={form.email} onChange={handleFormChange} className={`block w-full border rounded-xl p-3 focus:ring-2 focus:ring-primary-500 outline-none transition-all ${formErrors.email ? 'border-red-500 bg-red-50' : 'border-gray-200'}`} required placeholder="john@example.com" style={{ width: '100%', maxWidth: '100%' }} />
+                  </div>
+                  {formErrors.email && <span className="text-xs text-red-600 mt-1 block">{formErrors.email}</span>}
                 </label>
               </div>
-              <label className="text-base">Email
-                <input type="email" name="email" value={form.email} onChange={handleFormChange} className={`block w-full border rounded p-2 mt-1 ${formErrors.email ? 'border-red-500' : ''}`} required />
-                {formErrors.email && <span className="text-xs text-red-600">{formErrors.email}</span>}
-              </label>
-              <div className="flex gap-3">
-                <label className="flex-1 text-base">Start Date
-                  <input type="date" name="startDate" value={form.startDate} onChange={handleFormChange} className={`block w-full border rounded p-2 mt-1 ${formErrors.startDate ? 'border-red-500' : ''}`} required />
-                  {formErrors.startDate && <span className="text-xs text-red-600">{formErrors.startDate}</span>}
-                </label>
-                <label className="flex-1 text-base">End Date
-                  <input type="date" name="endDate" value={form.endDate} onChange={handleFormChange} className={`block w-full border rounded p-2 mt-1 ${formErrors.endDate ? 'border-red-500' : ''}`} required />
-                  {formErrors.endDate && <span className="text-xs text-red-600">{formErrors.endDate}</span>}
+
+              {/* Section 2: Event Details */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 pb-2 border-b border-gray-100">
+                  <div className="w-1.5 h-6 bg-primary-500 rounded-full" />
+                  <h3 className="text-lg font-bold text-gray-800">Event Details</h3>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <label className="block text-sm font-bold text-gray-700 w-full max-w-full">Start Date
+                    <div className="w-full overflow-hidden mt-1.5 label-input-wrapper">
+                      <input type="date" name="startDate" min={new Date().toISOString().split('T')[0]} value={form.startDate} onChange={handleFormChange} className={`block w-full border rounded-xl p-3 focus:ring-2 focus:ring-primary-500 outline-none transition-all ${formErrors.startDate ? 'border-red-500 bg-red-50' : 'border-gray-200'}`} required placeholder="Select start date" style={{ width: '100%', maxWidth: '100%' }} />
+                    </div>
+                    {formErrors.startDate && <span className="text-xs text-red-600 mt-1 block">{formErrors.startDate}</span>}
+                  </label>
+                  <label className="block text-sm font-bold text-gray-700 w-full max-w-full">End Date
+                    <div className="w-full overflow-hidden mt-1.5 label-input-wrapper">
+                      <input type="date" name="endDate" min={form.startDate || new Date().toISOString().split('T')[0]} value={form.endDate} onChange={handleFormChange} className={`block w-full border rounded-xl p-3 focus:ring-2 focus:ring-primary-500 outline-none transition-all ${formErrors.endDate ? 'border-red-500 bg-red-50' : 'border-gray-200'}`} required placeholder="Select end date" style={{ width: '100%', maxWidth: '100%' }} />
+                    </div>
+                    {formErrors.endDate && <span className="text-xs text-red-600 mt-1 block">{formErrors.endDate}</span>}
+                  </label>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <label className="block text-sm font-bold text-gray-700 w-full max-w-full">Event Start Time
+                    <div className="w-full overflow-hidden mt-1.5 label-input-wrapper">
+                      <input 
+                        type="time" 
+                        name="eventTime" 
+                        value={form.eventTime} 
+                        onChange={handleFormChange} 
+                        disabled={!form.startDate} 
+                        className={`block w-full border rounded-xl p-3 focus:ring-2 focus:ring-primary-500 outline-none transition-all disabled:bg-gray-100 disabled:cursor-not-allowed ${formErrors.eventTime ? 'border-red-500 bg-red-50' : 'border-gray-200'}`} 
+                        required 
+                        style={{ width: '100%', maxWidth: '100%' }}
+                      />
+                    </div>
+                    {!form.startDate && <span className="text-[10px] text-gray-400 font-medium">Select date first</span>}
+                    {formErrors.eventTime && <span className="text-xs text-red-600 mt-1 block">{formErrors.eventTime}</span>}
+                  </label>
+                  <label className="block text-sm font-bold text-gray-700 w-full max-w-full">Number of Guests
+                    <div className="w-full overflow-hidden mt-1.5 label-input-wrapper">
+                      <input type="number" name="guests" inputMode="numeric" value={form.guests} onChange={handleFormChange} className={`block w-full border rounded-xl p-3 focus:ring-2 focus:ring-primary-500 outline-none transition-all ${formErrors.guests ? 'border-red-500 bg-red-50' : 'border-gray-200'}`} required placeholder={`Max: ${hall?.capacity || '...'}`} style={{ width: '100%', maxWidth: '100%' }} />
+                    </div>
+                    {formErrors.guests && <span className="text-xs text-red-600 mt-1 block">{formErrors.guests}</span>}
+                  </label>
+                </div>
+                <label className="block text-sm font-bold text-gray-700">Special Requests (Optional)
+                  <textarea name="specialRequests" value={form.specialRequests} onChange={handleFormChange} className="block w-full border border-gray-200 rounded-xl p-3 mt-1.5 focus:ring-2 focus:ring-primary-500 outline-none transition-all" rows={3} placeholder="Any specific needs or preferences..." />
                 </label>
               </div>
-              <label className="text-base">Event Time
-                <input type="time" name="eventTime" value={form.eventTime} onChange={handleFormChange} className={`block w-full border rounded p-2 mt-1 ${formErrors.eventTime ? 'border-red-500' : ''}`} required />
-                {formErrors.eventTime && <span className="text-xs text-red-600">{formErrors.eventTime}</span>}
-              </label>
-              <label className="text-base">Number of Guests
-                <input type="number" name="guests" value={form.guests} onChange={handleFormChange} className={`block w-full border rounded p-2 mt-1 ${formErrors.guests ? 'border-red-500' : ''}`} required />
-                {formErrors.guests && <span className="text-xs text-red-600">{formErrors.guests}</span>}
-              </label>
-              <label className="text-base">Special Requests
-                <textarea name="specialRequests" value={form.specialRequests} onChange={handleFormChange} className="block w-full border rounded p-2 mt-1" rows={2} />
-              </label>
-            </form>
+            </div>
           </section>
-          {/* 6. Call to Action */}
-          <div className="mt-6">
-            <button
-              className="w-full bg-gray-900 hover:bg-gray-800 text-white font-extrabold py-4 rounded-2xl text-xl shadow-lg transition-all disabled:opacity-60 transition-transform duration-150 ease-in-out hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-gray-300 animate-pulse"
-              onClick={() => setShowReviewModal(true)}
-              disabled={submitting}
-            >
-              {submitting ? "Processing..." : "🎉 Proceed to Pay & Confirm Booking"}
-            </button>
-            {!user && <div className="text-red-600 text-base mt-2 font-semibold">Please sign in to book.</div>}
-            {submitError && (
-              <div className="flex flex-col items-center gap-2 mt-4">
-                <div className="text-red-600 text-base font-semibold">{submitError}</div>
-                <button
-                  className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300 text-gray-900 font-semibold transition transition-transform duration-150 ease-in-out hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-gray-300 shadow"
-                  onClick={handleProceedToPay}
-                  disabled={submitting}
-                >
-                  Retry
-                </button>
+
+          {/* 6. Call to Action (Sticky on Mobile) */}
+          <div className="md:mt-8 fixed bottom-0 left-0 right-0 md:relative bg-white/95 backdrop-blur-md md:bg-transparent p-4 md:p-0 border-t md:border-t-0 border-gray-100 md:shadow-none shadow-[0_-10px_30px_rgba(0,0,0,0.15)] z-[1000]">
+            <div className="max-w-7xl mx-auto flex flex-col md:block">
+              {/* Show price summary line on mobile sticky bar */}
+              <div className="flex justify-between items-center mb-3 md:hidden px-1">
+                <span className="text-gray-900 font-black">Total to pay:</span>
+                <span className="text-xl font-black text-primary-600">₹{total.toLocaleString()}</span>
               </div>
-            )}
+              
+              <button
+                className="w-full bg-primary-600 hover:bg-primary-700 text-white font-extrabold py-4 sm:py-5 rounded-2xl text-lg sm:text-xl shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed transform hover:-translate-y-1 active:translate-y-0"
+                onClick={handleProceedToPay}
+                disabled={submitting || Object.keys(formErrors).length > 0}
+              >
+                {submitting ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <svg className="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path></svg>
+                    Processing...
+                  </span>
+                ) : (
+                  "🎉 Review & Confirm Booking"
+                )}
+              </button>
+            </div>
+            {!user && <p className="text-red-500 text-[10px] sm:text-xs mt-2 font-bold text-center bg-red-50 py-1 rounded-lg border border-red-100 md:block hidden">Sign in required.</p>}
           </div>
-          {/* Add Save for Later and Clear Draft buttons below the booking form (before the call to action) */}
-          <div className="flex gap-4 mt-4">
+
+          <div className="h-24 md:hidden"></div> {/* Spacer for sticky button */}
+
+          {/* Add Save for Later and Clear Draft buttons */}
+          <div className="flex gap-4 mt-8 pb-8">
             <button
-              className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300 text-gray-900 font-semibold transition transition-transform duration-150 ease-in-out hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-gray-300 shadow"
+              className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300 text-gray-900 font-semibold transition text-sm shadow-sm"
               type="button"
               onClick={handleSaveForLater}
             >
@@ -675,7 +699,7 @@ const BookingPage = () => {
             </button>
             {draftLoaded && (
               <button
-                className="px-4 py-2 rounded bg-red-200 hover:bg-red-300 text-red-900 font-semibold transition transition-transform duration-150 ease-in-out hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-red-300 shadow"
+                className="px-4 py-2 rounded bg-red-200 hover:bg-red-300 text-red-900 font-semibold transition text-sm shadow-sm"
                 type="button"
                 onClick={handleClearDraft}
               >
@@ -684,43 +708,110 @@ const BookingPage = () => {
             )}
           </div>
         </div>
-        {/* Right Column: Sticky Cost Summary */}
-        <aside className="w-full md:w-96 md:sticky md:top-8 h-fit">
-          <div className="bg-white/95 rounded-2xl shadow-2xl p-6 mb-6 border-2 border-gray-200">
-            <h2 className="text-2xl font-extrabold mb-4 flex items-center gap-3 text-gray-900">💸 Final Cost Summary</h2>
-            <table className="w-full text-base mb-3">
-              <tbody>
-                <tr><td>Venue</td><td className="text-right">₹{adminVenuePrice.toLocaleString()}</td></tr>
-                {selectedServices.map(s => (
-                  <tr key={s._id || s.id}>
-                    <td>{s.name}{(s.serviceType === "Catering" || s.id === "catering") && form.guests ? ` (${form.guests} x ₹${s.price || s.avgPrice})` : ""}</td>
-                    <td className="text-right">₹{(s.serviceType === "Catering" || s.id === "catering") && form.guests ? (guestsCount * (s.price || s.avgPrice)).toLocaleString() : (s.price || s.avgPrice).toLocaleString()}</td>
-                  </tr>
-                ))}
-                {eventManager && <tr><td>Event Manager</td><td className="text-right">₹{EVENT_MANAGER_FEE.toLocaleString()}</td></tr>}
-                {totalTaxes > 0 && <tr><td>Taxes</td><td className="text-right">₹{totalTaxes.toLocaleString()}</td></tr>}
-                {discount > 0 && <tr className="text-gray-700"><td>Discount</td><td className="text-right">-₹{discount.toLocaleString()}</td></tr>}
-                <tr className="border-t-2 border-gray-300 font-extrabold text-xl"><td>Total</td><td className="text-right">₹{total.toLocaleString()}</td></tr>
-              </tbody>
-            </table>
-            <div className="flex gap-3 mt-3">
-              <input
-                type="text"
-                placeholder="Coupon code"
-                className="flex-1 border-2 border-gray-200 rounded-lg p-2 focus:border-gray-400 focus:ring-2 focus:ring-gray-100 transition"
-                value={coupon}
-                onChange={e => setCoupon(e.target.value)}
-              />
-              <button
-                className="bg-gray-900 hover:bg-gray-800 text-white px-5 py-2 rounded-lg font-bold shadow-md transition"
-                onClick={handleApplyCoupon}
-                type="button"
-              >Apply</button>
+
+        {/* Right Column: Cost Summary (Moves below on mobile) */}
+        <aside className="w-full lg:w-96 order-last lg:order-none lg:sticky lg:top-8 h-fit">
+          <div className="bg-white rounded-2xl shadow-2xl p-6 border border-gray-100">
+            <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-50">
+              <h2 className="text-2xl font-black text-gray-900 leading-tight">Price Breakdown</h2>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex justify-between items-center text-sm group">
+                <span className="text-gray-500 whitespace-nowrap">Venue Rental (₹{dailyPrice.toLocaleString()} x {totalDays})</span>
+                <div className="flex-1 border-b border-dotted border-gray-200 mx-2 self-end mb-1 opacity-50"></div>
+                <span className="text-gray-900 font-bold">₹{venueRental.toLocaleString()}</span>
+              </div>
+
+              {selectedServices.length > 0 && (
+                <div className="space-y-2 pt-2 border-t border-gray-50">
+                  <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-0.5">Additional Services</div>
+                  {selectedServices.map(s => {
+                    const isCatering = s.serviceType === "Catering" || s.id === "catering";
+                    const price = isCatering && guestsCount > 0 ? guestsCount * (s.price || s.avgPrice) : (s.price || s.avgPrice);
+                    return (
+                      <div key={s._id || s.id} className="flex justify-between items-center text-sm group">
+                        <div className="flex flex-col">
+                          <span className="text-gray-700 whitespace-nowrap">{s.name}</span>
+                          {isCatering && guestsCount > 0 && <span className="text-[10px] text-gray-400 font-bold italic">{guestsCount} guests × ₹{(s.price || s.avgPrice).toLocaleString()}</span>}
+                        </div>
+                        <div className="flex-1 border-b border-dotted border-gray-100 mx-2 self-end mb-1 opacity-30"></div>
+                        <span className="text-gray-900 font-bold">₹{price.toLocaleString()}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {eventManager && (
+                <div className="flex justify-between items-center text-sm pt-2 border-t border-gray-50 group">
+                  <span className="text-gray-700 whitespace-nowrap">Event Manager Fee</span>
+                  <div className="flex-1 border-b border-dotted border-gray-100 mx-2 self-end mb-1 opacity-30"></div>
+                  <span className="text-gray-900 font-bold">₹{EVENT_MANAGER_FEE.toLocaleString()}</span>
+                </div>
+              )}
+
+              <div className="flex justify-between items-center text-sm pt-2 border-t border-gray-50 group">
+                <span className="text-gray-500 whitespace-nowrap">Platform Fee (one-time)</span>
+                <div className="flex-1 border-b border-dotted border-gray-200 mx-2 self-end mb-1 opacity-50"></div>
+                <span className="text-gray-900 font-bold">₹{platformFee.toLocaleString()}</span>
+              </div>
+
+              <div className="flex justify-between items-center text-sm group">
+                <span className="text-gray-500 whitespace-nowrap">Taxes</span>
+                <div className="flex-1 border-b border-dotted border-gray-200 mx-2 self-end mb-1 opacity-50"></div>
+                <span className="text-gray-900 font-bold">₹{taxAmount.toLocaleString()}</span>
+              </div>
+
+              {discount > 0 && (
+                <div className="flex justify-between items-center text-sm text-green-600 font-bold bg-green-50 px-3 py-2 rounded-lg">
+                  <span>Coupon Discount</span>
+                  <span>-₹{discount.toLocaleString()}</span>
+                </div>
+              )}
+
+              <div className="pt-6 border-t-2 border-dashed border-gray-100">
+                <div className="flex justify-between items-center">
+                  <span className="text-lg font-black text-gray-900">Total Price</span>
+                  <span className="text-3xl font-black text-primary-600">₹{total.toLocaleString()}</span>
+                </div>
+              </div>
+
+              <div className="pt-4">
+                <div className="relative group">
+                  <input
+                    type="text"
+                    placeholder="Enter Coupon (e.g. SAVE5)"
+                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3.5 text-sm font-bold focus:ring-2 focus:ring-primary-500 outline-none transition-all placeholder:text-gray-300 pr-24"
+                    value={coupon}
+                    onChange={e => setCoupon(e.target.value)}
+                  />
+                  <button
+                    className="absolute right-1.5 top-1.5 bottom-1.5 bg-gray-900 text-white px-5 rounded-lg text-xs font-black hover:bg-black transition-all shadow-lg active:scale-95"
+                    onClick={handleApplyCoupon}
+                    type="button"
+                  >
+                    APPLY
+                  </button>
+                </div>
+              </div>
+
+              <div className="mt-6 pt-6 border-t border-gray-100">
+                <div className="bg-orange-50 p-4 rounded-xl border border-orange-100">
+                  <div className="flex items-center justify-between font-black text-orange-900 text-sm mb-1">
+                    <span>Advance Payment</span>
+                  </div>
+                  <p className="text-[10px] text-orange-700 font-bold leading-relaxed">
+                    Secure your booking today with an advance payment. Specify amount on the next page.
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </aside>
       </div>
-      {/* Service Reviews Modal */}
+
+      {/* Modals & Help Links */}
       {serviceReviewsModal.open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
           <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-8 relative border-2 border-gray-200">
@@ -741,105 +832,15 @@ const BookingPage = () => {
           </div>
         </div>
       )}
+
       {/* Need Help Support Link */}
-      <div className="mt-12 text-center w-full">
+      <div className="mt-12 text-center w-full pb-24 md:pb-12">
         <a href="/help" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-blue-600 underline font-extrabold text-lg hover:text-blue-900 transition">
           <span>❓ Need Help? Contact Support</span>
         </a>
       </div>
-      {showReviewModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] flex flex-col relative border-2 border-gray-200">
-            {/* Header */}
-            <div className="p-4 border-b border-gray-200 flex-shrink-0">
-              <div className="flex justify-between items-center">
-                <h3 className="text-xl font-extrabold text-gray-900">Review Your Booking</h3>
-                <button className="text-gray-500 hover:text-gray-700 text-2xl font-bold" onClick={() => setShowReviewModal(false)}>&times;</button>
-              </div>
-            </div>
-            
-            {/* Scrollable Content */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-3">
-              {/* Booking Summary */}
-              <div ref={summaryRef} className="border-b border-gray-200 pb-3">
-                <div className="flex justify-between items-center mb-1">
-                  <div className="font-bold text-base">Venue</div>
-                  <button className="text-blue-600 underline text-sm" onClick={() => { setShowReviewModal(false); summaryRef.current?.scrollIntoView({ behavior: 'smooth' }); }}>Edit</button>
-                </div>
-                <div className="text-sm text-gray-700">{hall ? `${hall.name}, ${hall.location?.city || hall.city}` : "Loading..."}</div>
-              </div>
-              
-              {/* Services */}
-              <div ref={servicesRef} className="border-b border-gray-200 pb-3">
-                <div className="flex justify-between items-center mb-1">
-                  <div className="font-bold text-base">Services</div>
-                  <button className="text-blue-600 underline text-sm" onClick={() => { setShowReviewModal(false); servicesRef.current?.scrollIntoView({ behavior: 'smooth' }); }}>Edit</button>
-                </div>
-                <div className="text-sm text-gray-700">{selectedServices.length === 0 ? "None" : selectedServices.map(s => s.name).join(", ")}</div>
-              </div>
-              
-              {/* Event Manager */}
-              <div ref={eventManagerRef} className="border-b border-gray-200 pb-3">
-                <div className="flex justify-between items-center mb-1">
-                  <div className="font-bold text-base">Event Manager</div>
-                  <button className="text-blue-600 underline text-sm" onClick={() => { setShowReviewModal(false); eventManagerRef.current?.scrollIntoView({ behavior: 'smooth' }); }}>Edit</button>
-                </div>
-                <div className="text-sm text-gray-700">{eventManager ? `Yes (Fee: ₹${EVENT_MANAGER_FEE.toLocaleString()})` : "No"}</div>
-              </div>
-              
-              {/* Final Event Details */}
-              <div ref={detailsRef} className="border-b border-gray-200 pb-3">
-                <div className="flex justify-between items-center mb-1">
-                  <div className="font-bold text-base">Event Details</div>
-                  <button className="text-blue-600 underline text-sm" onClick={() => { setShowReviewModal(false); detailsRef.current?.scrollIntoView({ behavior: 'smooth' }); }}>Edit</button>
-                </div>
-                <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm text-gray-700">
-                  <div><b>Name:</b> {form.name}</div>
-                  <div><b>Phone:</b> {form.phone}</div>
-                  <div><b>Email:</b> {form.email}</div>
-                  <div><b>Date:</b> {form.startDate}</div>
-                  <div><b>Time:</b> {form.eventTime}</div>
-                  <div><b>Guests:</b> {form.guests}</div>
-                  <div className="col-span-2"><b>Special Requests:</b> {form.specialRequests || "-"}</div>
-                </div>
-              </div>
-              
-              {/* Cost Summary */}
-              <div className="font-bold text-lg flex justify-between items-center py-2">
-                <span>Total</span>
-                <span>₹{total.toLocaleString()}</span>
-              </div>
-              
-              {/* Advance Payment Info */}
-              <div className="p-3 bg-blue-50 border border-blue-300 rounded text-blue-900">
-                <label className="block mb-2 font-semibold text-sm">
-                  Enter Advance Amount (min: ₹{minAdvance.toLocaleString()}, max: ₹{maxAdvance.toLocaleString()}):
-                  <input
-                    type="number"
-                    value={advance}
-                    onChange={e => handleAdvanceChange(e.target.value)}
-                    className="block w-full border rounded p-2 mt-1 text-base font-bold"
-                  />
-                  {advanceError && (
-                    <div className="text-xs text-red-600 mt-1">{advanceError}</div>
-                  )}
-                </label>
-                <span className="text-xs font-normal text-blue-700">
-                  You must pay at least 50% of total or ₹50,000, whichever is lower.
-                </span>
-              </div>
-            </div>
-            
-            {/* Footer */}
-            <div className="p-4 border-t border-gray-200 flex justify-end gap-3 flex-shrink-0">
-              <button className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300 text-gray-900 font-semibold transition text-sm" onClick={() => setShowReviewModal(false)}>Cancel</button>
-              <button className="px-4 py-2 rounded bg-green-600 hover:bg-green-700 text-white font-semibold transition text-sm" onClick={async () => { setShowReviewModal(false); setPendingBooking(true); await handleProceedToPay(); setPendingBooking(false); }}>Pay Advance & Request Booking</button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
 
-export default BookingPage; 
+export default BookingPage;

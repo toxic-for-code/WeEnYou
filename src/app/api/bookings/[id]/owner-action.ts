@@ -3,7 +3,9 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { connectDB } from '@/lib/db';
 import Booking from '@/models/Booking';
+import BookingPayment from '@/models/BookingPayment';
 import Notification from '@/models/Notification';
+import { razorpay } from '@/lib/razorpay';
 import { HallDoc } from '@/models/Hall';
 
 export const dynamic = 'force-dynamic';
@@ -23,35 +25,82 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     if ((booking.hallId as HallDoc).ownerId.toString() !== session.user.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
-    // Accept/reject after advance payment (pending_owner_confirmation)
-    if (booking.status !== 'pending_owner_confirmation') {
-      return NextResponse.json({ error: 'Booking is not awaiting owner confirmation' }, { status: 400 });
+    // Accept/reject when booking is awaiting owner approval
+    const awaitingApproval = ['pending_owner_confirmation', 'owner_approval_pending'];
+    if (!awaitingApproval.includes(booking.status)) {
+      return NextResponse.json({ error: 'Booking is not currently processing' }, { status: 400 });
     }
     const { action } = await req.json();
+
     if (action === 'approve') {
       booking.status = 'confirmed';
+      await booking.save();
+
+      // Also update the linked BookingPayment if it exists
+      if (booking.bookingPaymentId) {
+        await BookingPayment.findByIdAndUpdate(booking.bookingPaymentId, { status: 'owner_approved' });
+      }
+
       await Notification.create({
         userId: booking.userId,
         type: 'booking',
-        message: `Your booking for hall '${(booking.hallId as HallDoc).name}' was accepted by the owner. Please pay the remaining amount to complete your booking.`
+        message: `Your booking for '${(booking.hallId as HallDoc).name}' was approved! Please pay the remaining balance of ₹${booking.remainingBalance || 0} to complete your booking.`,
       });
-      await booking.save();
       return NextResponse.json({ booking });
+
     } else if (action === 'reject') {
-      booking.status = 'cancelled';
+      booking.status = 'rejected';
+      booking.paymentStatus = 'refund_pending';
+      await booking.save();
+
+      let refundId: string | null = null;
+
+      // Refund the advance via BookingPayment record
+      if (booking.bookingPaymentId) {
+        const bp = await BookingPayment.findById(booking.bookingPaymentId);
+        if (bp && bp.advancePaymentId && bp.advanceAmountPaid) {
+          try {
+            const refund = await razorpay.payments.refund(bp.advancePaymentId, {
+              amount: Math.round((bp.advanceAmountPaid as number) * 100),
+            });
+            bp.status = 'refunded';
+            bp.advancePaymentStatus = 'refunded';
+            bp.refundId = refund.id;
+            await bp.save();
+            refundId = refund.id;
+
+            // Mark booking as refunded once the refund is initiated
+            booking.paymentStatus = 'refund_pending';
+            await booking.save();
+          } catch (refundErr) {
+            console.error('Refund failed:', refundErr);
+            // Don't block rejection if refund fails — status stays refund_pending
+          }
+        }
+      } else if (booking.paymentId) {
+        // Fallback: attempt direct refund on the booking's paymentId
+        try {
+          const refund = await razorpay.payments.refund(booking.paymentId, {
+            amount: Math.round((booking.advanceAmount || 0) * 100),
+          });
+          refundId = refund.id;
+        } catch (refundErr) {
+          console.error('Direct refund failed:', refundErr);
+        }
+      }
+
       await Notification.create({
         userId: booking.userId,
         type: 'booking',
-        message: `Your booking for hall '${(booking.hallId as HallDoc).name}' was rejected by the owner.`
+        message: `Your booking for '${(booking.hallId as HallDoc).name}' was rejected by the owner. Your advance payment of ₹${booking.advanceAmount || 0} will be refunded.`,
       });
-      await booking.save();
-      return NextResponse.json({ booking });
+      return NextResponse.json({ booking, refundId });
+
     } else {
-      return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
+      return NextResponse.json({ error: 'Invalid action. Use "approve" or "reject".' }, { status: 400 });
     }
   } catch (error) {
     console.error('Error in owner-action:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-} 
- 
+}

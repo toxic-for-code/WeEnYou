@@ -5,7 +5,7 @@ import { connectDB } from '@/lib/db';
 import Booking from '@/models/Booking';
 import ServiceBooking from '@/models/ServiceBooking';
 import Notification from '@/models/Notification';
-import { HallDoc } from '@/models/Hall';
+import Hall, { HallDoc } from '@/models/Hall';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,7 +28,7 @@ export async function GET(
     const booking = await Booking.findOne({
       _id: params.id,
       userId: session.user.id,
-    }).populate('hallId', 'name images location amenities description ownerId') as any;
+    }).populate('hallId', 'name images location amenities description ownerId price platformFeePercent') as any;
 
     if (!booking) {
       return NextResponse.json(

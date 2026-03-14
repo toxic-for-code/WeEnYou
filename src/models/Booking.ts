@@ -29,6 +29,10 @@ const bookingSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    customerPhone: {
+      type: String,
+      trim: true,
+    },
     totalPrice: {
       type: Number,
       required: true,
@@ -37,19 +41,19 @@ const bookingSchema = new mongoose.Schema(
     status: {
       type: String,
       enum: [
-        'pending',
         'pending_advance',
-        'pending_owner_confirmation',
+        'waiting_owner_confirmation',
+        'owner_confirmed',
         'confirmed',
+        'rejected',
         'cancelled',
-        'completed',
-        'pending_approval'
+        'completed'
       ],
-      default: 'pending',
+      default: 'pending_advance',
     },
     paymentStatus: {
       type: String,
-      enum: ['pending', 'paid', 'refunded'],
+      enum: ['pending', 'paid', 'partial_paid', 'refund_pending', 'refunded'],
       default: 'pending',
     },
     paymentId: {
@@ -115,6 +119,27 @@ const bookingSchema = new mongoose.Schema(
     venuePrice: {
       type: Number,
     },
+    orderId: {
+      type: String, // Razorpay order ID — saved at order creation for webhook lookup
+    },
+    finalOrderId: {
+      type: String, // Specifically for the remaining balance payment
+    },
+    paymentTimestamp: {
+      type: Date, // When payment was captured
+    },
+    advanceAmount: {
+      type: Number,
+      default: 0,
+    },
+    remainingBalance: {
+      type: Number,
+      default: 0,
+    },
+    bookingPaymentId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'BookingPayment',
+    },
   },
   {
     timestamps: true,
@@ -133,9 +158,10 @@ interface BookingAttrs {
   endDate: Date;
   guests: number;
   specialRequests?: string;
+  customerPhone?: string;
   totalPrice: number;
-  status: 'pending' | 'pending_advance' | 'pending_owner_confirmation' | 'confirmed' | 'cancelled' | 'completed' | 'pending_approval';
-  paymentStatus: 'pending' | 'paid' | 'refunded';
+  status: 'pending_advance' | 'waiting_owner_confirmation' | 'owner_confirmed' | 'confirmed' | 'rejected' | 'cancelled' | 'completed';
+  paymentStatus: 'pending' | 'paid' | 'partial_paid' | 'refund_pending' | 'refunded';
   paymentId?: string;
   advancePaid?: boolean;
   finalPaymentMethod?: 'online' | 'offline' | null;
@@ -162,6 +188,12 @@ interface BookingAttrs {
     accountNumber?: string;
   };
   venuePrice?: number;
+  orderId?: string;
+  finalOrderId?: string;
+  paymentTimestamp?: Date;
+  advanceAmount?: number;
+  remainingBalance?: number;
+  bookingPaymentId?: mongoose.Types.ObjectId;
 }
 
 export type BookingDoc = Document & BookingAttrs & { createdAt: Date; updatedAt: Date };

@@ -1,212 +1,230 @@
-import Razorpay from "razorpay";
-import crypto from "crypto";
-import { NextResponse } from "next/server";
+import Razorpay from 'razorpay';
+import crypto from 'crypto';
+import { NextResponse } from 'next/server';
 import { connectDB } from '@/lib/db';
 import Booking from '@/models/Booking';
+import Notification from '@/models/Notification';
 
 export const dynamic = 'force-dynamic';
-
-// Utility functions using existing database connection
-async function getBookingByOrderId(orderId) {
-  await connectDB();
-  return await Booking.findOne({ orderId });
-}
-async function saveContactIdToOwner(ownerId, contactId) {
-  await Booking.updateMany({ ownerId }, { $set: { ownerContactId: contactId } });
-}
-async function saveFundAccountIdToOwner(ownerId, fundAccountId) {
-  await Booking.updateMany({ ownerId }, { $set: { ownerFundAccountId: fundAccountId } });
-}
-async function savePayoutToBooking(bookingId, payoutId, payoutStatus) {
-  await Booking.findByIdAndUpdate(bookingId, { $set: { payoutId, payoutStatus } });
-}
-async function markBookingPaid(bookingId) {
-  await Booking.findByIdAndUpdate(bookingId, { $set: { paymentStatus: 'paid' } });
-}
 
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID!,
   key_secret: process.env.RAZORPAY_KEY_SECRET!,
 });
-const RAZORPAY_WEBHOOK_SECRET = process.env.RAZORPAY_WEBHOOK_SECRET!;
+const WEBHOOK_SECRET = process.env.RAZORPAY_WEBHOOK_SECRET!;
 
-export async function POST(req) {
+// ────────────────────────────────────────────────────────────────────────────
+// Helpers
+// ────────────────────────────────────────────────────────────────────────────
+
+async function findBookingByOrderId(orderId: string) {
+  await connectDB();
+  return Booking.findOne({ orderId }).populate('hallId');
+}
+
+async function findBookingByNote(bookingId: string) {
+  await connectDB();
+  return Booking.findById(bookingId).populate('hallId');
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Webhook handler
+// ────────────────────────────────────────────────────────────────────────────
+
+export async function POST(req: Request) {
   try {
-    const signature = req.headers.get("x-razorpay-signature");
-    const body = await req.text();
-    
-    console.log('Webhook received - Headers:', Object.fromEntries(req.headers.entries()));
-    console.log('Webhook body length:', body.length);
-    
-    const expectedSignature = crypto
-      .createHmac("sha256", RAZORPAY_WEBHOOK_SECRET)
-      .update(body)
-      .digest("hex");
-      
-    if (signature !== expectedSignature) {
-      console.error('Webhook signature mismatch:', { received: signature, expected: expectedSignature });
-      return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
+    const rawBody = await req.text();
+    const signature = req.headers.get('x-razorpay-signature') || '';
+
+    // 1. Verify webhook signature
+    const expectedSig = crypto
+      .createHmac('sha256', WEBHOOK_SECRET)
+      .update(rawBody)
+      .digest('hex');
+
+    if (signature !== expectedSig) {
+      console.error('[webhook] Signature mismatch', { received: signature, expected: expectedSig });
+      return NextResponse.json({ error: 'Invalid webhook signature' }, { status: 400 });
     }
 
-    const event = JSON.parse(body);
-    console.log('Webhook event:', event.event, 'Payload keys:', Object.keys(event.payload || {}));
-    
-    if (event.event === "payment.captured") {
-      console.log('Processing payment.captured event');
+    const event = JSON.parse(rawBody);
+    console.log('[webhook] Event received:', event.event);
+
+    // ────────────────────────────────────────────────────────────────────────
+    // payment.captured — advance or final payment collected
+    // ────────────────────────────────────────────────────────────────────────
+    if (event.event === 'payment.captured') {
       const payment = event.payload.payment.entity;
-      const orderId = payment.order_id;
-      console.log('Looking up booking for orderId:', orderId);
-      
-      // Try to find booking by orderId
-      let booking = await getBookingByOrderId(orderId);
-      if (!booking && payment.notes && payment.notes.bookingId) {
-        // Fallback: find by bookingId from notes
-        console.log('Booking not found by orderId, trying bookingId from notes:', payment.notes.bookingId);
-        booking = await Booking.findById(payment.notes.bookingId);
+      const orderId   = payment.order_id as string;
+      const paymentId = payment.id         as string;
+      const notes     = (payment.notes || {}) as Record<string, string>;
+      const paymentType = notes.type || 'advance';
+
+      console.log('[webhook] payment.captured', { orderId, paymentId, type: paymentType, notes });
+
+      // Find booking: primary = orderId field; fallback = notes.bookingId
+      let booking: any = await findBookingByOrderId(orderId);
+      if (!booking && notes.bookingId) {
+        console.log('[webhook] Fallback: looking up by notes.bookingId', notes.bookingId);
+        booking = await findBookingByNote(notes.bookingId);
         if (booking) {
-          console.log('Booking found by bookingId from notes:', booking._id);
+          // Persist the orderId so future lookups work
+          booking.orderId = orderId;
         }
       }
-      
+
       if (!booking) {
-        console.error("Booking not found for orderId or bookingId:", orderId, payment.notes?.bookingId);
-        return NextResponse.json({ error: "Booking not found" }, { status: 404 });
+        console.error('[webhook] Booking not found', { orderId, bookingIdNote: notes.bookingId });
+        return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
       }
 
-      console.log('Booking found:', booking._id, 'Current status:', booking.status, 'Current paymentStatus:', booking.paymentStatus, 'Current advancePaid:', booking.advancePaid);
-      
-      // Determine payment type (advance/final) from order notes if available
-      let paymentType = 'advance';
-      if (payment.notes && payment.notes.type) {
-        paymentType = payment.notes.type;
-      }
-      
-      console.log('Payment type determined:', paymentType, 'Payment notes:', payment.notes);
-
-      if (paymentType === 'advance') {
-        // Mark advance as paid and set status to pending_owner_confirmation
-        console.log('Processing advance payment for booking:', booking._id);
-        try {
-          const updateResult = await Booking.findByIdAndUpdate(booking._id, {
-            $set: {
-              advancePaid: true,
-              status: 'pending_owner_confirmation',
-              paymentStatus: 'pending', // Not fully paid yet - advance payment is separate from final payment
-            }
-          }, { new: true });
-          console.log('Advance payment update result:', updateResult);
-          
-          // Verify the update was successful
-          const updatedBooking = await Booking.findById(booking._id);
-          console.log('Verification - Updated booking status:', updatedBooking?.status, 'advancePaid:', updatedBooking?.advancePaid, 'paymentStatus:', updatedBooking?.paymentStatus);
-        } catch (updateError) {
-          console.error('Error updating booking for advance payment:', updateError);
-          return NextResponse.json({ error: "Failed to update booking" }, { status: 500 });
-        }
-      } else if (paymentType === 'final') {
-        // Mark final payment as paid
-        console.log('Processing final payment for booking:', booking._id);
-        try {
-          const updateResult = await Booking.findByIdAndUpdate(booking._id, {
-            $set: {
-              finalPaymentStatus: 'paid',
-              paymentStatus: 'paid', // Now fully paid
-            }
-          }, { new: true });
-          console.log('Final payment update result:', updateResult);
-        } catch (updateError) {
-          console.error('Error updating booking for final payment:', updateError);
-          return NextResponse.json({ error: "Failed to update booking" }, { status: 500 });
-        }
-      } else {
-        // Fallback: treat as advance payment if type is not specified
-        console.log('Payment type not specified, treating as advance payment');
-        try {
-          const updateResult = await Booking.findByIdAndUpdate(booking._id, {
-            $set: {
-              advancePaid: true,
-              status: 'pending_owner_confirmation',
-              paymentStatus: 'pending',
-            }
-          }, { new: true });
-          console.log('Fallback advance payment update result:', updateResult);
-        } catch (updateError) {
-          console.error('Error updating booking for fallback advance payment:', updateError);
-          return NextResponse.json({ error: "Failed to update booking" }, { status: 500 });
-        }
-      }
-
-      // 1. Create Contact (if not already created)
-    let contactId = booking.ownerContactId;
-    if (!contactId) {
-      const contact = await (razorpay as any).contacts.create({
-        name: booking.ownerName,
-        email: booking.ownerEmail,
-        contact: booking.ownerPhone,
-        type: "vendor",
+      console.log('[webhook] Booking found', {
+        bookingId: booking._id,
+        currentStatus: booking.status,
+        currentPaymentStatus: booking.paymentStatus,
       });
-      contactId = contact.id;
-      await saveContactIdToOwner(booking.ownerId, contactId);
-    }
 
-    // 2. Create Fund Account (if not already created)
-    let fundAccountId = booking.ownerFundAccountId;
-    if (!fundAccountId && booking.ownerBankDetails) {
-      let fundAccount;
-      if (booking.ownerBankDetails.upi) {
-        fundAccount = await (razorpay as any).fundAccount.create({
-          contact_id: contactId,
-          account_type: "vpa",
-          vpa: { address: booking.ownerBankDetails.upi },
+      // ── Advance payment ──────────────────────────────────────────────────
+      if (paymentType === 'advance') {
+        const capturedAmount   = payment.amount / 100; // paise → rupees
+        const totalBookingPrice = booking.totalPrice || 0;
+        
+        // Ensure advanceAmount is never 0 if a payment was captured
+        const finalAdvanceAmount = capturedAmount || booking.advanceAmount || Math.min(totalBookingPrice * 0.5, 50000);
+        const remainingBalance   = Math.max(0, totalBookingPrice - finalAdvanceAmount);
+
+        console.log('[webhook] Recording advance payment', { 
+          bookingId: booking._id, 
+          capturedAmount, 
+          finalAdvanceAmount, 
+          remainingBalance 
         });
+
+        await Booking.findByIdAndUpdate(booking._id, {
+          $set: {
+            advancePaid:      true,
+            advanceAmount:    finalAdvanceAmount,
+            remainingBalance: remainingBalance,
+            paymentId,
+            orderId,
+            paymentTimestamp: new Date(),
+            paymentStatus:    'paid', // Marking advance step as paid
+            status:           'waiting_owner_confirmation',
+          },
+        }, { new: true });
+
+        console.log('[webhook] Advance payment updated', {
+          bookingId: booking._id,
+          advanceAmount: finalAdvanceAmount,
+          remainingBalance,
+          newStatus: 'waiting_owner_confirmation',
+        });
+
+        // Notify owner
+        const hallName = (booking.hallId as any)?.name || 'the hall';
+        const ownerId  = (booking.hallId as any)?.ownerId;
+        if (ownerId) {
+          await Notification.create({
+            userId: ownerId,
+            type: 'booking',
+            message: `Advance payment of ₹${finalAdvanceAmount.toLocaleString()} received for '${hallName}'. Please confirm or reject the booking.`,
+          });
+        }
+
+        return NextResponse.json({ status: 'Advance payment recorded. Booking processing.' });
+
+      // ── Final / full payment ─────────────────────────────────────────────
+      } else if (paymentType === 'final' || paymentType === 'remaining') {
+        await Booking.findByIdAndUpdate(booking._id, {
+          $set: {
+            paymentId,
+            orderId,
+            paymentTimestamp:    new Date(),
+            finalPaymentStatus:  'paid',
+            remainingBalance:    0,
+            status:              'confirmed',
+          },
+        }, { new: true });
+
+        console.log('[webhook] Final payment updated', { bookingId: booking._id, newStatus: 'confirmed' });
+
+        await Notification.create({
+          userId: booking.userId,
+          type: 'booking',
+          message: `Your booking at '${(booking.hallId as any)?.name || 'the hall'}' is fully paid. Enjoy your event!`,
+        });
+
+        // Trigger owner payout only when all details are available
+        const ownerContactId    = booking.ownerContactId;
+        const ownerFundAcctId   = booking.ownerFundAccountId;
+        const venuePrice        = booking.venuePrice ?? 0;
+
+        if (ownerFundAcctId && venuePrice > 0) {
+          try {
+            const payout = await (razorpay as any).payouts.create({
+              account_number: process.env.RAZORPAY_PAYOUT_ACCOUNT_NUMBER,
+              fund_account_id: ownerFundAcctId,
+              amount: Math.round(venuePrice * 100),
+              currency: 'INR',
+              mode: booking.ownerBankDetails?.upi ? 'upi' : 'imps',
+              purpose: 'vendor_payment',
+              queue_if_low_balance: true,
+              narration: 'Venue Booking Payout',
+              notes: { bookingId: booking._id.toString() },
+            });
+            await Booking.findByIdAndUpdate(booking._id, {
+              $set: { payoutId: payout.id, payoutStatus: payout.status },
+            });
+            console.log('[webhook] Payout triggered', { bookingId: booking._id, payoutId: payout.id });
+          } catch (payoutErr: any) {
+            // Payout failure must NOT fail the webhook response
+            console.error('[webhook] Payout failed (non-fatal)', payoutErr?.message);
+          }
+        } else {
+          console.warn('[webhook] Skipping payout — owner fund account or venue price not set', {
+            bookingId: booking._id, ownerFundAcctId, venuePrice,
+          });
+        }
+
+        return NextResponse.json({ status: 'Final payment recorded. Booking completed.' });
+
       } else {
-        fundAccount = await (razorpay as any).fundAccount.create({
-          contact_id: contactId,
-          account_type: "bank_account",
-          bank_account: {
-            name: booking.ownerBankDetails.name,
-            ifsc: booking.ownerBankDetails.ifsc,
-            account_number: booking.ownerBankDetails.accountNumber,
+        // Unknown type — treat as advance (safe default)
+        console.warn('[webhook] Unknown payment type, defaulting to advance', { paymentType });
+        await Booking.findByIdAndUpdate(booking._id, {
+          $set: {
+            advancePaid:      true,
+            paymentId,
+            orderId,
+            paymentTimestamp: new Date(),
+            paymentStatus:    'partial_paid',
+            status:           'owner_approval_pending',
           },
         });
+        return NextResponse.json({ status: 'Payment recorded as advance (default).' });
       }
-      fundAccountId = fundAccount.id;
-      await saveFundAccountIdToOwner(booking.ownerId, fundAccountId);
     }
 
-    // 3. Trigger payout
-    const payout = await (razorpay as any).payouts.create({
-      account_number: process.env.RAZORPAY_PAYOUT_ACCOUNT_NUMBER, // Your virtual account number
-      fund_account_id: fundAccountId,
-      amount: (booking.venuePrice ?? 0) * 100, // paise
-      currency: "INR",
-      mode: booking.ownerBankDetails && booking.ownerBankDetails.upi ? "upi" : "imps",
-      purpose: "vendor_payment",
-      queue_if_low_balance: true,
-      narration: "Venue Booking Payout",
-      notes: { bookingId: (booking._id as any).toString() },
-    });
-    await savePayoutToBooking(booking._id, payout.id, payout.status);
-    return NextResponse.json({ status: "Payout triggered and paymentStatus set to paid" });
-  }
+    // ── Payout status events ─────────────────────────────────────────────────
+    if (event.event === 'payout.processed') {
+      const payout = event.payload.payout.entity;
+      await Booking.findOneAndUpdate({ payoutId: payout.id }, { $set: { payoutStatus: 'processed' } });
+      console.log('[webhook] Payout processed', { payoutId: payout.id });
+      return NextResponse.json({ status: 'Payout processed' });
+    }
 
-  // Handle payout status webhooks
-  if (event.event === "payout.processed") {
-    const payout = event.payload.payout.entity;
-    await Booking.findOneAndUpdate({ payoutId: payout.id }, { $set: { payoutStatus: 'processed' } });
-    // Optionally notify admin/owner here
-    return NextResponse.json({ status: "Payout processed" });
-  }
-  if (event.event === "payout.failed") {
-    const payout = event.payload.payout.entity;
-    await Booking.findOneAndUpdate({ payoutId: payout.id }, { $set: { payoutStatus: 'failed' } });
-    // Optionally notify admin/owner here
-    return NextResponse.json({ status: "Payout failed" });
-  }
+    if (event.event === 'payout.failed') {
+      const payout = event.payload.payout.entity;
+      await Booking.findOneAndUpdate({ payoutId: payout.id }, { $set: { payoutStatus: 'failed' } });
+      console.error('[webhook] Payout failed', { payoutId: payout.id });
+      return NextResponse.json({ status: 'Payout failed noted' });
+    }
 
-  return NextResponse.json({ status: "Ignored" });
-  } catch (error) {
-    console.error('Webhook error:', error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    console.log('[webhook] Ignored event:', event.event);
+    return NextResponse.json({ status: 'Ignored' });
+
+  } catch (error: any) {
+    console.error('[webhook] Unhandled error:', error?.message, error?.stack);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

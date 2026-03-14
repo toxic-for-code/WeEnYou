@@ -1,0 +1,31 @@
+﻿diff --git a/src/app/layout.tsx b/src/app/layout.tsx
+index b48b2a8..331395d 100644
+--- a/src/app/layout.tsx
++++ b/src/app/layout.tsx
+@@ -1,11 +1,12 @@
+ import type { Metadata } from 'next'
+-import { Inter } from 'next/font/google'
++import { Inter, Playfair_Display } from 'next/font/google'
+ import './globals.css'
+ import ClientLayout from '@/components/ClientLayout'
+ import Footer from '@/components/Footer'
+ import MobileNavbar from '@/components/mobile/MobileNavbar'
+ 
+ const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
++const playfair = Playfair_Display({ subsets: ['latin'], variable: '--font-playfair' })
+ 
+ export const metadata: Metadata = {
+   title: 'WeEnYou',
+@@ -24,10 +25,10 @@ export default function RootLayout({
+ }) {
+   return (
+     <html lang="en">
+-      <body className={`${inter.variable} font-sans antialiased`}>
++      <body className={`${inter.variable} ${playfair.variable} font-sans antialiased text-[#111111]`}>
+         <ClientLayout>
+           <MobileNavbar />
+-          <main className="min-h-screen bg-gray-50 min-w-0 w-full overflow-x-hidden">
++          <main className="min-h-screen bg-[#FAF9F6] min-w-0 w-full overflow-x-hidden">
+             {children}
+           </main>
+           <Footer />

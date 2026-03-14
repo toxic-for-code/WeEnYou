@@ -20,10 +20,13 @@ export async function POST(req: Request) {
       );
     }
 
-    const { hallId, startDate, endDate, guests, specialRequests, services = [], servicesTotal = 0, totalAmount } = await req.json();
+    const { hallId, startDate, endDate, guests, specialRequests, services = [], servicesTotal = 0, totalAmount, user } = await req.json();
 
     // Log the incoming request body for debugging
-    console.log('Booking request body:', { hallId, startDate, endDate, guests, specialRequests, services, servicesTotal });
+    console.log('Booking request body:', { hallId, startDate, endDate, guests, specialRequests, services, servicesTotal, user });
+
+    // Extract customer phone if provided
+    const customerPhone = user?.phone || '';
 
     // Validate required fields
     if (!hallId || !startDate || !endDate || !guests) {
@@ -87,10 +90,22 @@ export async function POST(req: Request) {
       );
     }
 
-    // Calculate total price for hall only (do not include services)
-    const hallPrice = hall.price * Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
-    // Use totalAmount from frontend if provided, else fallback to hallPrice
-    const totalPrice = typeof totalAmount === 'number' ? totalAmount : hallPrice;
+    // Calculate total price for hall based on new model
+    const totalDays = Math.max(1, Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)));
+    const venueRental = hall.price * totalDays;
+    
+    // Platform fee (one-time)
+    const platformFeePercent = typeof hall.platformFeePercent === 'number' ? hall.platformFeePercent : 10;
+    const platformFee = Math.round(hall.price * (platformFeePercent / 100));
+    
+    // Tax (18% on platform fee)
+    const taxAmount = Math.round(platformFee * 0.18);
+    
+    // Server-calculated total for the hall part
+    const calculatedHallTotal = venueRental + platformFee + taxAmount;
+
+    // Use totalAmount from frontend if provided, else fallback to calculatedHallTotal
+    const totalPrice = typeof totalAmount === 'number' ? totalAmount : calculatedHallTotal;
 
     // Create booking
     const booking = await Booking.create({
@@ -100,7 +115,9 @@ export async function POST(req: Request) {
       endDate,
       guests,
       specialRequests,
+      customerPhone,
       totalPrice, // This now includes all fees if provided
+      venuePrice: venueRental, // Persist base venue rental
       status: 'pending_advance',
       advancePaid: false,
       finalPaymentMethod: null,

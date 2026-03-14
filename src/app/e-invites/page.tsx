@@ -40,25 +40,25 @@ export default function EInvitesPage() {
 
   if (customizing) {
     return (
-      <div className="page-mobile-first min-h-screen bg-white flex flex-col items-center py-8 sm:py-16 px-4 w-full min-w-0 overflow-x-hidden">
-        <h1 className="text-4xl font-bold mb-4 text-blue-900">Send E-Invites</h1>
+      <div className="page-mobile-first min-h-screen bg-white flex flex-col items-center py-8 sm:py-16 px-4 sm:px-6 lg:px-10 w-full min-w-0 overflow-x-hidden">
+        <h1 className="text-3xl md:text-4xl font-bold mb-3 md:mb-4 text-center text-blue-900">Send E-Invites</h1>
         <InviteCustomizer template={customizing} onBack={() => setCustomizing(null)} />
       </div>
     );
   }
 
   return (
-    <div className="page-mobile-first min-h-screen bg-white flex flex-col items-center py-8 sm:py-16 px-4 w-full min-w-0 overflow-x-hidden">
-      <h1 className="text-4xl font-bold mb-4 text-blue-900">Send E-Invites</h1>
-      <p className="text-lg text-gray-700 mb-8 max-w-xl text-center">
+    <div className="page-mobile-first min-h-screen bg-white flex flex-col items-center py-8 sm:py-16 px-4 sm:px-6 lg:px-10 w-full min-w-0 overflow-x-hidden">
+      <h1 className="text-3xl md:text-4xl font-bold mb-3 md:mb-4 text-center text-blue-900">Send E-Invites</h1>
+      <p className="text-base md:text-lg text-gray-700 mb-6 md:mb-8 max-w-xl text-center">
         Create beautiful, personalized event invitations and send them to your guests via email or WhatsApp. Track RSVPs, set reminders, and make your event unforgettable!
       </p>
       <div className="w-full max-w-4xl">
-        <div className="flex flex-wrap gap-4 justify-center mb-8">
+        <div className="flex overflow-x-auto md:flex-wrap gap-3 md:gap-4 md:justify-center mb-6 md:mb-8 pb-4 scrollbar-hide w-full" style={{ WebkitOverflowScrolling: 'touch' }}>
           {categories.map(cat => (
             <button
               key={cat.key}
-              className={`px-4 py-2 rounded-full font-semibold border transition-colors ${selectedCategory === cat.key ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-blue-900 border-blue-200 hover:bg-blue-50'}`}
+              className={`whitespace-nowrap shrink-0 px-4 py-2 rounded-full font-semibold border transition-colors ${selectedCategory === cat.key ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-blue-900 border-blue-200 hover:bg-blue-50'}`}
               onClick={() => setSelectedCategory(cat.key)}
             >
               {cat.label}
@@ -69,16 +69,16 @@ export default function EInvitesPage() {
           {sampleTemplates[selectedCategory].map(template => (
             <div key={template.id} className="bg-blue-50 border border-blue-100 rounded-lg shadow p-4 flex flex-col items-center">
               <img src={template.img} alt={template.name} className="w-full h-48 object-cover rounded mb-3" />
-              <div className="font-semibold text-blue-900 mb-2">{template.name}</div>
-              <button className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-semibold transition" onClick={() => setCustomizing(template)}>Customize</button>
+              <div className="font-semibold text-blue-900 mb-3 md:mb-2">{template.name}</div>
+              <button className="w-full md:w-auto px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-semibold transition" onClick={() => setCustomizing(template)}>Customize</button>
             </div>
           ))}
           <div className="bg-white border border-yellow-200 rounded-lg shadow p-4 flex flex-col items-center" style={{ background: 'url(/templates/floral-script-bg.png) center/cover, #fff' }}>
             <div className="font-semibold text-yellow-700 mb-2">Floral Script Wedding</div>
-            <div className="text-center text-gray-700 mb-4" style={{ fontFamily: 'Great Vibes, cursive', fontSize: 24 }}>
+            <div className="text-center text-gray-700 mb-5 md:mb-4" style={{ fontFamily: 'Great Vibes, cursive', fontSize: 24 }}>
               Jennifer Janet<br />and<br />Frederick Wilson
             </div>
-            <button className="px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700 font-semibold transition" onClick={() => setCustomizing({
+            <button className="w-full md:w-auto px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700 font-semibold transition" onClick={() => setCustomizing({
               id: 999,
               name: 'Floral Script Wedding',
               img: '/templates/floral-script-bg.png',

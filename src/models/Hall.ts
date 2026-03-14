@@ -30,7 +30,7 @@ export interface IHall extends mongoose.Document {
   }[];
   verified: boolean;
   featured: boolean;
-  status: 'pending' | 'active' | 'inactive';
+  status: 'pending' | 'active' | 'inactive' | 'rejected';
   createdAt: Date;
   updatedAt: Date;
   averageRating: number;
@@ -123,7 +123,7 @@ const hallSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['pending', 'active', 'inactive'],
+    enum: ['pending', 'active', 'inactive', 'rejected'],
     default: 'pending',
   },
   availability: [{

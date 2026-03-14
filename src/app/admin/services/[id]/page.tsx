@@ -6,6 +6,23 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { getImageUrl } from '@/lib/imageUtils';
+import { 
+  WrenchScrewdriverIcon, 
+  MapPinIcon, 
+  BanknotesIcon, 
+  UserIcon, 
+  CheckBadgeIcon, 
+  ChevronLeftIcon,
+  TrashIcon,
+  GlobeAltIcon,
+  InformationCircleIcon,
+  TagIcon,
+  PhoneIcon,
+  EnvelopeIcon,
+  ArrowTopRightOnSquareIcon,
+  SparklesIcon,
+  ShieldCheckIcon
+} from '@heroicons/react/24/outline';
 
 interface Service {
   _id: string;
@@ -50,9 +67,7 @@ export default function AdminServiceDetail({ params }: { params: { id: string } 
   const fetchService = async () => {
     try {
       const response = await fetch(`/api/admin/services/${params.id}`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch service');
-      }
+      if (!response.ok) throw new Error('Failed to fetch service');
       const data = await response.json();
       setService(data.service);
     } catch (error) {
@@ -64,23 +79,13 @@ export default function AdminServiceDetail({ params }: { params: { id: string } 
   };
 
   const deleteService = async () => {
-    if (!confirm('Are you sure you want to delete this service? This action cannot be undone.')) {
-      return;
-    }
-
+    if (!confirm('Are you sure you want to delete this service? This action cannot be undone.')) return;
     try {
       setDeleting(true);
-      const response = await fetch(`/api/admin/services/${params.id}`, {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to delete service');
-      }
-
+      const response = await fetch(`/api/admin/services/${params.id}`, { method: 'DELETE' });
+      if (!response.ok) throw new Error('Failed to delete service');
       router.push('/admin/services');
     } catch (error) {
-      console.error('Error deleting service:', error);
       setError('Failed to delete service');
     } finally {
       setDeleting(false);
@@ -89,154 +94,169 @@ export default function AdminServiceDetail({ params }: { params: { id: string } 
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="bg-red-50 border-l-4 border-red-400 p-4">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-              </svg>
-            </div>
-            <div className="ml-3">
-              <p className="text-sm text-red-700">{error}</p>
-            </div>
-          </div>
-        </div>
+      <div className="flex justify-center items-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#C89B3C]"></div>
       </div>
     );
   }
 
   if (!service) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900">Service not found</h1>
-          <Link href="/admin/services" className="text-primary-600 hover:text-primary-700">
-            Back to Services
-          </Link>
-        </div>
+      <div className="text-center py-20">
+         <WrenchScrewdriverIcon className="w-12 h-12 text-gray-200 mx-auto" />
+         <p className="text-gray-400 font-medium mt-4">Service not found.</p>
+         <Link href="/admin/services" className="text-[#C89B3C] font-bold mt-2 inline-block">Back to Services</Link>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-6">
-        <Link 
-          href="/admin/services" 
-          className="text-primary-600 hover:text-primary-700 flex items-center"
-        >
-          <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-          Back to Services
-        </Link>
+    <div className="space-y-8 animate-in fade-in duration-500 pb-12">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <Link href="/admin/services" className="p-2 bg-white rounded-xl border border-gray-100 text-gray-400 hover:text-gray-900 shadow-sm transition-all">
+            <ChevronLeftIcon className="w-5 h-5" />
+          </Link>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">{service.name}</h1>
+            <div className="flex items-center gap-2 text-xs text-gray-400 font-bold uppercase tracking-widest mt-1">
+               <span>Admin</span>
+               <span className="w-1 h-1 rounded-full bg-gray-300"></span>
+               <span>Services</span>
+               <span className="w-1 h-1 rounded-full bg-gray-300"></span>
+               <span className="text-[#B38A34]">{service.serviceType}</span>
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+           <Link href={`/services/${service._id}`} target="_blank" className="px-4 py-2 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-xl text-xs font-bold transition-all border border-gray-100 flex items-center gap-2">
+              <GlobeAltIcon className="w-4 h-4" />
+              View Public
+           </Link>
+           <button onClick={deleteService} disabled={deleting} className="px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl text-xs font-bold transition-all border border-red-100 flex items-center gap-2 disabled:opacity-50">
+              <TrashIcon className="w-4 h-4" />
+              {deleting ? 'Deleting...' : 'Delete Service'}
+           </button>
+        </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow-md overflow-hidden">
-        <div className="relative h-64 md:h-96">
-          <Image
-            src={getImageUrl(service.images[0] || '/placeholder.jpg')}
-            alt={service.name}
-            fill
-            className="object-cover"
-          />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2 space-y-8">
+           <div className="bg-white rounded-3xl overflow-hidden shadow-sm border border-gray-100">
+              <div className="relative h-80">
+                <Image
+                  src={getImageUrl(service.images[0] || '/placeholder.jpg')}
+                  alt={service.name}
+                  fill
+                  className="object-cover"
+                />
+                <div className="absolute top-6 left-6 flex gap-2">
+                   <span className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest shadow-lg backdrop-blur-md border border-white/20 theme-shadow ${
+                      service.status === 'active' ? 'bg-green-500/90 text-white' : 'bg-red-500/90 text-white'
+                   }`}>
+                      {service.status}
+                   </span>
+                   {service.verified && (
+                      <span className="px-4 py-1.5 rounded-full bg-[#C89B3C]/90 text-white text-xs font-bold uppercase tracking-widest shadow-lg backdrop-blur-md border border-white/20 flex items-center gap-1.5">
+                         <ShieldCheckIcon className="w-4 h-4" />
+                         Verified
+                      </span>
+                   )}
+                </div>
+              </div>
+              <div className="p-8">
+                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                    <div className="p-4 rounded-2xl bg-gray-50 border border-gray-100">
+                       <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Service Type</p>
+                       <p className="text-sm font-bold text-gray-900 capitalize">{service.serviceType}</p>
+                    </div>
+                    <div className="p-4 rounded-2xl bg-gray-50 border border-gray-100">
+                       <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Starting Price</p>
+                       <p className="text-sm font-bold text-gray-900">₹{service.price?.toLocaleString()}</p>
+                    </div>
+                    <div className="p-4 rounded-2xl bg-gray-50 border border-gray-100">
+                       <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Location</p>
+                       <p className="text-sm font-bold text-gray-900">{service.city}, {service.state}</p>
+                    </div>
+                 </div>
+
+                 <div className="mt-8">
+                    <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                       <InformationCircleIcon className="w-3.5 h-3.5" />
+                       About Service
+                    </h4>
+                    <p className="text-gray-600 leading-relaxed whitespace-pre-wrap">{service.description}</p>
+                 </div>
+              </div>
+           </div>
+
+           {/* Image Gallery */}
+           {service.images.length > 1 && (
+              <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 space-y-6">
+                 <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                    Service Gallery
+                 </h4>
+                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    {service.images.slice(1).map((image, index) => (
+                       <div key={index} className="relative h-28 rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-md transition-all">
+                          <Image
+                             src={getImageUrl(image)}
+                             alt={`${service.name} - Image ${index + 2}`}
+                             fill
+                             className="object-cover"
+                          />
+                       </div>
+                    ))}
+                 </div>
+              </div>
+           )}
         </div>
-        
-        <div className="p-6">
-          <div className="flex justify-between items-start mb-4">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">{service.name}</h1>
-              <p className="text-lg text-gray-600">{service.serviceType}</p>
-            </div>
-            <div className="flex flex-col items-end space-y-2">
-              <span className={`px-3 py-1 text-sm rounded-full ${
-                service.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-              }`}>
-                {service.status}
-              </span>
-              <span className={`px-3 py-1 text-sm rounded-full ${
-                service.verified ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800'
-              }`}>
-                {service.verified ? 'Verified' : 'Pending Verification'}
-              </span>
-            </div>
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            <div>
-              <h3 className="text-lg font-semibold mb-2">Service Details</h3>
-              <div className="space-y-2">
-                <p><span className="font-medium">Price:</span> ₹{service.price}</p>
-                <p><span className="font-medium">Location:</span> {service.city}, {service.state}</p>
-                <p><span className="font-medium">Contact:</span> {service.contact}</p>
-                <p><span className="font-medium">Created:</span> {new Date(service.createdAt).toLocaleDateString()}</p>
-                <p><span className="font-medium">Last Updated:</span> {new Date(service.updatedAt).toLocaleDateString()}</p>
+        <div className="space-y-8">
+           {/* Provider Card */}
+           <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 space-y-6">
+              <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                 <UserIcon className="w-3.5 h-3.5" />
+                 Provider Profile
+              </h4>
+              <div className="flex items-center gap-4">
+                 <div className="w-14 h-14 rounded-2xl bg-gold/10 flex items-center justify-center font-bold text-xl text-[#C89B3C]">
+                    {service.providerId?.name.charAt(0)}
+                 </div>
+                 <div>
+                    <p className="font-bold text-gray-900 leading-none">{service.providerId?.name}</p>
+                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1.5">Verified Partner</p>
+                 </div>
               </div>
-            </div>
-
-            <div>
-              <h3 className="text-lg font-semibold mb-2">Provider Information</h3>
-              <div className="space-y-2">
-                <p><span className="font-medium">Name:</span> {service.providerId.name}</p>
-                <p><span className="font-medium">Email:</span> {service.providerId.email}</p>
-                <p><span className="font-medium">Phone:</span> {service.providerId.phone}</p>
+              <div className="space-y-3 pt-4 border-t border-gray-50">
+                 <div className="flex items-center gap-3 text-xs text-gray-600">
+                    <p className="font-medium truncate">{service.providerId?.email}</p>
+                 </div>
+                 <div className="flex items-center gap-3 text-xs text-gray-600">
+                    <p className="font-medium">{service.providerId?.phone}</p>
+                 </div>
               </div>
-            </div>
-          </div>
+           </div>
 
-          <div className="mb-6">
-            <h3 className="text-lg font-semibold mb-2">Description</h3>
-            <p className="text-gray-700 whitespace-pre-wrap">{service.description}</p>
-          </div>
-
-          {service.images.length > 1 && (
-            <div className="mb-6">
-              <h3 className="text-lg font-semibold mb-2">Additional Images</h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {service.images.slice(1).map((image, index) => (
-                  <div key={index} className="relative h-32">
-                    <Image
-                      src={getImageUrl(image)}
-                      alt={`${service.name} - Image ${index + 2}`}
-                      fill
-                      className="object-cover rounded"
-                    />
-                  </div>
-                ))}
+           {/* Timeline Card */}
+           <div className="bg-gray-900 rounded-3xl p-8 shadow-xl shadow-gray-900/10 text-white space-y-6">
+              <div>
+                 <h4 className="text-[10px] font-bold uppercase tracking-widest opacity-50 mb-2">History</h4>
+                 <p className="text-xl font-bold">Timeline</p>
               </div>
-            </div>
-          )}
-
-          <div className="flex justify-between items-center pt-6 border-t">
-            <button
-              onClick={deleteService}
-              disabled={deleting}
-              className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {deleting ? 'Deleting...' : 'Delete Service'}
-            </button>
-            
-            <div className="flex space-x-4">
-              <Link
-                href={`/services/${service._id}`}
-                target="_blank"
-                className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
-              >
-                View Public Page
-              </Link>
-            </div>
-          </div>
+              <div className="space-y-4">
+                 <div>
+                    <p className="text-[10px] font-bold uppercase tracking-widest opacity-50">Created Date</p>
+                    <p className="text-sm font-bold text-gold">{new Date(service.createdAt).toLocaleDateString(undefined, { dateStyle: 'long' })}</p>
+                 </div>
+                 <div className="pt-4 border-t border-white/10">
+                    <p className="text-[10px] font-bold uppercase tracking-widest opacity-50">Last Modified</p>
+                    <p className="text-sm font-bold text-white/90">{new Date(service.updatedAt).toLocaleDateString(undefined, { dateStyle: 'long' })}</p>
+                 </div>
+              </div>
+           </div>
         </div>
       </div>
     </div>
   );
-} 
+}

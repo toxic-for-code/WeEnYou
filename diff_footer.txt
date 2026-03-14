@@ -1,0 +1,183 @@
+﻿diff --git a/src/components/Footer.tsx b/src/components/Footer.tsx
+index 78fb6d5..bf4434a 100644
+--- a/src/components/Footer.tsx
++++ b/src/components/Footer.tsx
+@@ -5,10 +5,26 @@ import Image from 'next/image';
+ import { usePathname } from 'next/navigation';
+ 
+ const socialLinks = [
+-  { href: 'https://facebook.com', label: 'Facebook', icon: '≡ƒôÿ' },
+-  { href: 'https://twitter.com', label: 'Twitter', icon: '≡ƒÉª' },
+-  { href: 'https://instagram.com', label: 'Instagram', icon: '≡ƒô╕' },
+-  { href: 'https://linkedin.com', label: 'LinkedIn', icon: '≡ƒÆ╝' },
++  { href: 'https://facebook.com', label: 'Facebook', icon: (
++    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
++      <path fillRule="evenodd" d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" clipRule="evenodd" />
++    </svg>
++  ) },
++  { href: 'https://twitter.com', label: 'Twitter', icon: (
++    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
++      <path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84" />
++    </svg>
++  ) },
++  { href: 'https://instagram.com', label: 'Instagram', icon: (
++    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
++      <path fillRule="evenodd" d="M12.315 2c2.43 0 2.784.013 3.808.06 1.064.049 1.791.218 2.427.465a4.902 4.902 0 011.772 1.153 4.902 4.902 0 011.153 1.772c.247.636.416 1.363.465 2.427.048 1.067.06 1.407.06 4.123v.08c0 2.643-.012 2.987-.06 4.043-.049 1.064-.218 1.791-.465 2.427a4.902 4.902 0 01-1.153 1.772 4.902 4.902 0 01-1.772 1.153c-.636.247-1.363.416-2.427.465-1.067.048-1.407.06-4.123.06h-.08c-2.643 0-2.987-.012-4.043-.06-1.064-.049-1.791-.218-2.427-.465a4.902 4.902 0 01-1.772-1.153 4.902 4.902 0 01-1.153-1.772c-.247-.636-.416-1.363-.465-2.427-.047-1.024-.06-1.379-.06-3.808v-.63c0-2.43.013-2.784.06-3.808.049-1.064.218-1.791.465-2.427a4.902 4.902 0 011.153-1.772A4.902 4.902 0 015.45 2.525c.636-.247 1.363-.416 2.427-.465C8.901 2.013 9.256 2 11.685 2h.63zm-.081 1.802h-.468c-2.456 0-2.784.011-3.807.058-.975.045-1.504.207-1.857.344-.467.182-.8.398-1.15.748-.35.35-.566.683-.748 1.15-.137.353-.3.882-.344 1.857-.047 1.023-.058 1.351-.058 3.807v.468c0 2.456.011 2.784.058 3.807.045.975.207 1.504.344 1.857.182.466.399.8.748 1.15.35.35.683.566 1.15.748.353.137.882.3 1.857.344 1.054.048 1.37.058 4.041.058h.08c2.597 0 2.917-.01 3.96-.058.976-.045 1.505-.207 1.858-.344.466-.182.8-.398 1.15-.748.35-.35.566-.683.748-1.15.137-.353.3-.882.344-1.857.048-1.055.058-1.37.058-4.041v-.08c0-2.597-.01-2.917-.058-3.96-.045-.976-.207-1.505-.344-1.858a3.097 3.097 0 00-.748-1.15 3.098 3.098 0 00-1.15-.748c-.353-.137-.882-.3-1.857-.344-1.023-.047-1.351-.058-3.807-.058zM12 6.865a5.135 5.135 0 110 10.27 5.135 5.135 0 010-10.27zm0 1.802a3.333 3.333 0 100 6.666 3.333 3.333 0 000-6.666zm5.338-3.205a1.2 1.2 0 110 2.4 1.2 1.2 0 010-2.4z" clipRule="evenodd" />
++    </svg>
++  ) },
++  { href: 'https://linkedin.com', label: 'LinkedIn', icon: (
++    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
++      <path fillRule="evenodd" d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" clipRule="evenodd" />
++    </svg>
++  ) },
+ ];
+ 
+ function scrollToTop() {
+@@ -19,52 +35,114 @@ function scrollToTop() {
+ 
+ export default function Footer() {
+   const pathname = usePathname();
++  
+   return (
+-    <footer className="relative w-full bg-black text-white pt-8 sm:pt-12 pb-6 sm:pb-8 mt-8 sm:mt-12 border-t border-gray-800">
+-      <div className="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col md:flex-row justify-between items-center gap-4 sm:gap-6 pt-4 sm:pt-6">
+-        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 md:gap-8 text-xs sm:text-sm text-center sm:text-left">
+-          <Link href="/about-us" className="hover:underline">About</Link>
+-          <Link href="/help" className="hover:underline">Contact</Link>
+-          <Link href="/privacy" className="hover:underline">Privacy</Link>
+-          <Link href="/terms" className="hover:underline">Terms</Link>
+-          <Link href="/blog" className="hover:underline">Blog/Ideas & Tips</Link>
++    <footer className="relative w-full bg-[#111111] text-white pt-16 sm:pt-24 pb-8 border-t border-gray-800">
++      <div className="max-w-7xl mx-auto px-4 sm:px-6">
++        
++        {/* Main Footer Content */}
++        <div className="grid grid-cols-1 md:grid-cols-12 gap-12 lg:gap-8 mb-16">
++          
++          {/* Brand & Description (Col Span 4) */}
++          <div className="md:col-span-4 lg:col-span-5 pr-0 lg:pr-12">
++            <Link href="/" className="inline-block mb-6">
++              <span className="font-serif text-3xl font-bold tracking-wider text-[#c8a96a]">
++                WeEnYou
++              </span>
++            </Link>
++            <p className="text-gray-400 text-sm sm:text-base leading-relaxed mb-8 max-w-sm">
++              Your ultimate destination for finding the perfect event spaces, expert vendors, and seamless planning tools. Make every celebration unforgettable.
++            </p>
++            {/* Social Icons */}
++            <div className="flex items-center gap-4">
++              {socialLinks.map((link) => (
++                <a
++                  key={link.label}
++                  href={link.href}
++                  target="_blank"
++                  rel="noopener noreferrer"
++                  className="w-10 h-10 rounded-full flex items-center justify-center bg-white/5 border border-white/10 hover:bg-[#c8a96a] hover:border-[#c8a96a] text-gray-300 hover:text-white transition-all duration-300 transform hover:-translate-y-1 hover:shadow-[0_4px_12px_rgba(200,169,106,0.3)]"
++                  aria-label={link.label}
++                >
++                  {link.icon}
++                </a>
++              ))}
++            </div>
++          </div>
++
++          {/* Quick Links (Col Span 2) */}
++          <div className="md:col-span-3 lg:col-span-2">
++            <h3 className="text-sm font-bold text-white mb-6 uppercase tracking-widest">Company</h3>
++            <ul className="space-y-4">
++              <li><Link href="/about-us" className="text-gray-400 hover:text-[#c8a96a] transition-colors text-sm">About Us</Link></li>
++              <li><Link href="/contact" className="text-gray-400 hover:text-[#c8a96a] transition-colors text-sm">Contact</Link></li>
++              <li><Link href="/halls" className="text-gray-400 hover:text-[#c8a96a] transition-colors text-sm">Browse Venues</Link></li>
++              <li><Link href="/vendors" className="text-gray-400 hover:text-[#c8a96a] transition-colors text-sm">Find Vendors</Link></li>
++            </ul>
++          </div>
++
++          {/* Resources (Col Span 3) */}
++          <div className="md:col-span-3 lg:col-span-2">
++            <h3 className="text-sm font-bold text-white mb-6 uppercase tracking-widest">Resources</h3>
++            <ul className="space-y-4">
++              <li><Link href="/ideas-tips" className="text-gray-400 hover:text-[#c8a96a] transition-colors text-sm">Ideas & Tips</Link></li>
++              <li><Link href="/e-invites" className="text-gray-400 hover:text-[#c8a96a] transition-colors text-sm">E-Invites</Link></li>
++              <li><Link href="/plan-event" className="text-gray-400 hover:text-[#c8a96a] transition-colors text-sm">Planning Tools</Link></li>
++              <li><Link href="/faq" className="text-gray-400 hover:text-[#c8a96a] transition-colors text-sm">FAQs</Link></li>
++            </ul>
++          </div>
++
++          {/* Legal (Col Span 2) */}
++          <div className="md:col-span-2 lg:col-span-3">
++            <h3 className="text-sm font-bold text-white mb-6 uppercase tracking-widest">Legal</h3>
++            <ul className="space-y-4">
++              <li><Link href="/privacy" className="text-gray-400 hover:text-[#c8a96a] transition-colors text-sm">Privacy Policy</Link></li>
++              <li><Link href="/terms" className="text-gray-400 hover:text-[#c8a96a] transition-colors text-sm">Terms of Service</Link></li>
++              <li><Link href="/cancellation" className="text-gray-400 hover:text-[#c8a96a] transition-colors text-sm">Cancellation</Link></li>
++              <li><Link href="/owner-auth" className="mt-2 inline-block px-4 py-2 border border-gray-700 rounded-lg text-sm text-gray-300 hover:text-white hover:border-[#c8a96a] hover:bg-[#c8a96a]/10 transition-colors">List Your Venue</Link></li>
++            </ul>
++          </div>
++
+         </div>
+-        <div className="flex gap-3 sm:gap-4 text-lg sm:text-xl">
+-          {socialLinks.map((link) => (
+-            <a
+-              key={link.label}
+-              href={link.href}
+-              target="_blank"
+-              rel="noopener noreferrer"
+-              aria-label={link.label}
+-              className="hover:text-white transition-colors p-1"
+-            >
+-              <span>{link.icon}</span>
+-            </a>
+-          ))}
++
++        {/* Global Bottom Divider */}
++        <div className="border-t border-gray-800/60 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
++          <div className="flex items-center gap-3">
++            <Image 
++              src="/logo.png" 
++              alt="WeEnYou Logo" 
++              width={140} 
++              height={40} 
++              className="opacity-50 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-300" 
++              style={{ filter: 'brightness(0) invert(1)' }} 
++            />
++          </div>
++          <p className="text-gray-500 text-sm">
++            &copy; {new Date().getFullYear()} WeEnYou. All rights reserved. Let's make every event memorable.
++          </p>
+         </div>
+       </div>
+-      <div className="max-w-7xl mx-auto px-4 sm:px-6 mt-6 sm:mt-8 flex flex-col items-center gap-2">
+-        <Image src="/logo.png" alt="WeEnYou Logo" width={200} height={64} className="mb-2" style={{ filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.25))' }} />
+-        <span className="text-xs text-gray-400 text-center">Making every event memorable. Your trusted event partner.</span>
+-      </div>
+-      <div className="text-center text-xs text-gray-500 mt-4 sm:mt-6 px-4 sm:px-6">&copy; {new Date().getFullYear()} WeEnYou. All rights reserved.</div>
+-      {/* Sticky Back to Top - touch-friendly on mobile */}
++
++      {/* Sticky Back to Top Button */}
+       <button
+         onClick={scrollToTop}
+-        className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 bg-gray-800 hover:bg-gray-700 text-white rounded-full shadow-lg transition-colors min-h-[48px] min-w-[48px] sm:min-h-[44px] sm:min-w-[44px] flex items-center justify-center p-0"
++        className="fixed bottom-6 right-6 z-50 bg-[#c8a96a] hover:bg-[#a37b3b] text-white rounded-full shadow-[0_8px_30px_rgba(200,169,106,0.5)] transition-all duration-300 hover:-translate-y-1 w-12 h-12 flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#c8a96a] focus:ring-offset-[#111111]"
+         aria-label="Back to top"
+-        style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.2)' }}
+       >
+-        <span className="text-lg sm:text-xl">Γåæ</span>
++        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
++          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
++        </svg>
+       </button>
+-      {/* Sticky Feedback Button - touch-friendly (hidden on /plan-event) */}
++
++      {/* Sticky Feedback Button */}
+       {pathname !== '/plan-event' && (
+         <button
+           onClick={() => window.open('mailto:support@weenyou.com', '_blank')}
+-          className="fixed bottom-20 right-4 sm:bottom-24 sm:right-6 z-50 bg-green-600 hover:bg-green-700 text-white rounded-full shadow-lg transition-colors text-xs sm:text-sm min-h-[48px] min-w-[48px] sm:min-h-[44px] sm:min-w-auto sm:px-5 sm:py-2 flex items-center justify-center px-4"
+-          style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.2)' }}
++          className="fixed bottom-24 right-6 z-50 bg-[#111111] border border-gray-700 hover:border-[#c8a96a] hover:bg-gray-800 text-white rounded-full shadow-lg transition-all duration-300 px-5 py-2.5 text-sm font-medium flex items-center gap-2"
+         >
++          <svg className="w-4 h-4 text-[#c8a96a]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
++            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
++          </svg>
+           Feedback
+         </button>
+       )}

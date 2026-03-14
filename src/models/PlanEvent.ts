@@ -3,6 +3,7 @@ import mongoose, { Schema, model, models, Document, Model } from 'mongoose';
 const PlanEventSchema = new Schema({
   eventType: { type: String, required: true },
   city: { type: String, required: true },
+  phoneNumber: { type: String, required: true },
   date: { type: String, required: true },
   guests: { type: String, required: true },
   budget: { type: String, required: true },
@@ -36,6 +37,7 @@ const PlanEventSchema = new Schema({
 interface PlanEventAttrs {
   eventType: string;
   city: string;
+  phoneNumber: string;
   date: string;
   guests: string;
   budget: string;

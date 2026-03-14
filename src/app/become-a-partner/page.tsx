@@ -75,89 +75,79 @@ export default function BecomeAPartnerPage() {
   };
 
   return (
-    <div className="page-mobile-first min-h-screen flex flex-col items-center justify-center bg-white px-4 sm:px-6 py-8 w-full min-w-0 overflow-x-hidden">
-      <h1 className="text-4xl font-bold text-center mb-2">Become a Partner</h1>
-      <p className="text-lg text-center mb-8 text-gray-700 max-w-2xl">
-        Whether you're a photographer, caterer, decorator, or provide any event-related service — WeEnYou gives you the tools and visibility to grow your business. Partner with us and reach thousands of event planners looking for trusted vendors like you.
-      </p>
+    <div className="min-h-screen w-full bg-white flex flex-col items-center overflow-x-hidden">
+      {/* Centered Main Content */}
+      <div className="w-full max-w-[1200px] mx-auto px-4 md:px-6 py-12 flex flex-col items-center">
+        {/* Hero Section */}
+        <div className="text-center mb-12 w-full">
+          <h1 className="text-[26px] md:text-5xl font-bold leading-tight mb-4 text-gray-900">
+            Become a Partner
+          </h1>
+          <p className="text-[15px] md:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+            Whether you're a photographer, caterer, decorator, or provide any event-related service — WeEnYou gives you the tools and visibility to grow your business. Partner with us and reach thousands of event planners looking for trusted vendors like you.
+          </p>
+        </div>
 
-      <div className="relative w-full max-w-5xl mb-12 min-h-[360px] flex items-center">
-        <button
-          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white rounded-full shadow p-2 text-2xl"
-          onClick={() => scrollSlider("left")}
-          aria-label="Scroll left"
-          style={{ height: 48, width: 48, display: infoCards.length > 1 ? 'flex' : 'none', alignItems: 'center', justifyContent: 'center' }}
-        >
-          &#8592;
-        </button>
-        <div
-          ref={sliderRef}
-          className="flex gap-8 overflow-x-auto scrollbar-hide px-12 py-2 w-full"
-          style={{ scrollSnapType: "x mandatory" }}
-        >
+        {/* Information Cards Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 w-full mb-16">
           {infoCards.map((card, idx) => (
             <div
               key={idx}
-              ref={el => { cardRefs.current[idx] = el; }}
-              className="bg-white/60 backdrop-blur-md border border-white/30 rounded-xl shadow-lg p-6 flex-shrink-0 w-80 flex flex-col items-center"
-              style={{ scrollSnapAlign: "center" }}
+              className="bg-white/60 backdrop-blur-md border border-gray-100 rounded-[16px] shadow-sm p-[18px] flex flex-col items-center h-full transition-shadow hover:shadow-md"
             >
-              <img src={card.img} alt={card.title} className="rounded-lg w-full h-40 object-cover mb-4" />
-              <h2 className="text-xl font-bold mb-2 text-center">{card.title}</h2>
-              <p className="text-gray-700 text-center mb-1">{card.desc}</p>
+              <img src={card.img} alt={card.title} className="rounded-xl w-full h-48 md:h-40 object-cover mb-4" />
+              <h2 className="text-xl font-bold mb-2 text-center text-gray-900">{card.title}</h2>
+              <p className="text-gray-600 text-center text-[15px] md:text-base leading-relaxed h-full">{card.desc}</p>
             </div>
           ))}
-          <div className="flex-shrink-0 w-16" />
         </div>
-        <button
-          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white rounded-full shadow p-2 text-2xl"
-          onClick={() => scrollSlider("right")}
-          aria-label="Scroll right"
-          style={{ height: 48, width: 48, display: infoCards.length > 1 ? 'flex' : 'none', alignItems: 'center', justifyContent: 'center' }}
-        >
-          &#8594;
-        </button>
       </div>
 
-      <section className="w-full bg-black py-12 mb-12">
-        <h1 className="text-4xl font-bold text-center text-white mb-2">Why join as a Service Partner?</h1>
-        <p className="text-lg text-center text-white mb-8">With WeEnYou's advanced tools, your service business will grow faster.</p>
-        <div className="relative w-full max-w-6xl mx-auto">
-          <div className="flex gap-8 overflow-x-auto scrollbar-hide px-4 py-2" style={{ scrollSnapType: 'x mandatory' }}>
+      {/* Why Join Section - Full bleed with centered content */}
+      <section className="w-full bg-black py-16 px-4 md:px-6 text-center text-white">
+        <div className="max-w-[1200px] mx-auto flex flex-col items-center">
+          <h2 className="text-[26px] md:text-4xl font-bold mb-4">Why join as a Service Partner?</h2>
+          <p className="text-[15px] md:text-lg text-gray-300 mb-12 max-w-2xl">
+            With WeEnYou's advanced tools, your service business will grow faster.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 w-full max-w-4xl">
             {benefitCards.map((card, idx) => (
               <div
                 key={idx}
-                className="bg-[#181818] rounded-xl shadow-lg p-6 flex-shrink-0 min-w-[320px] w-80 flex flex-col items-center"
-                style={{ scrollSnapAlign: 'center' }}
+                className="bg-[#181818] rounded-[16px] border border-white/10 p-[18px] flex flex-col items-center h-full"
               >
-                <img src={card.img} alt={card.title} className="rounded-lg w-full h-48 object-cover mb-4" />
-                <h2 className="text-xl font-bold mb-2 text-center text-white">{card.title}</h2>
-                <p className="text-gray-200 text-center mb-1">{card.desc}</p>
+                <img src={card.img} alt={card.title} className="rounded-xl w-full h-48 object-cover mb-4" />
+                <h3 className="text-xl font-bold mb-2">{card.title}</h3>
+                <p className="text-gray-400 text-[15px] leading-relaxed">{card.desc}</p>
               </div>
             ))}
-            <div className="flex-shrink-0 w-4" />
           </div>
         </div>
       </section>
 
-      <section className="w-full max-w-3xl mb-12">
-        <h2 className="text-2xl font-bold mb-4 text-center">💼 Service Categories We Welcome:</h2>
-        <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-lg text-gray-800 text-center">
-          {categories.map((cat, idx) => <li key={idx}>{cat}</li>)}
+      {/* Categories Section - Centered */}
+      <div className="w-full max-w-[1200px] mx-auto px-4 md:px-6 py-16">
+        <h2 className="text-[22px] md:text-3xl font-bold mb-8 text-center text-gray-900">💼 Service Categories We Welcome:</h2>
+        <ul className="flex flex-col md:grid md:grid-cols-2 gap-x-12 gap-y-3 text-[16px] md:text-lg text-gray-800">
+          {categories.map((cat, idx) => (
+            <li key={idx} className="flex items-center gap-3 bg-gray-50 md:bg-transparent p-3 md:p-0 rounded-lg border border-gray-100 md:border-none">
+              <span className="w-2 h-2 bg-primary-500 rounded-full shrink-0"></span>
+              {cat}
+            </li>
+          ))}
         </ul>
-      </section>
-
-      <div className="flex flex-col items-center">
-        <h3 className="text-xl font-semibold mb-4 text-center">🚀 Ready to grow your service business?</h3>
       </div>
-      <button
-        className="fixed left-1/2 -translate-x-1/2 bottom-6 bg-red-500 hover:bg-red-600 text-white text-lg font-semibold px-16 py-3 rounded-full shadow transition w-[90vw] max-w-2xl z-50"
-        onClick={() => window.location.href = "/auth/signup"}
-        style={{ position: 'fixed' }}
-      >
-        Join Now
-      </button>
 
+      {/* Final Join Section */}
+      <div className="w-full max-w-md px-4 pb-20 flex flex-col items-center">
+        <h3 className="text-lg md:text-xl font-semibold text-gray-800 mb-6 text-center">🚀 Ready to grow your service business?</h3>
+        <button
+          className="w-full h-[52px] bg-red-500 hover:bg-red-600 text-white text-base md:text-lg font-bold rounded-full shadow-lg transition-all active:scale-95"
+          onClick={() => window.location.href = "/auth/signup"}
+        >
+          Join Now
+        </button>
+      </div>
       <style jsx global>{`
         .scrollbar-hide::-webkit-scrollbar {
           display: none;

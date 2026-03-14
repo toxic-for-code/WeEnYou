@@ -8,19 +8,38 @@ export async function GET(req: Request) {
   try {
     await connectDB();
 
-    // Get only featured and active halls
-    let halls = await Hall.find({ 
+    const { searchParams } = new URL(req.url);
+    const limitParam = searchParams.get('limit');
+    let limit = 6;
+    if (limitParam === 'all') {
+      limit = 0; // In Mongoose, limit(0) is equivalent to no limit
+    } else if (limitParam) {
+      limit = parseInt(limitParam) || 6;
+    }
+
+    // Get featured and active halls
+    let query = Hall.find({ 
       featured: true, 
       status: 'active' 
     })
-      .sort({ averageRating: -1, createdAt: -1 })
-      .limit(6);
+      .sort({ averageRating: -1, createdAt: -1 });
+    
+    if (limit > 0) {
+      query = query.limit(limit);
+    }
+
+    let halls = await query;
 
     // If none found, fall back to any featured halls regardless of status
     if (!halls || halls.length === 0) {
-      const allFeatured = await Hall.find({ featured: true })
-        .sort({ averageRating: -1, createdAt: -1 })
-        .limit(6);
+      let fallbackQuery = Hall.find({ featured: true })
+        .sort({ averageRating: -1, createdAt: -1 });
+      
+      if (limit > 0) {
+        fallbackQuery = fallbackQuery.limit(limit);
+      }
+      
+      const allFeatured = await fallbackQuery;
       
       if (allFeatured.length > 0) {
         halls = allFeatured; // safe fallback to show featured content

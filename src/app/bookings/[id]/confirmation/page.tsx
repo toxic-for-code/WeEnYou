@@ -84,9 +84,29 @@ const ConfirmationPage = () => {
         description: `Booking for ${booking.hallId?.name}`,
         order_id: order.id,
         handler: async function (response: any) {
-          // Optionally, call backend to verify payment and update booking
-          // For now, reload page to show updated status
-          window.location.reload();
+          try {
+            const verifyRes = await fetch("/api/payments/verify", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                bookingId,
+                type: "advance", // Treating as advance for consistency, or 'finish' if total
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+              }),
+            });
+
+            if (verifyRes.ok) {
+              window.location.reload();
+            } else {
+              const errorData = await verifyRes.json();
+              setError(errorData.error || "Payment verification failed.");
+            }
+          } catch (err) {
+            console.error("Verification error:", err);
+            setError("An error occurred during payment verification.");
+          }
         },
         prefill: {
           name: booking.userId?.name,

@@ -39,7 +39,7 @@ export async function POST(
     }
 
     // Update hall status and commission
-    const newStatus = action === 'approve' ? 'active' : 'inactive';
+    const newStatus = action === 'approve' ? 'active' : 'rejected';
     const updateFields: any = {
       status: newStatus,
       verified: action === 'approve' ? true : false,

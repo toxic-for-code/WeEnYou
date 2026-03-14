@@ -3,6 +3,23 @@
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import { 
+  Cog6ToothIcon, 
+  EnvelopeIcon, 
+  BellIcon, 
+  BanknotesIcon, 
+  ClockIcon, 
+  TrashIcon, 
+  PlusIcon,
+  HandThumbUpIcon,
+  ShieldCheckIcon,
+  ArrowPathIcon,
+  DocumentTextIcon,
+  GlobeAltIcon,
+  DevicePhoneMobileIcon,
+  ExclamationCircleIcon
+} from '@heroicons/react/24/outline';
+
 
 interface Settings {
   platformFee: number;
@@ -81,9 +98,7 @@ export default function AdminSettings() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ settings }),
       });
-      
       if (!res.ok) throw new Error('Failed to save settings');
-      
       const data = await res.json();
       setSettings(data.settings);
     } catch (err) {
@@ -96,10 +111,7 @@ export default function AdminSettings() {
   const handleAddTimeSlot = () => {
     setSettings(prev => ({
       ...prev,
-      bookingTimeSlots: [
-        ...prev.bookingTimeSlots,
-        { start: '09:00', end: '23:00' }
-      ]
+      bookingTimeSlots: [...prev.bookingTimeSlots, { start: '09:00', end: '23:00' }]
     }));
   };
 
@@ -110,269 +122,254 @@ export default function AdminSettings() {
     }));
   };
 
-  if (loading) return <div>Loading...</div>;
-  if (error) return <div className="text-red-500">{error}</div>;
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#C89B3C]"></div>
+      </div>
+    );
+  }
+
+  const tabs = [
+    { id: 'general', label: 'General', icon: Cog6ToothIcon },
+    { id: 'email', label: 'Email Templates', icon: EnvelopeIcon },
+    { id: 'notifications', label: 'Notifications', icon: BellIcon },
+  ];
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8">Platform Settings</h1>
-
-      {/* Tabs */}
-      <div className="mb-8 border-b">
-        <div className="flex gap-4">
-          <button
-            onClick={() => setActiveTab('general')}
-            className={`pb-2 px-4 ${
-              activeTab === 'general'
-                ? 'border-b-2 border-blue-600 text-blue-600'
-                : 'text-gray-600'
-            }`}
-          >
-            General
-          </button>
-          <button
-            onClick={() => setActiveTab('email')}
-            className={`pb-2 px-4 ${
-              activeTab === 'email'
-                ? 'border-b-2 border-blue-600 text-blue-600'
-                : 'text-gray-600'
-            }`}
-          >
-            Email Templates
-          </button>
-          <button
-            onClick={() => setActiveTab('notifications')}
-            className={`pb-2 px-4 ${
-              activeTab === 'notifications'
-                ? 'border-b-2 border-blue-600 text-blue-600'
-                : 'text-gray-600'
-            }`}
-          >
-            Notifications
-          </button>
+    <div className="space-y-8 animate-in fade-in duration-500 pb-24">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Platform Settings</h1>
+          <p className="text-gray-500 text-sm mt-1">Global configuration for fees, notifications, and automated communications.</p>
         </div>
-      </div>
-
-      {/* General Settings */}
-      {activeTab === 'general' && (
-        <div className="space-y-6">
-          <div>
-            <label className="block font-medium mb-2">Platform Fee (%)</label>
-            <input
-              type="number"
-              value={settings.platformFee}
-              onChange={(e) => setSettings(prev => ({
-                ...prev,
-                platformFee: Number(e.target.value)
-              }))}
-              className="w-full md:w-1/3 px-4 py-2 border rounded"
-              min="0"
-              max="100"
-            />
-          </div>
-
-          <div>
-            <label className="block font-medium mb-2">Currency</label>
-            <select
-              value={settings.currency}
-              onChange={(e) => setSettings(prev => ({
-                ...prev,
-                currency: e.target.value
-              }))}
-              className="w-full md:w-1/3 px-4 py-2 border rounded"
-            >
-              <option value="INR">Indian Rupee (₹)</option>
-              <option value="USD">US Dollar ($)</option>
-              <option value="EUR">Euro (€)</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block font-medium mb-2">Booking Time Slots</label>
-            <div className="space-y-4">
-              {settings.bookingTimeSlots.map((slot, index) => (
-                <div key={index} className="flex gap-4 items-center">
-                  <input
-                    type="time"
-                    value={slot.start}
-                    onChange={(e) => setSettings(prev => ({
-                      ...prev,
-                      bookingTimeSlots: prev.bookingTimeSlots.map((s, i) =>
-                        i === index ? { ...s, start: e.target.value } : s
-                      )
-                    }))}
-                    className="px-4 py-2 border rounded"
-                  />
-                  <span>to</span>
-                  <input
-                    type="time"
-                    value={slot.end}
-                    onChange={(e) => setSettings(prev => ({
-                      ...prev,
-                      bookingTimeSlots: prev.bookingTimeSlots.map((s, i) =>
-                        i === index ? { ...s, end: e.target.value } : s
-                      )
-                    }))}
-                    className="px-4 py-2 border rounded"
-                  />
-                  <button
-                    onClick={() => handleRemoveTimeSlot(index)}
-                    className="text-red-600 hover:text-red-700"
-                  >
-                    Remove
-                  </button>
-                </div>
-              ))}
-              <button
-                onClick={handleAddTimeSlot}
-                className="text-blue-600 hover:text-blue-700"
-              >
-                + Add Time Slot
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Email Templates */}
-      {activeTab === 'email' && (
-        <div className="space-y-6">
-          <div>
-            <label className="block font-medium mb-2">Booking Confirmation</label>
-            <textarea
-              value={settings.emailTemplates.bookingConfirmation}
-              onChange={(e) => setSettings(prev => ({
-                ...prev,
-                emailTemplates: {
-                  ...prev.emailTemplates,
-                  bookingConfirmation: e.target.value
-                }
-              }))}
-              className="w-full h-48 px-4 py-2 border rounded font-mono"
-              placeholder="Available variables: {{userName}}, {{hallName}}, {{bookingDate}}, {{amount}}"
-            />
-          </div>
-
-          <div>
-            <label className="block font-medium mb-2">Payment Success</label>
-            <textarea
-              value={settings.emailTemplates.paymentSuccess}
-              onChange={(e) => setSettings(prev => ({
-                ...prev,
-                emailTemplates: {
-                  ...prev.emailTemplates,
-                  paymentSuccess: e.target.value
-                }
-              }))}
-              className="w-full h-48 px-4 py-2 border rounded font-mono"
-              placeholder="Available variables: {{userName}}, {{hallName}}, {{amount}}, {{transactionId}}"
-            />
-          </div>
-
-          <div>
-            <label className="block font-medium mb-2">Booking Cancellation</label>
-            <textarea
-              value={settings.emailTemplates.bookingCancellation}
-              onChange={(e) => setSettings(prev => ({
-                ...prev,
-                emailTemplates: {
-                  ...prev.emailTemplates,
-                  bookingCancellation: e.target.value
-                }
-              }))}
-              className="w-full h-48 px-4 py-2 border rounded font-mono"
-              placeholder="Available variables: {{userName}}, {{hallName}}, {{bookingDate}}, {{refundAmount}}"
-            />
-          </div>
-
-          <div>
-            <label className="block font-medium mb-2">Hall Verification</label>
-            <textarea
-              value={settings.emailTemplates.hallVerification}
-              onChange={(e) => setSettings(prev => ({
-                ...prev,
-                emailTemplates: {
-                  ...prev.emailTemplates,
-                  hallVerification: e.target.value
-                }
-              }))}
-              className="w-full h-48 px-4 py-2 border rounded font-mono"
-              placeholder="Available variables: {{ownerName}}, {{hallName}}, {{verificationStatus}}"
-            />
-          </div>
-        </div>
-      )}
-
-      {/* Notification Settings */}
-      {activeTab === 'notifications' && (
-        <div className="space-y-6">
-          <div>
-            <label className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                checked={settings.notifications.emailNotifications}
-                onChange={(e) => setSettings(prev => ({
-                  ...prev,
-                  notifications: {
-                    ...prev.notifications,
-                    emailNotifications: e.target.checked
-                  }
-                }))}
-                className="form-checkbox"
-              />
-              <span>Enable Email Notifications for Users</span>
-            </label>
-          </div>
-
-          <div>
-            <label className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                checked={settings.notifications.adminEmailNotifications}
-                onChange={(e) => setSettings(prev => ({
-                  ...prev,
-                  notifications: {
-                    ...prev.notifications,
-                    adminEmailNotifications: e.target.checked
-                  }
-                }))}
-                className="form-checkbox"
-              />
-              <span>Enable Email Notifications for Admins</span>
-            </label>
-          </div>
-
-          <div>
-            <label className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                checked={settings.notifications.ownerEmailNotifications}
-                onChange={(e) => setSettings(prev => ({
-                  ...prev,
-                  notifications: {
-                    ...prev.notifications,
-                    ownerEmailNotifications: e.target.checked
-                  }
-                }))}
-                className="form-checkbox"
-              />
-              <span>Enable Email Notifications for Hall Owners</span>
-            </label>
-          </div>
-        </div>
-      )}
-
-      {/* Save Button */}
-      <div className="mt-8">
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+        <button 
+          onClick={handleSave} 
+          disabled={saving} 
+          className="px-6 py-2.5 bg-gray-900 text-white rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-[#C89B3C] transition-all shadow-xl shadow-gray-900/10 flex items-center gap-2 disabled:opacity-50"
         >
-          {saving ? 'Saving...' : 'Save Changes'}
+          {saving ? <ArrowPathIcon className="w-4 h-4 animate-spin" /> : <HandThumbUpIcon className="w-4 h-4" />}
+          {saving ? 'Saving...' : 'Save Configuration'}
         </button>
       </div>
+
+      <div className="flex flex-wrap gap-2 p-1 bg-white border border-gray-100 rounded-2xl w-fit shadow-sm">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`px-6 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+              activeTab === tab.id 
+                ? 'bg-[#C89B3C] text-white shadow-md' 
+                : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
+            }`}
+          >
+            <tab.icon className="w-4 h-4" />
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2">
+          <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 space-y-10">
+            {activeTab === 'general' && (
+              <div className="space-y-8 animate-in slide-in-from-left-4 duration-300">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+                       <BanknotesIcon className="w-3.5 h-3.5" />
+                       Platform Commission (%)
+                    </label>
+                    <input
+                      type="number"
+                      value={settings.platformFee}
+                      onChange={(e) => setSettings(prev => ({ ...prev, platformFee: Number(e.target.value) }))}
+                      className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3 text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#C89B3C]/50 transition-all"
+                      min="0"
+                      max="100"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+                       <GlobeAltIcon className="w-3.5 h-3.5" />
+                       Default Currency
+                    </label>
+                    <select
+                      value={settings.currency}
+                      onChange={(e) => setSettings(prev => ({ ...prev, currency: e.target.value }))}
+                      className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3 text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#C89B3C]/50 transition-all cursor-pointer"
+                    >
+                      <option value="INR">Indian Rupee (₹)</option>
+                      <option value="USD">US Dollar ($)</option>
+                      <option value="EUR">Euro (€)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="space-y-4 pt-6 border-t border-gray-50">
+                  <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                    <ClockIcon className="w-3.5 h-3.5" />
+                    Standard Booking Intervals
+                  </h3>
+                  <div className="grid gap-3">
+                    {settings.bookingTimeSlots.map((slot, index) => (
+                      <div key={index} className="flex gap-4 items-center animate-in fade-in duration-300">
+                        <div className="flex-1 grid grid-cols-2 gap-2">
+                           <input
+                             type="time"
+                             value={slot.start}
+                             onChange={(e) => setSettings(prev => ({
+                               ...prev,
+                               bookingTimeSlots: prev.bookingTimeSlots.map((s, i) => i === index ? { ...s, start: e.target.value } : s)
+                             }))}
+                             className="bg-gray-50 border border-gray-100 rounded-xl px-4 py-2.5 text-xs font-bold text-gray-700"
+                           />
+                           <input
+                             type="time"
+                             value={slot.end}
+                             onChange={(e) => setSettings(prev => ({
+                               ...prev,
+                               bookingTimeSlots: prev.bookingTimeSlots.map((s, i) => i === index ? { ...s, end: e.target.value } : s)
+                             }))}
+                             className="bg-gray-50 border border-gray-100 rounded-xl px-4 py-2.5 text-xs font-bold text-gray-700"
+                           />
+                        </div>
+                        <button
+                          onClick={() => handleRemoveTimeSlot(index)}
+                          className="p-2.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+                        >
+                          <TrashIcon className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                    <button
+                      onClick={handleAddTimeSlot}
+                      className="w-fit flex items-center gap-2 px-4 py-2 bg-gray-50 hover:bg-gray-100 text-[#C89B3C] text-[10px] font-bold uppercase tracking-widest rounded-xl transition-all border border-dashed border-gray-200"
+                    >
+                      <PlusIcon className="w-3.5 h-3.5" />
+                      Add New Slot
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'email' && (
+              <div className="space-y-8 animate-in slide-in-from-left-4 duration-300">
+                {[
+                  { key: 'bookingConfirmation', label: 'Booking Confirmation', vars: '{{userName}}, {{hallName}}, {{bookingDate}}, {{amount}}' },
+                  { key: 'paymentSuccess', label: 'Payment Success Receipt', vars: '{{userName}}, {{hallName}}, {{amount}}, {{transactionId}}' },
+                  { key: 'bookingCancellation', label: 'Cancellation Notice', vars: '{{userName}}, {{hallName}}, {{bookingDate}}, {{refundAmount}}' },
+                  { key: 'hallVerification', label: 'Verification Status Update', vars: '{{ownerName}}, {{hallName}}, {{verificationStatus}}' }
+                ].map((tmpl) => (
+                  <div key={tmpl.key} className="space-y-3">
+                    <div className="flex items-center justify-between">
+                       <label className="text-sm font-bold text-gray-900">{tmpl.label}</label>
+                       <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">HTML / Markdown</span>
+                    </div>
+                    <div className="relative group">
+                       <textarea
+                         value={settings.emailTemplates[tmpl.key as keyof typeof settings.emailTemplates]}
+                         onChange={(e) => setSettings(prev => ({
+                           ...prev,
+                           emailTemplates: { ...prev.emailTemplates, [tmpl.key]: e.target.value }
+                         }))}
+                         className="w-full h-40 bg-[#1A1C21] text-gray-300 rounded-2xl p-6 font-mono text-xs focus:ring-2 focus:ring-[#C89B3C]/50 transition-all leading-relaxed scrollbar-thin scrollbar-thumb-gray-700"
+                         placeholder="Enter email content..."
+                       />
+                       <div className="absolute bottom-4 right-6 text-[9px] font-bold text-[#C89B3C]/50 uppercase tracking-widest">
+                          {tmpl.vars}
+                       </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {activeTab === 'notifications' && (
+              <div className="space-y-4 animate-in slide-in-from-left-4 duration-300">
+                {[
+                  { key: 'emailNotifications', label: 'User Marketing & Transactional', desc: 'Allow the platform to send automated emails to end-customers.' },
+                  { key: 'adminEmailNotifications', label: 'Administrative System Alerts', desc: 'Critical alerts for platform admins regarding system health and large transactions.' },
+                  { key: 'ownerEmailNotifications', label: 'Partner & Venue Owner Communication', desc: 'Daily digests and booking alerts for registered venue owners.' }
+                ].map((notif) => (
+                  <label key={notif.key} className="group flex items-center justify-between p-6 bg-gray-50 border border-gray-100 rounded-3xl hover:bg-white hover:border-[#C89B3C]/30 hover:shadow-lg hover:shadow-gold/5 transition-all cursor-pointer">
+                    <div className="space-y-1">
+                      <p className="text-sm font-bold text-gray-900 group-hover:text-[#C89B3C] transition-colors">{notif.label}</p>
+                      <p className="text-xs text-gray-400 pr-8">{notif.desc}</p>
+                    </div>
+                    <div className="relative inline-flex items-center">
+                      <input 
+                        type="checkbox" 
+                        checked={settings.notifications[notif.key as keyof typeof settings.notifications]}
+                        onChange={(e) => setSettings(prev => ({
+                          ...prev,
+                          notifications: { ...prev.notifications, [notif.key]: e.target.checked }
+                        }))}
+                        className="sr-only peer" 
+                      />
+                      <div className="w-12 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-[#C89B3C]/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#C89B3C]"></div>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="space-y-8">
+           <div className="bg-gray-900 rounded-3xl p-8 shadow-xl shadow-gray-900/10 text-white space-y-6">
+              <h4 className="text-[10px] font-bold text-white/50 uppercase tracking-widest flex items-center gap-2">
+                 <ShieldCheckIcon className="w-4 h-4" />
+                 Platform Security
+              </h4>
+              <p className="text-xs text-gray-400 border-l-2 border-[#C89B3C] pl-4 italic">
+                 "Changes to core settings may impact active bookings and financial reconciliation logs."
+              </p>
+              <div className="pt-4 space-y-3">
+                 <div className="flex items-center justify-between text-[10px]">
+                    <span className="text-gray-500 uppercase tracking-widest">Environment</span>
+                    <span className="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded font-bold uppercase tracking-widest">Production</span>
+                 </div>
+                 <div className="flex items-center justify-between text-[10px]">
+                    <span className="text-gray-500 uppercase tracking-widest">API Version</span>
+                    <span className="font-bold">v3.12.0</span>
+                 </div>
+              </div>
+           </div>
+
+           <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 space-y-6">
+              <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                 <DocumentTextIcon className="w-4 h-4" />
+                 Audit Trail
+              </h4>
+              <div className="space-y-4">
+                 <div className="flex items-start gap-3">
+                    <div className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-1.5" />
+                    <div>
+                       <p className="text-[10px] font-bold text-gray-900 uppercase tracking-widest">Last change</p>
+                       <p className="text-[10px] text-gray-400 mt-0.5">Today at 10:45 AM by System Admin</p>
+                    </div>
+                 </div>
+                 <div className="flex items-start gap-3">
+                    <div className="w-1.5 h-1.5 rounded-full bg-gray-300 mt-1.5" />
+                    <div>
+                       <p className="text-[10px] font-bold text-gray-900 uppercase tracking-widest">Platform Fee update</p>
+                       <p className="text-[10px] text-gray-400 mt-0.5">2 days ago by User Review</p>
+                    </div>
+                 </div>
+              </div>
+           </div>
+        </div>
+      </div>
+
+      {error && (
+        <div className="fixed bottom-8 right-8 bg-red-600 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4 duration-300">
+           <ExclamationCircleIcon className="w-5 h-5" />
+           <p className="text-sm font-bold">{error}</p>
+        </div>
+      )}
     </div>
   );
-} 
- 
+}

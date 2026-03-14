@@ -16,6 +16,12 @@ export async function POST(req: NextRequest) {
   }
   try {
     const data = await req.json();
+
+    // Backend Validation
+    if (!data.phoneNumber || !/^\d{10,15}$/.test(data.phoneNumber)) {
+      return NextResponse.json({ success: false, error: 'Valid phone number (10-15 digits) is required' }, { status: 400 });
+    }
+
     // Attach user info from session if not present
     if (!data.userId) data.userId = session.user.id;
     if (!data.userName) data.userName = session.user.name;
@@ -34,6 +40,7 @@ export async function POST(req: NextRequest) {
           <ul>
             <li><b>Event Type:</b> ${data.eventType}</li>
             <li><b>City:</b> ${data.city}</li>
+            <li><b>Phone Number:</b> ${data.phoneNumber}</li>
             <li><b>Date:</b> ${data.date}</li>
             <li><b>Guests:</b> ${data.guests}</li>
             <li><b>Budget:</b> ${data.budget}</li>
@@ -45,7 +52,7 @@ export async function POST(req: NextRequest) {
             <li><b>Event Tag:</b> ${data.eventTag}</li>
             <li><b>User Name:</b> ${data.userName}</li>
             <li><b>User Email:</b> ${data.userEmail}</li>
-            <li><b>User Phone:</b> ${data.userPhone}</li>
+            <li><b>User Profile Phone:</b> ${data.userPhone}</li>
           </ul>
           <p>Submitted at: ${new Date(saved.createdAt).toLocaleString()}</p>
         `,

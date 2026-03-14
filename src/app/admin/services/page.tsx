@@ -6,6 +6,22 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { getImageUrl } from '@/lib/imageUtils';
+import { 
+  BuildingStorefrontIcon, 
+  CheckBadgeIcon, 
+  MapPinIcon, 
+  UserIcon, 
+  BanknotesIcon,
+  StarIcon,
+  ArrowPathIcon,
+  EyeIcon,
+  CheckIcon,
+  XMarkIcon,
+  TagIcon,
+  PhoneIcon,
+  EnvelopeIcon
+} from '@heroicons/react/24/outline';
+import { CheckCircleIcon as CheckCircleIconSolid } from '@heroicons/react/24/solid';
 
 interface Service {
   _id: string;
@@ -18,7 +34,7 @@ interface Service {
   state: string;
   images: string[];
   verified: boolean;
-  status: string;
+  status: 'active' | 'inactive';
   providerId: {
     _id: string;
     name: string;
@@ -34,6 +50,8 @@ export default function AdminServices() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [verifyingServices, setVerifyingServices] = useState<string[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedType, setSelectedType] = useState('all');
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -50,12 +68,10 @@ export default function AdminServices() {
       const response = await fetch('/api/admin/services');
       const data = await response.json();
       
-      // Get cached verification status
       const cachedStatus = localStorage.getItem('serviceVerificationStatus');
       const verificationStatus = cachedStatus ? JSON.parse(cachedStatus) : {};
       
-      // Merge the fetched services with cached verification status
-      const updatedServices = data.services.map((service: Service) => ({
+      const updatedServices = (data.services || []).map((service: Service) => ({
         ...service,
         verified: verificationStatus[service._id] ?? service.verified
       }));
@@ -71,9 +87,6 @@ export default function AdminServices() {
 
   const toggleVerification = async (serviceId: string, verified: boolean) => {
     try {
-      console.log('Starting verification toggle for service:', serviceId);
-      console.log('Current verified status:', verified);
-      
       setVerifyingServices(prev => [...prev, serviceId]);
       
       const response = await fetch(`/api/admin/services/${serviceId}/verify`, {
@@ -83,137 +96,180 @@ export default function AdminServices() {
         },
       });
 
-      console.log('Response status:', response.status);
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('Error response:', errorData);
-        throw new Error('Failed to update verification status');
-      }
+      if (!response.ok) throw new Error('Failed to update verification status');
 
-      const { service: updatedService, message } = await response.json();
-      console.log('Received updated service data:', updatedService);
-      console.log('Success message:', message);
-      
-      if (typeof updatedService.verified !== 'boolean') {
-        console.error('Invalid verification status received:', updatedService.verified);
-        throw new Error('Invalid verification status received from server');
-      }
+      const { service: updatedService } = await response.json();
 
-      // Update the service in the local state
-      setServices(prevServices => {
-        const updatedServices = prevServices.map(service => {
-          if (service._id === serviceId) {
-            console.log('Updating service:', service._id);
-            console.log('New verified status:', updatedService.verified);
-            return { ...service, verified: updatedService.verified };
-          }
-          return service;
-        });
-        console.log('Updated services array:', updatedServices);
-        return updatedServices;
-      });
+      setServices(prevServices => prevServices.map(service => 
+        service._id === serviceId ? { ...service, verified: updatedService.verified } : service
+      ));
 
-      // Cache the verification status
       const cachedStatus = localStorage.getItem('serviceVerificationStatus');
       const verificationStatus = cachedStatus ? JSON.parse(cachedStatus) : {};
       verificationStatus[serviceId] = updatedService.verified;
       localStorage.setItem('serviceVerificationStatus', JSON.stringify(verificationStatus));
 
-      // Show success message
-      setError(''); // Clear any existing error
+      setError('');
     } catch (error) {
-      console.error('Error toggling verification:', error);
       setError('Failed to update verification status');
     } finally {
       setVerifyingServices(prev => prev.filter(id => id !== serviceId));
     }
   };
 
+  const types = ['all', ...Array.from(new Set(services.map(s => s.serviceType)))];
+
+  const filteredServices = services.filter(service => {
+    const matchesSearch = service.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          service.providerId?.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesType = selectedType === 'all' || service.serviceType === selectedType;
+    return matchesSearch && matchesType;
+  });
+
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      <div className="flex justify-center items-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#C89B3C]"></div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">Manage Services</h1>
+    <div className="space-y-8 animate-in fade-in duration-500">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Manage Services</h1>
+          <p className="text-gray-500 text-sm mt-1">Review and verify vendor services, catering, and event supplies.</p>
+        </div>
       </div>
+
+      {/* Filters Area */}
+      <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-col lg:flex-row gap-4">
+        <div className="flex-1 relative">
+          <TagIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search services or providers..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 rounded-xl border border-gray-100 focus:outline-none focus:ring-2 focus:ring-[#C89B3C]/10 focus:border-[#C89B3C] transition-all text-sm"
+          />
+        </div>
+        <div className="flex gap-2 overflow-x-auto pb-2 lg:pb-0 no-scrollbar">
+          {types.map(type => (
+            <button
+              key={type}
+              onClick={() => setSelectedType(type)}
+              className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest transition-all whitespace-nowrap ${
+                selectedType === type 
+                  ? 'bg-[#C89B3C] text-white shadow-md' 
+                  : 'bg-gray-50 text-gray-500 hover:bg-gray-100'
+              }`}
+            >
+              {type}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {error && (
-        <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-4">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-              </svg>
-            </div>
-            <div className="ml-3">
-              <p className="text-sm text-red-700">{error}</p>
-            </div>
-          </div>
+        <div className="bg-red-50 border border-red-100 p-4 rounded-xl flex items-center gap-3 text-red-700 text-sm">
+          <XMarkIcon className="w-5 h-5" />
+          {error}
         </div>
       )}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {services.map((service) => (
-          <div key={service._id} className="bg-white rounded-lg shadow-md overflow-hidden">
-            <div className="relative h-48">
-              <Image
+
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        {filteredServices.map((service) => (
+          <div key={service._id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden group hover:shadow-xl transition-all duration-300">
+            <div className="relative h-48 overflow-hidden">
+               <Image
                 src={getImageUrl(service.images[0] || '/placeholder.jpg')}
                 alt={service.name}
                 fill
-                className="object-cover"
+                className="object-cover group-hover:scale-105 transition-transform duration-500"
               />
+              <div className="absolute top-4 left-4">
+                 <span className={`px-3 py-1 text-[10px] font-bold uppercase tracking-widest rounded-full shadow-lg border border-white/20 backdrop-blur-md ${
+                    service.status === 'active' ? 'bg-green-500/90 text-white' : 'bg-red-500/90 text-white'
+                 }`}>
+                    {service.status}
+                 </span>
+              </div>
+              {service.verified && (
+                <div className="absolute top-4 right-4">
+                  <CheckBadgeIcon className="w-8 h-8 text-[#C89B3C] drop-shadow-lg" />
+                </div>
+              )}
+              <div className="absolute bottom-4 left-4">
+                 <div className="bg-black/40 backdrop-blur-md px-3 py-1 rounded-lg border border-white/10 text-white text-[10px] font-bold uppercase tracking-widest">
+                    {service.serviceType}
+                 </div>
+              </div>
             </div>
+
             <div className="p-6">
-              <div className="flex justify-between items-start mb-2">
-                <h3 className="text-xl font-semibold">{service.name}</h3>
-                <span className={`px-2 py-1 text-xs rounded-full ${
-                  service.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                }`}>
-                  {service.status}
-                </span>
-              </div>
-              <p className="text-gray-600 mb-2">{service.serviceType}</p>
-              <p className="text-gray-600 mb-2">{service.city}, {service.state}</p>
-              <p className="text-gray-600 mb-2">Price: ₹{service.price}</p>
-              <p className="text-gray-600 mb-2">Contact: {service.contact}</p>
-              <p className="text-gray-600 mb-4 text-sm">
-                Provider: {service.providerId.name} ({service.providerId.email})
-              </p>
-              <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                {service.description}
-              </p>
-              <div className="mt-4 flex justify-between items-center">
-                <button
-                  onClick={() => toggleVerification(service._id, !service.verified)}
-                  disabled={verifyingServices.includes(service._id)}
-                  className={`px-4 py-2 rounded ${
-                    service.verified 
-                      ? 'bg-green-600 hover:bg-green-700' 
-                      : 'bg-yellow-600 hover:bg-yellow-700'
-                  } text-white transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed`}
-                >
-                  {verifyingServices.includes(service._id)
-                    ? 'Updating...'
-                    : service.verified
-                    ? 'Verified ✓'
-                    : 'Verify'}
-                </button>
-                <Link 
-                  href={`/admin/services/${service._id}`} 
-                  className="text-primary-600 hover:text-primary-700"
-                >
-                  View Details
-                </Link>
-              </div>
+               <div className="mb-4">
+                  <h3 className="text-lg font-bold text-gray-900 group-hover:text-[#C89B3C] transition-colors leading-tight">{service.name}</h3>
+                  <div className="flex items-center gap-1 text-gray-500 text-xs mt-1">
+                    <MapPinIcon className="w-3 h-3" />
+                    <span>{service.city}, {service.state}</span>
+                  </div>
+               </div>
+
+               <div className="grid grid-cols-2 gap-4 mb-6">
+                  <div className="p-3 rounded-xl bg-gray-50 border border-gray-100">
+                    <div className="flex items-center gap-2 mb-1">
+                      <BanknotesIcon className="w-3 h-3 text-gray-400" />
+                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Pricing</span>
+                    </div>
+                    <p className="text-sm font-bold text-gray-900">₹{service.price?.toLocaleString()}</p>
+                  </div>
+                  <div className="p-3 rounded-xl bg-gray-50 border border-gray-100">
+                    <div className="flex items-center gap-2 mb-1">
+                      <StarIcon className="w-3 h-3 text-amber-400" />
+                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Ratings</span>
+                    </div>
+                    <p className="text-sm font-bold text-gray-900">4.8 <span className="text-[10px] font-normal text-gray-400">(24)</span></p>
+                  </div>
+               </div>
+
+               <div className="space-y-3 mb-6">
+                  <div className="flex items-center gap-3">
+                     <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-[10px] font-bold text-gray-500">
+                        {service.providerId?.name.charAt(0)}
+                     </div>
+                     <div className="min-w-0">
+                        <p className="text-xs font-bold text-gray-900 truncate">{service.providerId?.name}</p>
+                        <p className="text-[10px] text-gray-500 truncate">{service.providerId?.email}</p>
+                     </div>
+                  </div>
+               </div>
+
+               <div className="flex items-center gap-2 pt-4 border-t border-gray-50">
+                  <button
+                    onClick={() => toggleVerification(service._id, !service.verified)}
+                    disabled={verifyingServices.includes(service._id)}
+                    className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 border ${
+                      service.verified 
+                        ? 'bg-green-50 border-green-100 text-green-600 hover:bg-green-100' 
+                        : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
+                    } disabled:opacity-50`}
+                  >
+                    {verifyingServices.includes(service._id) ? <ArrowPathIcon className="w-4 h-4 animate-spin" /> : service.verified ? <CheckBadgeIcon className="w-4 h-4" /> : <CheckCircleIconSolid className="w-4 h-4 text-gray-300" />}
+                    {service.verified ? 'Verified' : 'Verify'}
+                  </button>
+                  <Link 
+                    href={`/admin/services/${service._id}`} 
+                    className="p-2.5 bg-gray-50 hover:bg-gray-100 text-gray-400 hover:text-gray-900 rounded-xl border border-gray-100 transition-all"
+                  >
+                    <EyeIcon className="w-5 h-5" />
+                  </Link>
+               </div>
             </div>
           </div>
         ))}
       </div>
     </div>
   );
-} 
+}

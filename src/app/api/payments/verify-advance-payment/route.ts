@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { connectDB } from '@/lib/db';
 import BookingPayment from '@/models/BookingPayment';
+import Booking from '@/models/Booking';
+import Notification from '@/models/Notification';
 import { verifySignature } from '@/lib/razorpay';
 
 export async function POST(req: Request) {
@@ -8,6 +10,7 @@ export async function POST(req: Request) {
     await connectDB();
     const body = await req.json();
     const {
+      bookingId,
       userId,
       hallId,
       totalAmount,
@@ -16,6 +19,7 @@ export async function POST(req: Request) {
       razorpay_payment_id,
       razorpay_signature,
     } = body as {
+      bookingId?: string;
       userId: string; hallId: string; totalAmount: number; advanceAmount: number;
       razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string;
     };
@@ -24,6 +28,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Missing required fields.' }, { status: 400 });
     }
 
+    // Verify Razorpay signature
     const valid = verifySignature({ orderId: razorpay_order_id, paymentId: razorpay_payment_id, signature: razorpay_signature });
     if (!valid) {
       return NextResponse.json({ error: 'Signature verification failed.' }, { status: 400 });
@@ -31,7 +36,8 @@ export async function POST(req: Request) {
 
     const remainingAmount = Math.max(0, totalAmount - advanceAmount);
 
-    const booking = await BookingPayment.create({
+    // Create BookingPayment record
+    const bookingPayment = await BookingPayment.create({
       userId,
       hallId,
       totalAmount,
@@ -44,9 +50,35 @@ export async function POST(req: Request) {
       status: 'request_sent',
     });
 
+    // Also update the main Booking document if bookingId is provided
+    if (bookingId) {
+      const booking = await Booking.findById(bookingId);
+      if (booking) {
+        booking.advancePaid = true;
+        booking.advanceAmount = advanceAmount;
+        booking.remainingBalance = remainingAmount;
+        booking.paymentId = razorpay_payment_id;
+        booking.paymentStatus = 'partial_paid' as any;
+        booking.status = 'owner_approval_pending' as any;
+        booking.bookingPaymentId = (bookingPayment._id as any);
+        await booking.save();
+
+        // Notify the hall owner
+        const populatedBooking = await Booking.findById(bookingId).populate('hallId') as any;
+        if (populatedBooking?.hallId?.ownerId) {
+          await Notification.create({
+            userId: populatedBooking.hallId.ownerId,
+            type: 'booking',
+            message: `A user has paid the advance for booking at '${populatedBooking.hallId.name}'. Please approve or reject the booking.`,
+          });
+        }
+      }
+    }
+
     return NextResponse.json({
-      message: 'Booking Request Sent!\nThank you for  your payment.\nPlease wait for the owner to accept  your request.\nYou’ll be notified once it’s accepted.',
-      bookingId: (booking._id as any).toString(),
+      message: 'Booking Request Sent!\nThank you for your payment.\nPlease wait for the owner to accept your request.\nYou\'ll be notified once it\'s accepted.',
+      bookingId: bookingId || (bookingPayment._id as any).toString(),
+      bookingPaymentId: (bookingPayment._id as any).toString(),
     });
   } catch (e: any) {
     console.error('verify-advance-payment error', e);
