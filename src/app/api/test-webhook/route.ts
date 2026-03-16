@@ -21,17 +21,17 @@ export async function POST(req: Request) {
     console.log('Test webhook - Before update:', {
       _id: booking._id,
       status: booking.status,
-      paymentStatus: booking.paymentStatus,
-      advancePaid: booking.advancePaid
+      paymentStatus: (booking as any).payment?.paymentStatus,
+      advancePaid: (booking as any).payment?.advancePaid
     });
     
     // Simulate the webhook update
     if (paymentType === 'advance') {
       const updateResult = await Booking.findByIdAndUpdate(bookingId, {
         $set: {
-          advancePaid: true,
+          'payment.advancePaid': true,
           status: 'pending_owner_confirmation',
-          paymentStatus: 'pending',
+          'payment.paymentStatus': 'pending',
         }
       }, { new: true });
       
@@ -42,21 +42,21 @@ export async function POST(req: Request) {
       console.log('Test webhook - After update:', {
         _id: updatedBooking?._id,
         status: updatedBooking?.status,
-        paymentStatus: updatedBooking?.paymentStatus,
-        advancePaid: updatedBooking?.advancePaid
+        paymentStatus: (updatedBooking as any)?.payment?.paymentStatus,
+        advancePaid: (updatedBooking as any)?.payment?.advancePaid
       });
       
       return NextResponse.json({
         message: 'Test webhook processed successfully',
         before: {
           status: booking.status,
-          paymentStatus: booking.paymentStatus,
-          advancePaid: booking.advancePaid
+          paymentStatus: (booking as any).payment?.paymentStatus,
+          advancePaid: (booking as any).payment?.advancePaid
         },
         after: {
           status: updatedBooking?.status,
-          paymentStatus: updatedBooking?.paymentStatus,
-          advancePaid: updatedBooking?.advancePaid
+          paymentStatus: (updatedBooking as any)?.payment?.paymentStatus,
+          advancePaid: (updatedBooking as any)?.payment?.advancePaid
         }
       });
     }
@@ -66,4 +66,4 @@ export async function POST(req: Request) {
     console.error('Test webhook error:', error);
     return NextResponse.json({ error: 'Test webhook failed' }, { status: 500 });
   }
-} 
+}

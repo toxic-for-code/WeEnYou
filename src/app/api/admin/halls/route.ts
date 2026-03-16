@@ -49,20 +49,20 @@ export async function GET() {
           },
           revenue: {
             total: bookings
-              .filter((b) => b.paymentStatus === 'paid')
+              .filter((b: any) => b.payment?.paymentStatus === 'paid')
               .reduce((sum, b) => sum + b.totalPrice, 0),
             thisMonth: bookings
               .filter(
-                (b) =>
-                  b.paymentStatus === 'paid' &&
+                (b: any) =>
+                  b.payment?.paymentStatus === 'paid' &&
                   new Date(b.createdAt).getMonth() === now.getMonth() &&
                   new Date(b.createdAt).getFullYear() === now.getFullYear()
               )
               .reduce((sum, b) => sum + b.totalPrice, 0),
             lastMonth: bookings
               .filter(
-                (b) =>
-                  b.paymentStatus === 'paid' &&
+                (b: any) =>
+                  b.payment?.paymentStatus === 'paid' &&
                   new Date(b.createdAt).getMonth() ===
                     (now.getMonth() === 0 ? 11 : now.getMonth() - 1) &&
                   new Date(b.createdAt).getFullYear() ===

@@ -20,6 +20,15 @@ const bookingSchema = new mongoose.Schema(
       type: Date,
       required: true,
     },
+    eventType: {
+      type: String,
+      enum: ['wedding', 'birthday', 'engagement', 'corporate'],
+      required: true,
+    },
+    eventStartTime: {
+      type: String,
+      required: true,
+    },
     guests: {
       type: Number,
       required: true,
@@ -33,10 +42,50 @@ const bookingSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    venuePrice: {
+      type: Number,
+      required: true,
+    },
+    platformFee: {
+      type: Number,
+      required: true,
+    },
+    platformFeePercentage: {
+      type: Number,
+      required: true,
+    },
     totalPrice: {
       type: Number,
       required: true,
       min: 0,
+    },
+    payment: {
+      advancePaid: {
+        type: Boolean,
+        default: false,
+      },
+      advanceAmount: {
+        type: Number,
+        default: 0,
+      },
+      remainingBalance: {
+        type: Number,
+        default: 0,
+      },
+      paymentStatus: {
+        type: String,
+        enum: ['pending', 'paid', 'failed', 'partial_paid', 'refund_pending', 'refunded'],
+        default: 'pending',
+      },
+      orderId: {
+        type: String,
+      },
+      paymentId: {
+        type: String,
+      },
+      paymentTimestamp: {
+        type: Date,
+      },
     },
     status: {
       type: String,
@@ -46,22 +95,28 @@ const bookingSchema = new mongoose.Schema(
         'owner_confirmed',
         'confirmed',
         'rejected',
+        'cancellation_requested',
         'cancelled',
         'completed'
       ],
       default: 'pending_advance',
     },
-    paymentStatus: {
-      type: String,
-      enum: ['pending', 'paid', 'partial_paid', 'refund_pending', 'refunded'],
-      default: 'pending',
-    },
-    paymentId: {
-      type: String,
-    },
-    advancePaid: {
+    cancellationRequested: {
       type: Boolean,
       default: false,
+    },
+    cancellationRequestedBy: {
+      type: String,
+      enum: ['user', 'owner', 'admin', null],
+      default: null,
+    },
+    cancellationReason: String,
+    cancellationRequestedAt: Date,
+    cancelledAt: Date,
+    cancelledBy: {
+      type: String,
+      enum: ['user', 'owner', 'admin', null],
+      default: null,
     },
     finalPaymentMethod: {
       type: String,
@@ -90,52 +145,23 @@ const bookingSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
-    // Payment-related fields for Razorpay
+    // Owner details for payouts
     ownerId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
     },
-    ownerName: {
-      type: String,
-    },
-    ownerEmail: {
-      type: String,
-    },
-    ownerPhone: {
-      type: String,
-    },
-    ownerContactId: {
-      type: String,
-    },
-    ownerFundAccountId: {
-      type: String,
-    },
+    ownerName: String,
+    ownerEmail: String,
+    ownerPhone: String,
+    ownerContactId: String,
+    ownerFundAccountId: String,
     ownerBankDetails: {
-      upi: { type: String },
-      name: { type: String },
-      ifsc: { type: String },
-      accountNumber: { type: String },
+      upi: String,
+      name: String,
+      ifsc: String,
+      accountNumber: String,
     },
-    venuePrice: {
-      type: Number,
-    },
-    orderId: {
-      type: String, // Razorpay order ID — saved at order creation for webhook lookup
-    },
-    finalOrderId: {
-      type: String, // Specifically for the remaining balance payment
-    },
-    paymentTimestamp: {
-      type: Date, // When payment was captured
-    },
-    advanceAmount: {
-      type: Number,
-      default: 0,
-    },
-    remainingBalance: {
-      type: Number,
-      default: 0,
-    },
+    finalOrderId: String,
     bookingPaymentId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'BookingPayment',
@@ -154,16 +180,33 @@ bookingSchema.index({ status: 1 });
 interface BookingAttrs {
   userId: mongoose.Types.ObjectId;
   hallId: mongoose.Types.ObjectId;
+  eventType: 'wedding' | 'birthday' | 'engagement' | 'corporate';
+  eventStartTime: string;
   startDate: Date;
   endDate: Date;
   guests: number;
   specialRequests?: string;
   customerPhone?: string;
+  venuePrice: number;
+  platformFee: number;
+  platformFeePercentage: number;
   totalPrice: number;
-  status: 'pending_advance' | 'waiting_owner_confirmation' | 'owner_confirmed' | 'confirmed' | 'rejected' | 'cancelled' | 'completed';
-  paymentStatus: 'pending' | 'paid' | 'partial_paid' | 'refund_pending' | 'refunded';
-  paymentId?: string;
-  advancePaid?: boolean;
+  payment: {
+    advancePaid: boolean;
+    advanceAmount: number;
+    remainingBalance: number;
+    paymentStatus: 'pending' | 'paid' | 'failed' | 'partial_paid' | 'refund_pending' | 'refunded';
+    orderId?: string;
+    paymentId?: string;
+    paymentTimestamp?: Date;
+  };
+  status: 'pending_advance' | 'waiting_owner_confirmation' | 'owner_confirmed' | 'confirmed' | 'rejected' | 'cancellation_requested' | 'cancelled' | 'completed';
+  cancellationRequested?: boolean;
+  cancellationRequestedBy?: 'user' | 'owner' | 'admin' | null;
+  cancellationReason?: string;
+  cancellationRequestedAt?: Date;
+  cancelledAt?: Date;
+  cancelledBy?: 'user' | 'owner' | 'admin' | null;
   finalPaymentMethod?: 'online' | 'offline' | null;
   finalPaymentStatus?: 'pending' | 'paid' | null;
   event_manager_id?: mongoose.Types.ObjectId;
@@ -174,7 +217,6 @@ interface BookingAttrs {
     requestedAt?: Date;
   };
   reminderSent?: boolean;
-  // Payment-related fields for Razorpay
   ownerId?: mongoose.Types.ObjectId;
   ownerName?: string;
   ownerEmail?: string;
@@ -187,20 +229,18 @@ interface BookingAttrs {
     ifsc?: string;
     accountNumber?: string;
   };
-  venuePrice?: number;
-  orderId?: string;
   finalOrderId?: string;
-  paymentTimestamp?: Date;
-  advanceAmount?: number;
-  remainingBalance?: number;
   bookingPaymentId?: mongoose.Types.ObjectId;
 }
 
 export type BookingDoc = Document & BookingAttrs & { createdAt: Date; updatedAt: Date };
 
-const Booking: Model<BookingDoc> =
-  (mongoose.models.Booking as Model<BookingDoc>) ||
-  mongoose.model<BookingDoc>('Booking', bookingSchema);
+// Force-reload the model to pick up schema changes in active dev environment
+if (mongoose.models && mongoose.models.Booking) {
+  delete mongoose.models.Booking;
+}
 
-export default Booking; 
+const Booking: Model<BookingDoc> = mongoose.model<BookingDoc>('Booking', bookingSchema);
+
+export default Booking;
  

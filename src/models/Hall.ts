@@ -31,6 +31,93 @@ export interface IHall extends mongoose.Document {
   verified: boolean;
   featured: boolean;
   status: 'pending' | 'active' | 'inactive' | 'rejected';
+  venueType: string[];
+  eventSpaces: {
+    name: string;
+    type: 'Hall' | 'Lawn' | 'Rooftop' | 'Poolside' | 'Other';
+    area?: number;
+    seatingCapacity: number;
+    floatingCapacity: number;
+    images?: string[];
+  }[];
+  pricingBreakdown?: {
+    hallRental?: number;
+    lawnRental?: number;
+    fullVenueBuyout?: number;
+    gstPercent: number;
+    serviceChargePercent?: number;
+  };
+  catering: {
+    inHouseAvailable: boolean;
+    outsideAllowed: boolean;
+    vegPricePerPlate?: number;
+    nonVegPricePerPlate?: number;
+    cuisines: string[];
+  };
+  vendorRules: {
+    inHouseDecorator: boolean;
+    outsideDecoratorAllowed: boolean;
+    decorationStartingCost?: number;
+    djAllowed: boolean;
+    outsideDjAllowed: boolean;
+    photographyAllowed: boolean;
+    photographyStartingCost?: number;
+    videographyStartingCost?: number;
+    liveBandAllowed: boolean;
+    soundSystemAvailable: boolean;
+    lightingStartingCost?: number;
+    stageStartingCost?: number;
+  };
+  beautyAndGrooming?: {
+    bridalMakeupAvailable: boolean;
+    makeupStartingPrice?: number;
+    mehendiArtistAvailable: boolean;
+    mehendiStartingPrice?: number;
+    hairstylistAvailable: boolean;
+  };
+  eventPlanning?: {
+    plannerAvailable: boolean;
+    plannerStartingPrice?: number;
+    coordinatorAvailable: boolean;
+  };
+  logistics?: {
+    transportationAvailable: boolean;
+    transportationStartingPrice?: number;
+    hospitalityTeamAvailable: boolean;
+  };
+  religiousServices?: {
+    panditAvailable: boolean;
+    priestAvailable: boolean;
+    ritualSetupAvailable: boolean;
+  };
+  accommodation?: {
+    roomsAvailable: number;
+    startingPrice?: number;
+    bridalSuiteCount: number;
+    complimentaryRooms: number;
+  };
+  policies: {
+    alcoholAllowed: boolean;
+    outsideAlcoholAllowed: boolean;
+    musicTimeLimit?: string;
+    lateNightEvents: boolean;
+    cancellationPolicy: string;
+  };
+  parking: {
+    capacity: number;
+    valetAvailable: boolean;
+    charges?: string;
+  };
+  nearbyTransport?: {
+    airport?: string;
+    railway?: string;
+    metro?: string;
+  };
+  faqs: {
+    question: string;
+    answer: string;
+  }[];
+  highlights: string[];
   createdAt: Date;
   updatedAt: Date;
   averageRating: number;
@@ -162,16 +249,104 @@ const hallSchema = new mongoose.Schema({
       5: 0,
     },
   },
-  reviews: [{
-    userId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      required: true,
+    reviews: [{
+      userId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true,
+      },
+      rating: { type: Number, required: true },
+      comment: { type: String, required: true },
+      createdAt: { type: Date, default: Date.now }
+    }],
+    venueType: [String],
+    eventSpaces: [{
+      name: String,
+      type: { type: String, enum: ['Hall', 'Lawn', 'Rooftop', 'Poolside', 'Other'] },
+      area: Number,
+      seatingCapacity: Number,
+      floatingCapacity: Number,
+      images: [String]
+    }],
+    pricingBreakdown: {
+      hallRental: Number,
+      lawnRental: Number,
+      fullVenueBuyout: Number,
+      gstPercent: { type: Number, default: 18 },
+      serviceChargePercent: Number
     },
-    rating: { type: Number, required: true },
-    comment: { type: String, required: true },
-    createdAt: { type: Date, default: Date.now }
-  }],
+    catering: {
+      inHouseAvailable: { type: Boolean, default: false },
+      outsideAllowed: { type: Boolean, default: true },
+      vegPricePerPlate: Number,
+      nonVegPricePerPlate: Number,
+      cuisines: [String]
+    },
+    vendorRules: {
+      inHouseDecorator: { type: Boolean, default: false },
+      outsideDecoratorAllowed: { type: Boolean, default: true },
+      decorationStartingCost: Number,
+      djAllowed: { type: Boolean, default: true },
+      outsideDjAllowed: { type: Boolean, default: true },
+      photographyAllowed: { type: Boolean, default: true },
+      photographyStartingCost: Number,
+      videographyStartingCost: Number,
+      liveBandAllowed: { type: Boolean, default: false },
+      soundSystemAvailable: { type: Boolean, default: true },
+      lightingStartingCost: Number,
+      stageStartingCost: Number
+    },
+    beautyAndGrooming: {
+      bridalMakeupAvailable: { type: Boolean, default: false },
+      makeupStartingPrice: Number,
+      mehendiArtistAvailable: { type: Boolean, default: false },
+      mehendiStartingPrice: Number,
+      hairstylistAvailable: { type: Boolean, default: false }
+    },
+    eventPlanning: {
+      plannerAvailable: { type: Boolean, default: false },
+      plannerStartingPrice: Number,
+      coordinatorAvailable: { type: Boolean, default: false }
+    },
+    logistics: {
+      transportationAvailable: { type: Boolean, default: false },
+      transportationStartingPrice: Number,
+      hospitalityTeamAvailable: { type: Boolean, default: false }
+    },
+    religiousServices: {
+      panditAvailable: { type: Boolean, default: false },
+      priestAvailable: { type: Boolean, default: false },
+      ritualSetupAvailable: { type: Boolean, default: false }
+    },
+    accommodation: {
+      roomsAvailable: { type: Number, default: 0 },
+      startingPrice: Number,
+      bridalSuiteCount: { type: Number, default: 0 },
+      complimentaryRooms: { type: Number, default: 0 }
+    },
+    policies: {
+      alcoholAllowed: { type: Boolean, default: false },
+      outsideAlcoholAllowed: { type: Boolean, default: false },
+      musicTimeLimit: String,
+      lateNightEvents: { type: Boolean, default: false },
+      perHourExtendedCharges: Number,
+      cancellationPolicy: String
+    },
+    parking: {
+      capacity: { type: Number, default: 0 },
+      valetAvailable: { type: Boolean, default: false },
+      charges: String
+    },
+    nearbyTransport: {
+      airport: String,
+      railway: String,
+      metro: String
+    },
+    faqs: [{
+      question: String,
+      answer: String
+    }],
+    highlights: [String]
 }, {
   timestamps: true,
 });

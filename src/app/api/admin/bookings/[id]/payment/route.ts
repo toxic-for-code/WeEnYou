@@ -33,7 +33,7 @@ export async function POST(
 
     const booking = await Booking.findByIdAndUpdate(
       params.id,
-      { paymentStatus: status },
+      { 'payment.paymentStatus': status },
       { new: true }
     )
       .populate('hallId', 'name images location')

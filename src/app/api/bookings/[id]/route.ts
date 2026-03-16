@@ -25,10 +25,12 @@ export async function GET(
 
     await connectDB();
 
-    const booking = await Booking.findOne({
-      _id: params.id,
-      userId: session.user.id,
-    }).populate('hallId', 'name images location amenities description ownerId price platformFeePercent') as any;
+    const query: any = { _id: params.id };
+    if (session.user.role !== 'admin') {
+      query.userId = session.user.id;
+    }
+
+    const booking = await Booking.findOne(query).populate('hallId', 'name images location amenities description ownerId price platformFeePercent') as any;
 
     if (!booking) {
       return NextResponse.json(
@@ -62,10 +64,12 @@ export async function PATCH(
 
     await connectDB();
 
-    const booking = await Booking.findOne({
-      _id: params.id,
-      userId: session.user.id,
-    }).populate('hallId') as any;
+    const query: any = { _id: params.id };
+    if (session.user.role !== 'admin') {
+      query.userId = session.user.id;
+    }
+
+    const booking = await Booking.findOne(query).populate('hallId') as any;
 
     if (!booking) {
       return NextResponse.json(

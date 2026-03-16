@@ -8,6 +8,8 @@ import Notification from '@/models/Notification';
 import Service from '@/models/Service';
 import ServiceBooking from '@/models/ServiceBooking';
 
+import Settings from '@/models/Settings';
+
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
@@ -20,17 +22,27 @@ export async function POST(req: Request) {
       );
     }
 
-    const { hallId, startDate, endDate, guests, specialRequests, services = [], servicesTotal = 0, totalAmount, user } = await req.json();
+    const { 
+      hallId, 
+      startDate, 
+      endDate, 
+      eventStartTime,
+      eventType,
+      guests, 
+      specialRequests, 
+      services = [], 
+      totalAmount, 
+      user 
+    } = await req.json();
 
     // Log the incoming request body for debugging
-    console.log('Booking request body:', { hallId, startDate, endDate, guests, specialRequests, services, servicesTotal, user });
+    console.log('Booking request body:', { hallId, startDate, endDate, eventStartTime, eventType, guests, specialRequests, services, user });
 
     // Extract customer phone if provided
     const customerPhone = user?.phone || '';
 
     // Validate required fields
-    if (!hallId || !startDate || !endDate || !guests) {
-      console.error('Booking error: Missing required fields', { hallId, startDate, endDate, guests });
+    if (!hallId || !startDate || !endDate || !eventStartTime || !eventType || !guests) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
@@ -39,15 +51,18 @@ export async function POST(req: Request) {
 
     await connectDB();
 
-    // Check if hall exists
+    // 1. Fetch Hall
     const hall = await Hall.findById(hallId);
+
     if (!hall) {
-      console.error('Booking error: Hall not found', { hallId });
       return NextResponse.json(
         { error: 'Hall not found' },
         { status: 404 }
       );
     }
+
+    // Read platformFeePercent from hall document, default to 10 if missing
+    const platformFeePercentage = hall.platformFeePercent ?? 10;
 
     // Check if dates are valid
     const start = new Date(startDate);
@@ -55,7 +70,6 @@ export async function POST(req: Request) {
     const now = new Date();
 
     if (start < now) {
-      console.error('Booking error: Start date in the past', { startDate });
       return NextResponse.json(
         { error: 'Start date cannot be in the past' },
         { status: 400 }
@@ -63,14 +77,13 @@ export async function POST(req: Request) {
     }
 
     if (end < start) {
-      console.error('Booking error: End date before start date', { startDate, endDate });
       return NextResponse.json(
         { error: 'End date must not be before start date' },
         { status: 400 }
       );
     }
 
-    // Check if hall is available for the selected dates
+    // Check availability
     const existingBooking = await Booking.findOne({
       hallId,
       $or: [
@@ -79,80 +92,55 @@ export async function POST(req: Request) {
           endDate: { $gte: start },
         },
       ],
-      status: { $in: ['confirmed'] },
+      status: { $in: ['confirmed', 'waiting_owner_confirmation'] },
     });
 
     if (existingBooking) {
-      console.log('Conflicting booking:', existingBooking);
       return NextResponse.json(
         { error: 'Hall is not available for the selected dates' },
         { status: 400 }
       );
     }
 
-    // Calculate total price for hall based on new model
+    // 2. Platform Fee Calculation
     const totalDays = Math.max(1, Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)));
     const venueRental = hall.price * totalDays;
     
-    // Platform fee (one-time)
-    const platformFeePercent = typeof hall.platformFeePercent === 'number' ? hall.platformFeePercent : 10;
-    const platformFee = Math.round(hall.price * (platformFeePercent / 100));
-    
-    // Tax (18% on platform fee)
-    const taxAmount = Math.round(platformFee * 0.18);
-    
-    // Server-calculated total for the hall part
-    const calculatedHallTotal = venueRental + platformFee + taxAmount;
+    // Calculate platform fee based on TOTAL venue rental
+    const platformFee = Math.round((venueRental * platformFeePercentage) / 100);
+    const totalPrice = venueRental + platformFee;
 
-    // Use totalAmount from frontend if provided, else fallback to calculatedHallTotal
-    const totalPrice = typeof totalAmount === 'number' ? totalAmount : calculatedHallTotal;
-
-    // Create booking
+    // 3. Create booking with nested payment structure
+    console.log('Creating booking with dates:', { startDate, endDate });
     const booking = await Booking.create({
       userId: session.user.id,
       hallId,
+      customerPhone,
+      eventType,
+      guests,
       startDate,
       endDate,
-      guests,
+      eventStartTime,
       specialRequests,
-      customerPhone,
-      totalPrice, // This now includes all fees if provided
-      venuePrice: venueRental, // Persist base venue rental
+      venuePrice: venueRental,
+      platformFee,
+      platformFeePercentage,
+      totalPrice,
+      payment: {
+        advancePaid: false,
+        advanceAmount: 0,
+        remainingBalance: totalPrice,
+        paymentStatus: 'pending',
+      },
       status: 'pending_advance',
-      advancePaid: false,
-      finalPaymentMethod: null,
-      finalPaymentStatus: null,
+      ownerId: hall.ownerId,
     });
-
-    // Create service bookings if any
-    if (services.length > 0) {
-      const serviceBookingPromises = services.map(async (service: { name: string; price: number }) => {
-        // Find the service in the database
-        const dbService = await Service.findOne({ name: service.name, price: service.price });
-        if (dbService) {
-          return ServiceBooking.create({
-            userId: session.user.id,
-            serviceId: dbService._id,
-            providerId: dbService.providerId,
-            hallId,
-            hallBookingId: booking._id,
-            startDate,
-            endDate,
-            totalPrice: service.price,
-            status: 'pending',
-            paymentStatus: 'pending',
-          });
-        }
-      });
-
-      await Promise.all(serviceBookingPromises);
-    }
 
     // Notify owner
     await Notification.create({
       userId: hall.ownerId,
       type: 'booking',
-      message: `New booking for ${hall.name} from ${session.user.name || 'a user'} (${startDate} to ${endDate})`,
+      message: `New booking for ${hall.name} for ${eventType} on ${startDate}`,
     });
 
     return NextResponse.json({ booking }, { status: 201 });
@@ -179,21 +167,26 @@ export async function GET() {
     await connectDB();
 
     let bookings;
-    if (session.user.role === 'owner') {
-      // Owner: get all bookings for their halls
-      const halls = await Hall.find({ ownerId: session.user.id });
-      const hallIds = halls.map(h => h._id);
-      bookings = await Booking.find({ hallId: { $in: hallIds } })
-        .populate('hallId', 'name images location amenities ownerId')
-        .sort({ createdAt: -1 })
-        .lean();
+    let query: any = {};
+    if (session.user.role === 'admin') {
+      query = {};
+    } else if (session.user.role === 'owner') {
+      const ownerHalls = await Hall.find({ ownerId: session.user.id });
+      const hallIds = ownerHalls.map(h => h._id);
+      query = {
+        $or: [
+          { userId: session.user.id },
+          { hallId: { $in: hallIds } }
+        ]
+      };
     } else {
-      // User: get their own bookings
-      bookings = await Booking.find({ userId: session.user.id })
-        .populate('hallId', 'name images location amenities ownerId')
-        .sort({ createdAt: -1 })
-        .lean();
+      query = { userId: session.user.id };
     }
+
+    bookings = await Booking.find(query)
+      .populate('hallId', 'name images location amenities ownerId price')
+      .sort({ createdAt: -1 })
+      .lean();
 
     // For each booking, populate serviceBookings with providerId
     const bookingsWithServices = await Promise.all(bookings.map(async (booking) => {

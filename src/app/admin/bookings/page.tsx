@@ -42,7 +42,7 @@ interface Booking {
   startDate: string;
   endDate: string;
   totalPrice: number;
-  status: 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'pending_approval';
+  status: 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'pending_approval' | 'cancellation_requested' | 'pending_advance' | 'waiting_owner_confirmation';
   paymentStatus: 'pending' | 'paid' | 'refunded';
   createdAt: string;
   pendingChange?: {
@@ -222,11 +222,13 @@ export default function AdminBookings() {
                 className="pl-9 pr-8 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#C89B3C]/20 focus:border-[#C89B3C] transition-all text-sm appearance-none bg-white min-w-[160px]"
               >
                 <option value="all">All Statuses</option>
-                <option value="pending">Pending</option>
+                <option value="pending_advance">Pending Advance</option>
+                <option value="waiting_owner_confirmation">Waiting Confirmation</option>
+                <option value="owner_confirmed">Owner Confirmed</option>
                 <option value="confirmed">Confirmed</option>
                 <option value="cancelled">Cancelled</option>
                 <option value="completed">Completed</option>
-                <option value="pending_approval">Pending Approval</option>
+                <option value="rejected">Rejected</option>
               </select>
             </div>
             <div className="relative flex-1 sm:flex-none">
@@ -311,24 +313,36 @@ export default function AdminBookings() {
                       value={booking.status}
                       onChange={(e) => handleStatusChange(booking._id, e.target.value)}
                       className={`text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded-lg border-0 focus:ring-2 focus:ring-[#C89B3C]/20 cursor-pointer ${
-                        booking.status === 'confirmed' ? 'bg-blue-50 text-blue-600' : 
-                        booking.status === 'completed' ? 'bg-green-50 text-green-600' : 
-                        booking.status === 'cancelled' ? 'bg-red-50 text-red-600' : 
-                        'bg-amber-50 text-amber-600'
-                      }`}
+                      booking.status === 'confirmed' ? 'bg-blue-50 text-blue-600' : 
+                      booking.status === 'completed' ? 'bg-green-50 text-green-600' : 
+                      booking.status === 'cancelled' ? 'bg-red-50 text-red-600' : 
+                      booking.status === 'waiting_owner_confirmation' ? 'bg-amber-50 text-amber-600' :
+                      booking.status === 'pending_advance' ? 'bg-purple-50 text-purple-600' :
+                      'bg-gray-50 text-gray-600'
+                    }`}
                     >
-                      <option value="pending">Pending</option>
+                      <option value="pending_advance">Pending Advance</option>
+                      <option value="waiting_owner_confirmation">Waiting Confirmation</option>
+                      <option value="owner_confirmed">Owner Confirmed</option>
                       <option value="confirmed">Confirmed</option>
                       <option value="cancelled">Cancelled</option>
                       <option value="completed">Completed</option>
-                      <option value="pending_approval">Awaiting Approval</option>
+                      <option value="rejected">Rejected</option>
                     </select>
-                    {booking.status === 'pending_approval' && (
+                    {(booking.status === 'pending_approval' || booking.status === 'cancellation_requested') && (
                        <div className="mt-2 flex gap-1">
-                          <button onClick={() => handleOwnerAction(booking._id, 'approve')} className="p-1 hover:bg-green-50 text-green-600 rounded-md transition-colors">
+                          <button 
+                            onClick={() => handleOwnerAction(booking._id, 'approve')} 
+                            className="p-1 hover:bg-green-50 text-green-600 rounded-md transition-colors"
+                            title={booking.status === 'cancellation_requested' ? "Approve Cancellation" : "Approve Booking"}
+                          >
                             <CheckCircleIcon className="w-4 h-4" />
                           </button>
-                          <button onClick={() => handleOwnerAction(booking._id, 'reject')} className="p-1 hover:bg-red-50 text-red-600 rounded-md transition-colors">
+                          <button 
+                            onClick={() => handleOwnerAction(booking._id, 'reject')} 
+                            className="p-1 hover:bg-red-50 text-red-600 rounded-md transition-colors"
+                            title={booking.status === 'cancellation_requested' ? "Reject Cancellation" : "Reject Booking"}
+                          >
                             <XCircleIcon className="w-4 h-4" />
                           </button>
                        </div>

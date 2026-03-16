@@ -42,6 +42,8 @@ export async function GET(
       services
     };
 
+    console.log('API returning hall:', JSON.stringify(hallWithData, null, 2));
+
     return NextResponse.json({ hall: hallWithData });
   } catch (error) {
     console.error('Error fetching hall:', error);
@@ -93,6 +95,17 @@ export async function PUT(
       'amenities',
       'location',
       'status',
+      'venueType',
+      'eventSpaces',
+      'pricingBreakdown',
+      'catering',
+      'vendorRules',
+      'accommodation',
+      'policies',
+      'parking',
+      'nearbyTransport',
+      'faqs',
+      'highlights',
     ];
 
     // Filter out invalid updates

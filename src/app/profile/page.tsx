@@ -14,11 +14,10 @@ const getStatusColor = (status: string) => {
     case 'confirmed': return 'text-green-600';
     case 'cancelled': return 'text-red-600';
     case 'completed': return 'text-blue-600';
-    case 'pending_owner_confirmation':
-    case 'waiting_owner_confirmation': return 'text-blue-600';
-    case 'pending_advance': return 'text-yellow-600';
-    case 'pending_approval': return 'text-orange-600';
-    default: return 'text-yellow-600';
+    case 'waiting_owner_confirmation': return 'text-purple-600';
+    case 'pending_advance': return 'text-amber-600';
+    case 'cancellation_requested': return 'text-orange-600';
+    default: return 'text-gray-600';
   }
 };
 
@@ -27,11 +26,10 @@ const getStatusDisplayText = (status: string) => {
     case 'confirmed': return 'Confirmed';
     case 'cancelled': return 'Cancelled';
     case 'completed': return 'Completed';
-    case 'pending_owner_confirmation':
     case 'waiting_owner_confirmation': return 'Pending Confirmation';
     case 'pending_advance': return 'Pending Advance Payment';
-    case 'pending_approval': return 'Pending Approval';
-    default: return status?.charAt(0).toUpperCase() + status?.slice(1) || 'Pending';
+    case 'cancellation_requested': return 'Cancellation Requested';
+    default: return status?.charAt(0).toUpperCase() + status?.slice(1).replace(/_/g, ' ') || 'Pending';
   }
 };
 
@@ -84,11 +82,16 @@ export default function ProfilePage() {
     alert(`Searching for: ${search}, Check-in: ${checkIn}, Check-out: ${checkOut}, Guests: ${guests}`);
   };
 
+  const [mounted, setMounted] = useState(false);
+
   useEffect(() => {
+    setMounted(true);
     if (session?.user) {
       fetch('/api/bookings')
         .then(res => res.json())
-        .then(data => setBookings(data.bookings || []))
+        .then(data => {
+          setBookings(data.bookings || []);
+        })
         .finally(() => setLoading(false));
     }
   }, [session]);
@@ -102,14 +105,7 @@ export default function ProfilePage() {
     }
   }, [session]);
 
-  useEffect(() => {
-    if (session?.user) {
-      fetch('/api/plan-event/user-events')
-        .then(res => res.json())
-        .then(data => setPlannedEvents(data.events || []))
-        .finally(() => setPlannedEventsLoading(false));
-    }
-  }, [session]);
+  if (!mounted) return null;
 
   if (!session?.user) {
     return (
@@ -122,11 +118,24 @@ export default function ProfilePage() {
     );
   }
 
-  // Booking filtering logic (placeholder)
-  const now = new Date();
+  // Booking filtering logic
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
   const filteredBookings = bookings.filter((b: any) => {
-    if (tab === "Upcoming") return new Date(b.startDate) >= now && b.status !== "cancelled";
-    if (tab === "Past") return new Date(b.startDate) < now && b.status !== "cancelled";
+    const bookingDate = new Date(b.startDate);
+    const isInvalidDate = isNaN(bookingDate.getTime());
+    bookingDate.setHours(0, 0, 0, 0);
+
+    // If date is missing, let it show in "Upcoming" so user can see it
+    if (tab === "Upcoming") {
+      if (b.status === "cancelled") return false;
+      return isInvalidDate || bookingDate >= today;
+    }
+    if (tab === "Past") {
+      if (b.status === "cancelled") return false;
+      return !isInvalidDate && bookingDate < today;
+    }
     if (tab === "Cancelled") return b.status === "cancelled";
     return true;
   });
@@ -782,11 +791,7 @@ export default function ProfilePage() {
                       </div>
                     )}
                     <div className="absolute top-4 right-4 flex flex-col gap-2 items-end">
-                      <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg ${
-                        b.status === 'confirmed' ? 'bg-green-500 text-white' : 
-                        b.status === 'cancelled' ? 'bg-red-500 text-white' : 
-                        'bg-yellow-400 text-gray-900'
-                      }`}>
+                      <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg bg-white ${getStatusColor(b.status)} border border-gray-100`}>
                         {getStatusDisplayText(b.status)}
                       </span>
                     </div>
@@ -815,7 +820,16 @@ export default function ProfilePage() {
                           </div>
                           <div className="flex flex-col">
                             <span className="text-[10px] font-black text-gray-400 uppercase leading-none mb-1">Date</span>
-                            <span className="text-xs font-black text-gray-900">{b.startDate ? new Date(b.startDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A'}</span>
+                            <span className="text-xs font-black text-gray-900">
+                              {b.startDate && !isNaN(new Date(b.startDate).getTime()) ? (
+                                <>
+                                  {new Date(b.startDate).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                  {b.endDate && new Date(b.endDate).toDateString() !== new Date(b.startDate).toDateString() && (
+                                    <> - {new Date(b.endDate).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })}</>
+                                  )}
+                                </>
+                              ) : 'Date Missing'}
+                            </span>
                           </div>
                         </div>
                         <div className="p-3 bg-gray-50 rounded-2xl flex items-center gap-3">
@@ -842,17 +856,29 @@ export default function ProfilePage() {
                       </Link>
                       {tab === 'Upcoming' && (
                         <>
+                          {b.status !== 'cancellation_requested' && (
+                            <button 
+                              className="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2.5 rounded-xl font-black text-xs shadow-lg shadow-primary-500/10 transition-all active:scale-95"
+                              onClick={e => { e.stopPropagation(); setShowReschedule(true); setRescheduleBookingId(b._id); }}
+                            >
+                              Reschedule
+                            </button>
+                          )}
                           <button 
-                            className="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2.5 rounded-xl font-black text-xs shadow-lg shadow-primary-500/10 transition-all active:scale-95"
-                            onClick={e => { e.stopPropagation(); setShowReschedule(true); setRescheduleBookingId(b._id); }}
+                            className={`px-4 py-2.5 rounded-xl font-black text-xs border transition-all active:scale-95 ${
+                              b.status === 'cancellation_requested'
+                                ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed w-full'
+                                : 'bg-red-50 hover:bg-red-100 text-red-600 border-red-100'
+                            }`}
+                            onClick={e => { 
+                              e.stopPropagation(); 
+                              if (b.status === 'cancellation_requested') return;
+                              setCancelBookingId(b._id); 
+                              setShowCancelReason(true); 
+                            }}
+                            disabled={b.status === 'cancellation_requested'}
                           >
-                            Reschedule
-                          </button>
-                          <button 
-                            className="bg-red-50 hover:bg-red-100 text-red-600 px-4 py-2.5 rounded-xl font-black text-xs border border-red-100 transition-all active:scale-95"
-                            onClick={e => { e.stopPropagation(); setCancelBookingId(b._id); setShowCancelReason(true); }}
-                          >
-                            Cancel
+                            {b.status === 'cancellation_requested' ? 'Cancellation Pending...' : 'Cancel'}
                           </button>
                         </>
                       )}

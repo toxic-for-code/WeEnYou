@@ -91,17 +91,21 @@ export async function POST(req: Request) {
 
     // ── 4. Apply updates based on payment type ───────────────────────────────
     if (type === 'advance') {
-      const paidAdvance = advanceAmount || booking.advanceAmount || Math.min(booking.totalPrice * 0.5, 50000);
-      const remaining   = Math.max(0, booking.totalPrice - paidAdvance);
+      const totalAmount = booking.totalPrice || 0;
+      const paidAdvance = advanceAmount || booking.payment?.advanceAmount || Math.min(totalAmount * 0.5, 50000);
+      const remaining   = Math.max(0, totalAmount - paidAdvance);
 
-      booking.advancePaid       = true;
-      booking.advanceAmount     = paidAdvance;
-      booking.remainingBalance  = remaining;
-      booking.paymentId         = razorpay_payment_id;
-      booking.orderId           = razorpay_order_id;
-      booking.paymentTimestamp  = new Date();
-      booking.paymentStatus     = 'paid' as any; // Marking advance step as paid
-      booking.status            = 'waiting_owner_confirmation' as any;
+      booking.payment = {
+        advancePaid: true,
+        advanceAmount: paidAdvance,
+        remainingBalance: remaining,
+        paymentId: razorpay_payment_id,
+        orderId: razorpay_order_id,
+        paymentTimestamp: new Date(),
+        paymentStatus: 'paid',
+      };
+      
+      booking.status = 'waiting_owner_confirmation' as any;
       await booking.save();
 
       console.log('[verify] Advance payment recorded', {
@@ -109,7 +113,6 @@ export async function POST(req: Request) {
         orderId: razorpay_order_id,
         paymentId: razorpay_payment_id,
         newStatus: booking.status,
-        newPaymentStatus: booking.paymentStatus,
       });
 
       // Notify hall owner
@@ -129,13 +132,16 @@ export async function POST(req: Request) {
       });
 
     } else if (type === 'final') {
-      booking.paymentId        = razorpay_payment_id;
-      booking.orderId          = razorpay_order_id;
-      booking.paymentTimestamp = new Date();
-      booking.paymentStatus    = 'paid' as any;
+      if (!booking.payment) booking.payment = {} as any;
+      
+      booking.payment.paymentId = razorpay_payment_id;
+      booking.payment.orderId = razorpay_order_id;
+      booking.payment.paymentTimestamp = new Date();
+      booking.payment.paymentStatus = 'paid';
+      booking.payment.remainingBalance = 0;
+      
       booking.finalPaymentStatus = 'paid';
-      booking.remainingBalance = 0;
-      booking.status           = 'completed' as any;
+      booking.status = 'completed' as any;
       await booking.save();
 
       // Update any linked service bookings

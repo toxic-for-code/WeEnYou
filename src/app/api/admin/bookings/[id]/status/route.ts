@@ -22,15 +22,6 @@ export async function POST(
     await connectDB();
     const { status } = await request.json();
 
-    // Validate status
-    const validStatuses = ['pending', 'confirmed', 'cancelled', 'completed'];
-    if (!validStatuses.includes(status)) {
-      return NextResponse.json(
-        { error: 'Invalid status' },
-        { status: 400 }
-      );
-    }
-
     const booking = await Booking.findByIdAndUpdate(
       params.id,
       { status },
@@ -54,5 +45,4 @@ export async function POST(
       { status: 500 }
     );
   }
-} 
- 
+}

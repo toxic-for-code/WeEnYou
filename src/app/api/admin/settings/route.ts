@@ -2,98 +2,10 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { connectDB } from '@/lib/db';
-import mongoose, { Document, Model } from 'mongoose';
+import Settings from '@/models/Settings';
+import mongoose from 'mongoose';
 
 export const dynamic = 'force-dynamic';
-
-// Define the Settings schema
-const settingsSchema = new mongoose.Schema({
-  platformFee: {
-    type: Number,
-    required: true,
-    min: 0,
-    max: 100,
-    default: 5
-  },
-  currency: {
-    type: String,
-    required: true,
-    enum: ['INR', 'USD', 'EUR'],
-    default: 'INR'
-  },
-  bookingTimeSlots: [{
-    start: {
-      type: String,
-      required: true
-    },
-    end: {
-      type: String,
-      required: true
-    }
-  }],
-  emailTemplates: {
-    bookingConfirmation: {
-      type: String,
-      default: ''
-    },
-    paymentSuccess: {
-      type: String,
-      default: ''
-    },
-    bookingCancellation: {
-      type: String,
-      default: ''
-    },
-    hallVerification: {
-      type: String,
-      default: ''
-    }
-  },
-  notifications: {
-    emailNotifications: {
-      type: Boolean,
-      default: true
-    },
-    adminEmailNotifications: {
-      type: Boolean,
-      default: true
-    },
-    ownerEmailNotifications: {
-      type: Boolean,
-      default: true
-    }
-  }
-}, {
-  timestamps: true
-});
-
-interface SettingsAttrs {
-  platformFee: number;
-  currency: 'INR' | 'USD' | 'EUR';
-  bookingTimeSlots: {
-    start: string;
-    end: string;
-  }[];
-  emailTemplates: {
-    bookingConfirmation: string;
-    paymentSuccess: string;
-    bookingCancellation: string;
-    hallVerification: string;
-  };
-  notifications: {
-    emailNotifications: boolean;
-    adminEmailNotifications: boolean;
-    ownerEmailNotifications: boolean;
-  };
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export type SettingsDoc = Document & SettingsAttrs;
-
-const Settings: Model<SettingsDoc> =
-  (mongoose.models.Settings as Model<SettingsDoc>) ||
-  mongoose.model<SettingsDoc>('Settings', settingsSchema);
 
 // GET /api/admin/settings
 export async function GET() {
@@ -199,5 +111,4 @@ export async function PUT(request: Request) {
       { status: 500 }
     );
   }
-} 
- 
+}

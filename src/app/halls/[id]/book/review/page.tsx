@@ -77,8 +77,7 @@ const ReviewBookingPage = () => {
   const venueRental = dailyPrice * totalDays;
   
   const platformFeePercent = typeof hall?.platformFeePercent === 'number' ? hall.platformFeePercent : 10;
-  const platformFee = Math.round(dailyPrice * (platformFeePercent / 100));
-  const taxAmount = Math.round(platformFee * 0.18);
+  const platformFee = Math.round((venueRental * platformFeePercent) / 100);
   
   const servicesPrice = selectedServices.reduce((sum: number, s: any) => {
     const p = s.serviceType === "Catering" || s.id === "catering" 
@@ -125,6 +124,8 @@ const ReviewBookingPage = () => {
           hallId,
           startDate: form.startDate,
           endDate: form.endDate,
+          eventStartTime: form.eventTime,
+          eventType: form.eventType,
           guests: guestsCount,
           specialRequests: form.specialRequests,
           services: selectedServices.map((s: any) => ({
@@ -279,6 +280,10 @@ const ReviewBookingPage = () => {
                 <span className="text-sm text-gray-400 font-bold uppercase tracking-wider">Client</span>
                 <span className="text-lg font-black text-gray-900">{form.name}</span>
               </div>
+              <div className="flex justify-between md:flex-col gap-2">
+                <span className="text-sm text-gray-400 font-bold uppercase tracking-wider">Event Type</span>
+                <span className="text-lg font-black text-gray-900 capitalize">{form.eventType?.replace('_', ' ') || 'Not specified'}</span>
+              </div>
               <div className="md:col-span-2 flex justify-between md:flex-col gap-2 pt-2 border-t border-gray-50">
                 <span className="text-sm text-gray-400 font-bold uppercase tracking-wider">Special Requests</span>
                 <p className="text-gray-700 font-medium italic">{form.specialRequests || "None"}</p>
@@ -304,11 +309,6 @@ const ReviewBookingPage = () => {
                   <span className="font-bold text-gray-900">₹{platformFee.toLocaleString()}</span>
                 </div>
 
-                <div className="flex justify-between items-center py-2 border-b border-gray-50 group">
-                  <span className="text-gray-700 font-medium whitespace-nowrap">Taxes</span>
-                  <div className="flex-1 border-b border-dotted border-gray-200 mx-2 self-end mb-1 opacity-30"></div>
-                  <span className="font-bold text-gray-900">₹{taxAmount.toLocaleString()}</span>
-                </div>
               
               {selectedServices.map((s: any) => {
                 const isCatering = s.serviceType === "Catering" || s.id === "catering";

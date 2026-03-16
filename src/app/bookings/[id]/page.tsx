@@ -35,6 +35,7 @@ interface Booking {
     | 'owner_confirmed'
     | 'confirmed'
     | 'rejected'
+    | 'cancellation_requested'
     | 'cancelled'
     | 'completed';
   paymentStatus: 'pending' | 'paid' | 'partial_paid' | 'refund_pending' | 'refunded';
@@ -576,15 +577,18 @@ export default function BookingDetails({ params }: { params: { id: string } }) {
             ? { bg: 'bg-blue-50 border-blue-200', icon: 'bg-blue-100 text-blue-700', text: 'text-blue-700' }
             : isWaiting
             ? { bg: 'bg-purple-50 border-purple-200', icon: 'bg-purple-100 text-purple-700', text: 'text-purple-700' }
+            : s === 'cancellation_requested'
+            ? { bg: 'bg-orange-50 border-orange-200', icon: 'bg-orange-100 text-orange-700', text: 'text-orange-700' }
             : { bg: 'bg-amber-50 border-amber-200', icon: 'bg-amber-100 text-amber-700', text: 'text-amber-700' };
 
           const statusLabel =
-            s === 'waiting_owner_confirmation' ? 'Booking Processing'
+            s === 'waiting_owner_confirmation' ? 'Pending Confirmation'
             : s === 'owner_confirmed'  ? 'Owner Confirmed'
             : s === 'pending_advance'  ? 'Pending Advance Payment'
             : s === 'rejected'         ? 'Booking Rejected'
             : s === 'completed'        ? 'Completed'
             : s === 'confirmed'        ? 'Confirmed'
+            : s === 'cancellation_requested' ? 'Cancellation Requested'
             : s === 'cancelled'        ? 'Cancelled'
             : s as string;
 
@@ -613,8 +617,8 @@ export default function BookingDetails({ params }: { params: { id: string } }) {
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                   ) : isRejected || isCancelled ? (
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                  ) : isWaiting ? (
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
+                  ) : isWaiting || s === 'cancellation_requested' ? (
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                   ) : (
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                   )}
@@ -629,6 +633,12 @@ export default function BookingDetails({ params }: { params: { id: string } }) {
                     <p className="text-xs text-purple-600 mt-2 leading-relaxed">
                       Your advance of ₹{(booking.advanceAmount || Math.min(booking.totalPrice * 0.5, 50000)).toLocaleString()} has been received.
                       The owner will review and confirm your booking shortly.
+                    </p>
+                  )}
+                  {s === 'cancellation_requested' && (
+                    <p className="text-xs text-orange-600 mt-2 font-medium leading-relaxed">
+                      Your cancellation request has been submitted and is currently being reviewed by the venue owner. 
+                      You will be notified once they take action.
                     </p>
                   )}
                   {isApproved && (

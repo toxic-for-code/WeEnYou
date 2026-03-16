@@ -49,7 +49,7 @@ export async function GET(request: Request) {
     const bookings = await Booking.find({
       createdAt: { $gte: startDate },
       status: { $in: ['confirmed', 'completed'] },
-      paymentStatus: 'paid'
+      'payment.paymentStatus': 'paid'
     });
     const totalRevenue = bookings.reduce((sum, booking) => sum + booking.totalPrice, 0);
 
@@ -59,7 +59,7 @@ export async function GET(request: Request) {
         $match: {
           createdAt: { $gte: startDate },
           status: { $in: ['confirmed', 'completed'] },
-          paymentStatus: 'paid'
+          'payment.paymentStatus': 'paid'
         }
       },
       {

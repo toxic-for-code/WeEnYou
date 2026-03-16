@@ -247,14 +247,18 @@ export async function GET(
       .text('Payment Summary', 70, paymentTop + 15);
 
     if (hasRegular) doc.font('Roboto');
+    const advancePaid = (booking.payment?.advanceAmount || (booking as any).advanceAmount || 0);
+    const balanceDue = (booking.payment?.remainingBalance || (booking as any).remainingBalance || 0);
+    const pStatus = (booking.payment?.paymentStatus || (booking as any).paymentStatus || 'pending');
+
     doc
       .fontSize(10)
       .fillColor('#059669') // Green-600
       .text(`Advance Paid:`, 250, paymentTop + 15)
-      .text(`- ₹${booking.advanceAmount?.toLocaleString() || '0'}`, 400, paymentTop + 15, { align: 'right' })
+      .text(`- ₹${advancePaid.toLocaleString()}`, 400, paymentTop + 15, { align: 'right' })
       .fillColor('#dc2626') // Red-600
       .text(`Remaining Balance:`, 250, paymentTop + 35)
-      .text(`₹${booking.remainingBalance?.toLocaleString() || '0'}`, 400, paymentTop + 35, { align: 'right' });
+      .text(`₹${balanceDue.toLocaleString()}`, 400, paymentTop + 35, { align: 'right' });
 
     // STATUS SECTION
     const statusTop = paymentTop + 80;
@@ -282,8 +286,23 @@ export async function GET(
     if (hasBold) doc.font('Roboto-Bold');
     doc.text(`Payment Status: `, 50, statusTop + 35);
     if (hasRegular) doc.font('Roboto');
-    doc.text(`${booking.paymentStatus.toUpperCase()}`, 140, statusTop + 35);
+    doc.text(`${pStatus.toUpperCase()}`, 140, statusTop + 35);
 
+    if (booking.status === 'cancellation_requested' && booking.cancellationRequestedAt) {
+      const cancelDate = new Date(booking.cancellationRequestedAt).toLocaleString('en-IN', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+      });
+      if (hasBold) doc.font('Roboto-Bold');
+      doc.text(`Request Date: `, 50, statusTop + 50);
+      if (hasRegular) doc.font('Roboto');
+      doc.text(`${cancelDate}`, 140, statusTop + 50);
+    }
+    
     // FOOTER
     doc
       .fontSize(9)

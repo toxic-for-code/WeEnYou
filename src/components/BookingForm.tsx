@@ -11,6 +11,7 @@ interface BookingFormProps {
   servicesTotal?: number;
   capacity: number;
   platformFeePercent?: number;
+  blockedDates?: string[];
 }
 
 export default function BookingForm({ 
@@ -19,7 +20,8 @@ export default function BookingForm({
   services = [], 
   servicesTotal = 0, 
   capacity,
-  platformFeePercent = 10 
+  platformFeePercent = 10,
+  blockedDates = []
 }: BookingFormProps) {
   const { data: session } = useSession();
   const router = useRouter();
@@ -54,10 +56,20 @@ export default function BookingForm({
     router.push(`/halls/${hallId}/book?${query}`);
   };
 
+  const isDateBlocked = (dateString: string) => {
+    return blockedDates.includes(dateString);
+  };
+
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
+    
+    if ((name === 'startDate' || name === 'endDate') && isDateBlocked(value)) {
+      setError('Selected date is not available. Venue not available.');
+      return;
+    }
+
     setFormData((prev) => ({
       ...prev,
       [name]: value,
@@ -159,17 +171,38 @@ export default function BookingForm({
 
         {error && <div className="p-3 bg-red-50 text-red-600 text-xs font-bold rounded-xl border border-red-100">{error}</div>}
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full py-4 bg-primary-600 hover:bg-primary-700 text-white font-black text-sm rounded-2xl transition-all active:scale-[0.98] disabled:opacity-60 shadow-xl shadow-primary-500/10"
-        >
-          {loading ? 'Processing...' : 'Reserve Now'}
-        </button>
+        <div className="relative group">
+          <div className="absolute -inset-1 bg-gradient-to-r from-primary-600 to-primary-400 rounded-2xl blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200" />
+          <button
+            type="submit"
+            disabled={loading}
+            className="relative w-full py-4 bg-primary-600 hover:bg-primary-500 text-white font-black text-sm rounded-2xl transition-all active:scale-[0.98] disabled:opacity-60 shadow-xl shadow-primary-500/20 uppercase tracking-widest"
+          >
+            {loading ? 'Processing...' : 'Reserve Now'}
+          </button>
+        </div>
 
-        <p className="text-[10px] text-gray-400 text-center font-medium mt-4">
-          You won't be charged yet
-        </p>
+        <div className="space-y-4 pt-2">
+          <p className="text-[10px] text-gray-500 text-center font-black uppercase tracking-tighter leading-tight italic">
+            Pay a small advance to reserve this venue.<br/>
+            Remaining payment will be paid directly to the venue.
+          </p>
+          
+          <div className="flex flex-col gap-2 pt-2">
+            <div className="flex items-center gap-2 text-xs font-bold text-gray-600">
+              <div className="p-1 bg-emerald-50 text-emerald-600 rounded-md">
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+              </div>
+              Secure Payments – Razorpay
+            </div>
+            <div className="flex items-center gap-2 text-xs font-bold text-gray-600">
+              <div className="p-1 bg-blue-50 text-blue-600 rounded-md">
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+              </div>
+              Instant Booking Availability
+            </div>
+          </div>
+        </div>
 
         {/* Price Breakdown */}
         {daysBooking > 0 && (

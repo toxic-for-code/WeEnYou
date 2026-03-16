@@ -36,9 +36,15 @@ export async function POST(
       );
     }
 
-    // Update booking status
-    booking.status = 'cancelled';
-    booking.paymentStatus = 'refunded';
+    const { reason } = await request.json();
+
+    // Update booking status to request
+    booking.status = 'cancellation_requested';
+    booking.cancellationRequested = true;
+    booking.cancellationRequestedBy = 'user';
+    booking.cancellationReason = reason || '';
+    booking.cancellationRequestedAt = new Date();
+    
     await booking.save();
 
     // Notify owner
@@ -46,8 +52,8 @@ export async function POST(
     if (hall) {
       await Notification.create({
         userId: hall.ownerId,
-        type: 'cancellation',
-        message: `Booking for ${hall.name} (${booking.startDate} to ${booking.endDate}) was cancelled by the user.`,
+        type: 'cancellation_request',
+        message: `Cancellation requested for ${hall.name} (${new Date(booking.startDate).toLocaleDateString('en-IN')} to ${new Date(booking.endDate).toLocaleDateString('en-IN')}) by the user. Reason: ${reason || 'Not provided'}`,
       });
     }
 

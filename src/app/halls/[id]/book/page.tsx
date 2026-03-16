@@ -33,6 +33,7 @@ const BookingPage = () => {
     startDate: "",
     endDate: "",
     eventTime: "",
+    eventType: "",
     guests: "",
     specialRequests: "",
   });
@@ -72,6 +73,11 @@ const BookingPage = () => {
       const start = new Date(form.startDate);
       const end = new Date(form.endDate);
       if (end < start) errors.endDate = 'End date cannot be earlier than start date.';
+    }
+
+    // Event Type Validation
+    if (!form.eventType) {
+      errors.eventType = 'Event type is required.';
     }
 
     // Time Validation
@@ -224,12 +230,11 @@ const BookingPage = () => {
   const dailyPrice = hall?.price || hall?.basePrice || 0;
   const venueRental = dailyPrice * totalDays;
   
-  // Platform Fee (Charged once based on ONE day's price)
-  const platformFeePercent = typeof hall?.platformFeePercent === 'number' ? hall.platformFeePercent : 10;
-  const platformFee = Math.round(dailyPrice * (platformFeePercent / 100));
+  // Platform Fee (Charged based on TOTAL venue rental)
+  const platformFeePercentValue = typeof hall?.platformFeePercent === 'number' ? hall.platformFeePercent : 10;
+  const platformFee = Math.round((venueRental * platformFeePercentValue) / 100);
 
-  // Taxes (18% on platform fee - existing rule)
-  const taxAmount = Math.round(platformFee * 0.18);
+  // Taxes - Removed as per new totalPrice = venuePrice + platformFee rule
   
   // Services Price
   const servicesPrice = selectedServices.reduce((sum, s) => {
@@ -243,7 +248,7 @@ const BookingPage = () => {
   const eventManagerPrice = eventManager ? EVENT_MANAGER_FEE : 0;
 
   // Subtotal
-  const subtotal = venueRental + platformFee + taxAmount + servicesPrice + eventManagerPrice;
+  const subtotal = venueRental + platformFee + servicesPrice + eventManagerPrice;
   
   // Total including discount
   const total = Math.max(0, subtotal - discount);
@@ -315,7 +320,6 @@ const BookingPage = () => {
       totalDays,
       venueRental,
       platformFee,
-      taxAmount,
       servicesPrice,
       total
     };
@@ -484,8 +488,7 @@ const BookingPage = () => {
                 <li>📅 <b>Date & Time:</b> {form.startDate ? form.startDate : 'Not selected'}{form.eventTime ? (', ' + form.eventTime) : ''}</li>
                 <li>👥 <b>Guests:</b> {form.guests ? form.guests : 'Not provided'}</li>
                 <li>💰 <b>Venue Rental:</b> ₹{dailyPrice.toLocaleString()} {totalDays > 1 ? `x ${totalDays} days` : '(1 day)'} — ₹{venueRental.toLocaleString()}</li>
-                <li>🛡️ <b>Platform Fee:</b> ₹{platformFee.toLocaleString()} (one-time)</li>
-                <li>⚖️ <b>Taxes:</b> ₹{taxAmount.toLocaleString()}</li>
+                <li>🛡️ <b>Platform Fee:</b> ₹{platformFee.toLocaleString()} ({platformFeePercentValue}%)</li>
                 <li>🛎️ <b>Selected Services:</b> {selectedServices.length === 0 ? "None yet" : selectedServices.map(s => s.name).join(", ")}</li>
               </ul>
               <div className="mt-3">
@@ -645,6 +648,25 @@ const BookingPage = () => {
                     {!form.startDate && <span className="text-[10px] text-gray-400 font-medium">Select date first</span>}
                     {formErrors.eventTime && <span className="text-xs text-red-600 mt-1 block">{formErrors.eventTime}</span>}
                   </label>
+                  <label className="block text-sm font-bold text-gray-700 w-full max-w-full">Event Type
+                    <div className="w-full overflow-hidden mt-1.5 label-input-wrapper">
+                      <select 
+                        name="eventType" 
+                        value={form.eventType} 
+                        onChange={(e: any) => handleFormChange(e)} 
+                        className={`block w-full border rounded-xl p-3 focus:ring-2 focus:ring-primary-500 outline-none transition-all ${formErrors.eventType ? 'border-red-500 bg-red-50' : 'border-gray-200'}`}
+                        required
+                        style={{ width: '100%', maxWidth: '100%' }}
+                      >
+                        <option value="">Select Event Type</option>
+                        <option value="wedding">Wedding</option>
+                        <option value="birthday">Birthday</option>
+                        <option value="engagement">Engagement</option>
+                        <option value="corporate">Corporate Event</option>
+                      </select>
+                    </div>
+                    {formErrors.eventType && <span className="text-xs text-red-600 mt-1 block">{formErrors.eventType}</span>}
+                  </label>
                   <label className="block text-sm font-bold text-gray-700 w-full max-w-full">Number of Guests
                     <div className="w-full overflow-hidden mt-1.5 label-input-wrapper">
                       <input type="number" name="guests" inputMode="numeric" value={form.guests} onChange={handleFormChange} className={`block w-full border rounded-xl p-3 focus:ring-2 focus:ring-primary-500 outline-none transition-all ${formErrors.guests ? 'border-red-500 bg-red-50' : 'border-gray-200'}`} required placeholder={`Max: ${hall?.capacity || '...'}`} style={{ width: '100%', maxWidth: '100%' }} />
@@ -757,11 +779,7 @@ const BookingPage = () => {
                 <span className="text-gray-900 font-bold">₹{platformFee.toLocaleString()}</span>
               </div>
 
-              <div className="flex justify-between items-center text-sm group">
-                <span className="text-gray-500 whitespace-nowrap">Taxes</span>
-                <div className="flex-1 border-b border-dotted border-gray-200 mx-2 self-end mb-1 opacity-50"></div>
-                <span className="text-gray-900 font-bold">₹{taxAmount.toLocaleString()}</span>
-              </div>
+
 
               {discount > 0 && (
                 <div className="flex justify-between items-center text-sm text-green-600 font-bold bg-green-50 px-3 py-2 rounded-lg">

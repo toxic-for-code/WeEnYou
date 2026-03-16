@@ -14,15 +14,15 @@ export async function GET() {
       sampleBooking: sampleBooking ? {
         _id: sampleBooking._id,
         status: sampleBooking.status,
-        paymentStatus: sampleBooking.paymentStatus,
-        advancePaid: sampleBooking.advancePaid,
+        paymentStatus: sampleBooking.payment?.paymentStatus,
+        advancePaid: sampleBooking.payment?.advancePaid,
         hallName: sampleBooking.hallId?.name,
         createdAt: sampleBooking.createdAt
       } : null,
       totalBookings: await Booking.countDocuments(),
       pendingAdvanceBookings: await Booking.countDocuments({ status: 'pending_advance' }),
       pendingOwnerConfirmationBookings: await Booking.countDocuments({ status: 'pending_owner_confirmation' }),
-      advancePaidBookings: await Booking.countDocuments({ advancePaid: true })
+      advancePaidBookings: await Booking.countDocuments({ 'payment.advancePaid': true })
     });
   } catch (error) {
     console.error('Test endpoint error:', error);

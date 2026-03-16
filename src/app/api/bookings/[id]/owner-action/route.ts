@@ -25,16 +25,32 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     if ((booking.hallId as HallDoc).ownerId.toString() !== session.user.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
-    // Accept/reject when booking is awaiting owner approval
-    const awaitingApproval = ['pending_owner_confirmation', 'owner_approval_pending'];
+    // Accept/reject when booking is awaiting owner approval OR cancellation request
+    const awaitingApproval = ['pending_owner_confirmation', 'owner_approval_pending', 'cancellation_requested'];
     if (!awaitingApproval.includes(booking.status)) {
       return NextResponse.json({ error: 'Booking is not currently processing' }, { status: 400 });
     }
     const { action } = await req.json();
 
     if (action === 'approve') {
+      if (booking.status === 'cancellation_requested') {
+        booking.status = 'cancelled';
+        booking.cancelledAt = new Date();
+        booking.cancelledBy = 'owner';
+        booking.payment.paymentStatus = 'refunded'; // Assuming refund on cancellation approval
+        await booking.save();
+
+        await Notification.create({
+          userId: booking.userId,
+          type: 'cancellation_approved',
+          message: `Your cancellation request for '${(booking.hallId as HallDoc).name}' was approved. Any advance payment will be refunded.`,
+        });
+        return NextResponse.json({ booking });
+      }
+
       booking.status = 'confirmed';
       await booking.save();
+      // ... rest of the original approve logic
 
       // Also update the linked BookingPayment if it exists
       if (booking.bookingPaymentId) {
@@ -49,7 +65,21 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       return NextResponse.json({ booking });
 
     } else if (action === 'reject') {
+      if (booking.status === 'cancellation_requested') {
+        booking.status = 'confirmed'; // Restore to previous status
+        booking.cancellationRequested = false;
+        await booking.save();
+
+        await Notification.create({
+          userId: booking.userId,
+          type: 'booking',
+          message: `Your cancellation request for '${(booking.hallId as HallDoc).name}' was rejected by the owner. Your booking remains confirmed.`,
+        });
+        return NextResponse.json({ booking });
+      }
+
       booking.status = 'rejected';
+      // ... rest of the original reject logic
       booking.paymentStatus = 'refund_pending';
       await booking.save();
 

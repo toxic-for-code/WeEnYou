@@ -54,12 +54,16 @@ export async function POST(req: Request) {
     if (bookingId) {
       const booking = await Booking.findById(bookingId);
       if (booking) {
-        booking.advancePaid = true;
-        booking.advanceAmount = advanceAmount;
-        booking.remainingBalance = remainingAmount;
-        booking.paymentId = razorpay_payment_id;
-        booking.paymentStatus = 'partial_paid' as any;
-        booking.status = 'owner_approval_pending' as any;
+        booking.payment = {
+          advancePaid: true,
+          advanceAmount: advanceAmount,
+          remainingBalance: remainingAmount,
+          paymentId: razorpay_payment_id,
+          orderId: razorpay_order_id,
+          paymentStatus: 'paid',
+          paymentTimestamp: new Date(),
+        };
+        booking.status = 'waiting_owner_confirmation' as any;
         booking.bookingPaymentId = (bookingPayment._id as any);
         await booking.save();
 

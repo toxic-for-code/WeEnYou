@@ -102,14 +102,14 @@ export async function POST(req: Request) {
 
         await Booking.findByIdAndUpdate(booking._id, {
           $set: {
-            advancePaid:      true,
-            advanceAmount:    finalAdvanceAmount,
-            remainingBalance: remainingBalance,
-            paymentId,
-            orderId,
-            paymentTimestamp: new Date(),
-            paymentStatus:    'paid', // Marking advance step as paid
-            status:           'waiting_owner_confirmation',
+            'payment.advancePaid':      true,
+            'payment.advanceAmount':    finalAdvanceAmount,
+            'payment.remainingBalance': remainingBalance,
+            'payment.paymentId':        paymentId,
+            'payment.orderId':          orderId,
+            'payment.paymentTimestamp': new Date(),
+            'payment.paymentStatus':    'paid',
+            status:                     'waiting_owner_confirmation',
           },
         }, { new: true });
 
@@ -137,12 +137,13 @@ export async function POST(req: Request) {
       } else if (paymentType === 'final' || paymentType === 'remaining') {
         await Booking.findByIdAndUpdate(booking._id, {
           $set: {
-            paymentId,
-            orderId,
-            paymentTimestamp:    new Date(),
-            finalPaymentStatus:  'paid',
-            remainingBalance:    0,
-            status:              'confirmed',
+            'payment.paymentId':        paymentId,
+            'payment.orderId':          orderId,
+            'payment.paymentTimestamp': new Date(),
+            'payment.paymentStatus':    'paid',
+            'payment.remainingBalance': 0,
+            finalPaymentStatus:         'paid',
+            status:                     'confirmed',
           },
         }, { new: true });
 
@@ -193,12 +194,12 @@ export async function POST(req: Request) {
         console.warn('[webhook] Unknown payment type, defaulting to advance', { paymentType });
         await Booking.findByIdAndUpdate(booking._id, {
           $set: {
-            advancePaid:      true,
-            paymentId,
-            orderId,
-            paymentTimestamp: new Date(),
-            paymentStatus:    'partial_paid',
-            status:           'owner_approval_pending',
+            'payment.advancePaid':      true,
+            'payment.paymentId':        paymentId,
+            'payment.orderId':          orderId,
+            'payment.paymentTimestamp': new Date(),
+            'payment.paymentStatus':    'paid',
+            status:                     'waiting_owner_confirmation',
           },
         });
         return NextResponse.json({ status: 'Payment recorded as advance (default).' });
