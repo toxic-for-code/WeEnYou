@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { MapPinIcon, CalendarIcon, UsersIcon, MagnifyingGlassIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import VenueCard from '@/components/VenueCard';
+import EarlyUserFeedback from '@/components/EarlyUserFeedback';
 
 // Removed eventTypes, now using date range
 const capacities = ['50+ guests', '100+ guests', '200+ guests', '500+ guests', '1000+ guests'];
@@ -152,29 +153,7 @@ export default function Home() {
     }
   };
 
-  // Testimonials (static for now)
-  const testimonials = [
-    {
-      name: 'Priya Sharma',
-      text: 'Booking my wedding venue was so easy and stress-free. Highly recommend!',
-      avatar: 'https://randomuser.me/api/portraits/women/68.jpg',
-    },
-    {
-      name: 'Rahul Verma',
-      text: 'Great selection of halls and excellent customer support.',
-      avatar: 'https://randomuser.me/api/portraits/men/32.jpg',
-    },
-    {
-      name: 'Ayesha Khan',
-      text: "I found the perfect place for my daughter's birthday. Thank you!",
-      avatar: 'https://randomuser.me/api/portraits/women/44.jpg',
-    },
-  ];
-  const [testimonialIdx, setTestimonialIdx] = useState(0);
-  useEffect(() => {
-    const interval = setInterval(() => setTestimonialIdx(i => (i + 1) % testimonials.length), 5000);
-    return () => clearInterval(interval);
-  }, [testimonials.length]);
+
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -469,91 +448,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Testimonials Section */}
-      <section className="py-24 sm:py-32 bg-[#fafafa]">
-        <div className="max-w-7xl mx-auto px-6 sm:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-gray-900 mb-6 animate-fade-in-up">
-              What Our Users Say
-            </h2>
-            <p className="text-gray-500 text-lg max-w-2xl mx-auto animate-fade-in-up delay-100">
-              Trusted by thousands of happy hosts across India.
-            </p>
-          </div>
-          
-          <div className="max-w-4xl mx-auto relative group">
-            {/* Carousel Navigation Arrows (Optional, but adding for UX) */}
-            <button 
-              onClick={() => setTestimonialIdx(prev => (prev - 1 + testimonials.length) % testimonials.length)}
-              className="absolute left-0 top-1/2 -ml-4 sm:-ml-12 -translate-y-1/2 z-10 p-3 rounded-full bg-white shadow-lg text-gray-400 hover:text-[#C89B3C] transition-all opacity-0 group-hover:opacity-100 hidden md:flex"
-              aria-label="Previous testimonial"
-            >
-              <ChevronLeftIcon className="w-6 h-6" />
-            </button>
-            <button 
-              onClick={() => setTestimonialIdx(prev => (prev + 1) % testimonials.length)}
-              className="absolute right-0 top-1/2 -mr-4 sm:-mr-12 -translate-y-1/2 z-10 p-3 rounded-full bg-white shadow-lg text-gray-400 hover:text-[#C89B3C] transition-all opacity-0 group-hover:opacity-100 hidden md:flex"
-              aria-label="Next testimonial"
-            >
-              <ChevronRightIcon className="w-6 h-6" />
-            </button>
-
-            {/* Testimonial Card */}
-            <div className="bg-white rounded-[3rem] p-8 sm:p-12 md:p-16 shadow-xl shadow-gray-200/50 border border-gray-100 relative overflow-hidden animate-fade-in-up">
-              {/* Decorative Quote Icon */}
-              <div className="absolute top-10 left-10 text-gold opacity-10 select-none">
-                <svg width="120" height="120" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M14.017 21L14.017 18C14.017 16.8954 14.9124 16 16.017 16H19.017C20.1216 16 21.017 16.8954 21.017 18V21C21.017 22.1046 20.1216 23 19.017 23H16.017C14.9124 23 14.017 22.1046 14.017 21ZM14.017 21C14.017 21 14.017 21 14.017 21ZM3 21V18C3 16.8954 3.89543 16 5 16H8C9.10457 16 10 16.8954 10 18V21C10 22.1046 9.10457 23 8 23H5C3.89543 23 3 22.1046 3 21ZM3 21C3 21 3 21 3 21ZM21.017 11.1377C20.352 11.5343 19.7113 11.7513 19.117 11.8369C18.5226 11.9225 17.9715 11.8841 17.4814 11.7109C16.9913 11.5377 16.5919 11.2335 16.2832 10.7984C15.9745 10.3633 15.8201 9.80371 15.8201 9.11963C15.8201 8.3584 15.9868 7.69727 16.3203 7.13623C16.6538 6.5752 17.1196 6.13086 17.7178 5.80322C18.3159 5.47559 19.0112 5.31177 19.8037 5.31177C20.6553 5.31177 21.3647 5.47559 21.9321 5.80322L20.8926 7.39941C20.5957 7.21484 20.2671 7.12256 19.9067 7.12256C19.5312 7.12256 19.2207 7.21777 18.9751 7.4082C18.7295 7.59863 18.5664 7.84863 18.4858 8.1582C18.4053 8.46777 18.3813 8.78467 18.4141 9.10889C18.4468 9.43311 18.5444 9.69189 18.707 9.88525C18.8696 10.0786 19.1411 10.1753 19.5215 10.1753C19.8818 10.1753 20.2178 10.0889 20.5293 9.91602L21.017 11.1377ZM10.017 11.1377C9.35205 11.5343 8.7113 11.7513 8.11699 11.8369C7.52269 11.9225 6.97151 11.8841 6.48145 11.7109C5.99138 11.5377 5.59194 11.2335 5.2832 10.7984C4.97447 10.3633 4.8201 9.80371 4.8201 9.11963C4.8201 8.3584 4.98683 7.69727 5.32031 7.13623C5.6538 6.5752 6.11961 6.13086 6.71777 5.80322C7.31593 5.47559 8.01123 5.31177 8.80371 5.31177C9.65527 5.31177 10.3646 5.47559 10.9321 5.80322L9.89258 7.39941C9.5957 7.21484 9.26711 7.12256 8.90674 7.12256C8.53125 7.12256 8.2207 7.21777 7.9751 7.4082C7.72949 7.59863 7.56641 7.84863 7.48584 8.1582C7.40527 8.46777 7.3813 8.78467 7.41406 9.10889C7.44682 9.43311 7.54443 9.69189 7.70703 9.88525C7.86963 10.0786 8.14111 10.1753 8.52148 10.1753C8.88184 10.1753 9.21777 10.0889 9.5293 9.91602L10.017 11.1377Z" />
-                </svg>
-              </div>
-
-              <div className="flex flex-col items-center">
-                {/* User Avatar with Ring */}
-                <div className="relative mb-8">
-                  <div className="absolute inset-0 bg-[#C89B3C] blur-xl opacity-20 rounded-full animate-pulse"></div>
-                  <img 
-                    src={testimonials[testimonialIdx].avatar} 
-                    alt={testimonials[testimonialIdx].name} 
-                    className="w-24 h-24 sm:w-28 sm:h-28 rounded-full border-4 border-white shadow-xl relative z-10 object-cover" 
-                  />
-                </div>
-
-                {/* Rating Stars */}
-                <div className="flex gap-1 mb-6">
-                  {[1, 2, 3, 4, 5].map(star => (
-                    <svg key={star} className="w-5 h-5 text-[#C89B3C]" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.967a1 1 0 00.95.69h4.178c.969 0 1.371 1.24.588 1.81l-3.385 2.46a1 1 0 00-.364 1.118l1.287 3.966c.3.922-.755 1.688-1.54 1.118l-3.385-2.46a1 1 0 00-1.175 0l-3.385 2.46c-.784.57-1.838-.196-1.54-1.118l1.287-3.966a1 1 0 00-.364-1.118l-3.385-2.46c-.783-.57-.38-1.81.588-1.81h4.178a1 1 0 00.95-.69l1.286-3.967z" />
-                    </svg>
-                  ))}
-                </div>
-
-                {/* Quote Text */}
-                <p className="text-xl sm:text-2xl md:text-3xl text-gray-800 font-medium leading-tight mb-8 max-w-2xl">
-                  "{testimonials[testimonialIdx].text}"
-                </p>
-
-                {/* User Info */}
-                <div className="text-center">
-                  <div className="font-bold text-gray-900 text-lg sm:text-xl mb-1">{testimonials[testimonialIdx].name}</div>
-                  <div className="text-sm sm:text-base text-[#C89B3C] font-semibold tracking-wide uppercase">Happy Client</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Pagination Dots */}
-            <div className="flex justify-center gap-3 mt-10">
-              {testimonials.map((_, i) => (
-                <button
-                  key={i}
-                  className={`h-2.5 rounded-full transition-all duration-300 ${i === testimonialIdx ? 'w-10 bg-[#C89B3C]' : 'w-2.5 bg-gray-300 hover:bg-gray-400'}`}
-                  onClick={() => setTestimonialIdx(i)}
-                  aria-label={`Show testimonial ${i + 1}`}
-                />
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* Early User Feedback Section */}
+      <EarlyUserFeedback />
 
       {/* Why Choose WeEnYou */}
       <section className="py-20 sm:py-28 bg-white">

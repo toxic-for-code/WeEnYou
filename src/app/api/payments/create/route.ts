@@ -86,8 +86,7 @@ export async function POST(req: Request) {
       }
     }
 
-    // Create Razorpay order
-    const order = await razorpay.orders.create({
+    const orderOptions = {
       amount: amount * 100, // in paise
       currency: 'INR',
       receipt: `booking_${bookingId}`,
@@ -98,7 +97,24 @@ export async function POST(req: Request) {
         hall: booking.hallId.name,
         type: type, // Add payment type to distinguish advance vs final
       },
-    });
+    };
+
+    console.log("Using Key:", process.env.RAZORPAY_KEY_ID);
+    console.log("Order Options:", orderOptions);
+
+    let order;
+    try {
+      order = await razorpay.orders.create(orderOptions);
+      console.log("Order:", order);
+    } catch (err: any) {
+      console.error("Razorpay Order Creation Failed:", {
+        statusCode: err.statusCode,
+        error: err.error,
+        description: err.error?.description,
+        message: err.message
+      });
+      throw err;
+    }
 
     // Save the Razorpay orderId in the booking for webhook lookup
     const updateResult = await Booking.findByIdAndUpdate(bookingId, { $set: { orderId: order.id } });

@@ -46,8 +46,7 @@ export async function POST(req: Request) {
       }, { status: 400 });
     }
 
-    // Create Razorpay order — embed bookingId in notes for webhook fallback
-    const order = await razorpay.orders.create({
+    const orderOptions = {
       amount: Math.round(advance * 100),
       currency: 'INR',
       receipt: bookingId ? `adv_${bookingId.slice(-8)}_${Date.now()}` : `adv_${Date.now()}`,
@@ -59,9 +58,24 @@ export async function POST(req: Request) {
         advanceRequested: String(advance),
         type: 'advance',
       },
-    });
+    };
 
-    console.log('[create-advance-order] Order created', { orderId: order.id, bookingId, hallId, advance });
+    console.log("Using Key:", process.env.RAZORPAY_KEY_ID);
+    console.log("Order Options:", orderOptions);
+
+    let order;
+    try {
+      order = await razorpay.orders.create(orderOptions);
+      console.log("Order:", order);
+    } catch (err: any) {
+      console.error("Razorpay Order Creation Failed:", {
+        statusCode: err.statusCode,
+        error: err.error,
+        description: err.error?.description,
+        message: err.message
+      });
+      throw err;
+    }
 
     // Save orderId back to the Booking document so the webhook can find it via orderId
     if (bookingId) {

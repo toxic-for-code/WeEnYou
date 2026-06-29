@@ -257,7 +257,7 @@ export default function BookingDetails({ params }: { params: { id: string } }) {
       }
       // 3. Open Razorpay checkout
       const rzp = new window.Razorpay({
-        key: 'rzp_test_EvcFsJFi50khcp',
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
         amount: orderData.amount,
         currency: orderData.currency,
         name: booking.hallId.name,
@@ -383,7 +383,7 @@ export default function BookingDetails({ params }: { params: { id: string } }) {
       }
       // Open Razorpay checkout
       const rzp = new window.Razorpay({
-        key: "rzp_test_EvcFsJFi50khcp",
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
         amount: order.amount,
         currency: order.currency,
         name: booking.hallId.name,

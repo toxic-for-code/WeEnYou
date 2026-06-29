@@ -45,8 +45,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Final payment has already been made.' }, { status: 400 });
     }
 
-    // ── Create Razorpay Order ───────────────────────────────────────────────
-    const order = await razorpay.orders.create({
+    const orderOptions = {
       amount: Math.round(booking.remainingBalance * 100), // convert to paise
       currency: 'INR',
       receipt: `final_${bookingId.slice(-8)}_${Date.now()}`,
@@ -56,7 +55,24 @@ export async function POST(req: Request) {
         hall: booking.hallId.name,
         type: 'final',
       },
-    });
+    };
+
+    console.log("Using Key:", process.env.RAZORPAY_KEY_ID);
+    console.log("Order Options:", orderOptions);
+
+    let order;
+    try {
+      order = await razorpay.orders.create(orderOptions);
+      console.log("Order:", order);
+    } catch (err: any) {
+      console.error("Razorpay Order Creation Failed:", {
+        statusCode: err.statusCode,
+        error: err.error,
+        description: err.error?.description,
+        message: err.message
+      });
+      throw err;
+    }
 
     // Save finalOrderId for webhook and verification lookup
     booking.finalOrderId = order.id;
